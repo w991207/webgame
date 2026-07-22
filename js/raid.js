@@ -86,9 +86,15 @@ function scheduleRaidMonsterTick(){
 function raidPlayerAttackTick(){
   if(!state.raidActive) return;
   const s = stats();
-  const dmg = Math.round(Math.max(1, s.atk - raidBossDef()));
+  let dmg = Math.round(Math.max(1, s.atk - raidBossDef()));
+  const isCrit = Math.random() * 100 < s.critChance;
+  if(isCrit){
+    dmg = Math.round(dmg * s.critDamageMult);
+    floatText('CRIT! -'+dmg, 'crit');
+  } else {
+    floatText('-'+dmg, null);
+  }
   state.raidBossHp -= dmg;
-  floatText('-'+dmg, null);
 
   if(state.raidBossHp <= 0){
     resolveRaidVictory();

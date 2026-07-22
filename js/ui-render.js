@@ -40,6 +40,17 @@ function renderAll(){
   document.getElementById('statGold').textContent = 'x'+s.goldMult.toFixed(2);
   document.getElementById('statExpMult').textContent = 'x'+s.expMult.toFixed(2);
 
+  const isMaxCrit = (state.goldUpgrades.critChance||0) >= 100 && (state.goldUpgrades.critDamage||0) >= 100;
+  const critChanceEl = document.getElementById('statCritChance');
+  const critDamageEl = document.getElementById('statCritDamage');
+  if(isMaxCrit){
+    critChanceEl.innerHTML = `100% <span style="color:#ff3b3b;font-weight:900;">⚡MAX</span>`;
+    critDamageEl.innerHTML = `x${s.critDamageMult.toFixed(2)} <span style="color:#ff3b3b;font-weight:900;">⚡MAX</span>`;
+  } else {
+    critChanceEl.textContent = s.critChance.toFixed(0) + '%';
+    critDamageEl.textContent = 'x' + s.critDamageMult.toFixed(2);
+  }
+
   const needed = expNeeded(state.level);
   document.getElementById('expText').textContent = `${state.exp} / ${needed}`;
   document.getElementById('expBar').style.width = Math.min(100,(state.exp/needed*100)) + '%';

@@ -23,7 +23,7 @@ function defaultState(){
     monsterIndex: 0,
     isBoss: false,
     playerHp: 0,
-    goldUpgrades: {atk:0, def:0, hp:0, goldGain:0, expGain:0, atkSpeed:0},
+    goldUpgrades: {atk:0, def:0, hp:0, goldGain:0, expGain:0, atkSpeed:0, critChance:0, critDamage:0},
     soulUpgrades: {atkMult:0, goldMult:0, defMult:0},
     totalKills: 0,
     totalBossKills: 0,
@@ -41,6 +41,7 @@ function defaultState(){
     bugfixCompGranted: false,
     bonusGrant1Given: false,
     bugfixCompGranted2: false,
+    maxCritAnnounced: false,
     fragments: 0,
     totalRelicPulls: 0,
     relics: {hpRelic:0, atkRelic:0, defRelic:0, goldRelic:0, expRelic:0, dropRelic:0, spdRelic:0},
@@ -90,7 +91,9 @@ function stats(){
   const spdMult = (1 + Math.min(gu.atkSpeed,50)*0.05) * (1 + re.spdRelic*0.03);
   const tickMs = Math.max(150, Math.round(1000 / spdMult));
   const dropChance = Math.min(0.6, 0.15 + re.dropRelic*0.015);
-  return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance};
+  const critChance = Math.min(100, (gu.critChance||0) * 1); // 레벨당 1%, 최대 100%
+  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배
+  return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance, critChance, critDamageMult};
 }
 function expNeeded(lvl){ return Math.round(50 * Math.pow(lvl, 1.4)); }
 function tryLevelUp(){

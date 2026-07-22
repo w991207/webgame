@@ -111,9 +111,16 @@ function playerAttackTick(){
 
   const currentFloor = state.mode === 'tower' ? state.towerFloor : state.floor;
 
-  const dmgToMonster = Math.round(Math.max(1, s.atk - monsterDefFor(currentFloor, state.isBoss)));
-  state.monsterHp -= dmgToMonster;
-  floatText('-'+dmgToMonster, null);
+  let dmgToMonster = Math.round(Math.max(1, s.atk - monsterDefFor(currentFloor, state.isBoss)));
+  const isCrit = Math.random() * 100 < s.critChance;
+  if(isCrit){
+    dmgToMonster = Math.round(dmgToMonster * s.critDamageMult);
+    state.monsterHp -= dmgToMonster;
+    floatText('CRIT! -'+dmgToMonster, 'crit');
+  } else {
+    state.monsterHp -= dmgToMonster;
+    floatText('-'+dmgToMonster, null);
+  }
   pulseMonster();
 
   if(state.monsterHp <= 0){

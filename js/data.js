@@ -33,7 +33,7 @@ const RELICS = [
   {key:'goldRelic', name:'탐욕의 유물', icon:'🪙', perLevel:4, descFn:v=>`골드 획득 +${v}%`},
   {key:'expRelic', name:'지혜의 유물', icon:'📖', perLevel:4, descFn:v=>`경험치 획득 +${v}%`},
   {key:'dropRelic', name:'행운의 유물', icon:'🍀', perLevel:1.5, descFn:v=>`파편 드랍 확률 +${v}%p`},
-  {key:'spdRelic', name:'가속의 유물', icon:'⚡', perLevel:2, descFn:v=>`공격 속도 +${v}%`},
+  {key:'spdRelic', name:'가속의 유물', icon:'⚡', perLevel:3, descFn:v=>`공격 속도 +${v}%`},
 ];
 
 const PETS = [
@@ -110,6 +110,8 @@ const GOLD_UPGRADES = [
   {key:'goldGain', name:'행운의 주머니', desc:'골드 획득량 +10%', baseCost:25, mult:1.22, effect:'+10% Gold'},
   {key:'expGain', name:'지혜의 문장', desc:'경험치 획득량 +10%', baseCost:20, mult:1.22, effect:'+10% EXP'},
   {key:'atkSpeed', name:'신속의 축복', desc:'공격 속도 +5% (최대 50)', baseCost:35, mult:1.11, effect:'+5% SPD', maxLevel:50},
+  {key:'critChance', name:'치명의 감각', desc:'치명타 확률 +1% (최대 100%)', baseCost:38, mult:1.115, effect:'+1% CRIT', maxLevel:100},
+  {key:'critDamage', name:'치명의 일격', desc:'치명타 피해 +4% (최대 100레벨)', baseCost:42, mult:1.115, effect:'+4% CRIT DMG', maxLevel:100},
 ];
 
 const DAILY_QUESTS = [

@@ -47,6 +47,10 @@ function renderShop(){
           state.goldUpgrades[u.key] = (state.goldUpgrades[u.key] || 0) + n;
           state.dailyUpgradesBought += n;
           log(`${u.name} 강화! (Lv.${state.goldUpgrades[u.key]}, +${n})`);
+          if(!state.maxCritAnnounced && (state.goldUpgrades.critChance||0) >= 100 && (state.goldUpgrades.critDamage||0) >= 100){
+            state.maxCritAnnounced = true;
+            log('⚡ 맥스 치명타 달성! 치명타 확률 100%, 치명타 피해 최대치에 도달했습니다!', 'good');
+          }
           renderAll();
         }
       });

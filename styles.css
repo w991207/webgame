@@ -219,6 +219,7 @@
   }
   .float-text.dmgToPlayer{color:#ff7a72;}
   .float-text.heal{color:#6bcf7f;}
+  .float-text.crit{color:#ff3b3b;font-size:20px;font-weight:900;text-shadow:0 0 8px rgba(255,59,59,0.6);}
   @keyframes floatUp{
     0%{opacity:1;transform:translate(-50%,0);}
     100%{opacity:0;transform:translate(-50%,-46px);}
