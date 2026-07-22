@@ -1,0 +1,63 @@
+// ---------- Rendering ----------
+function renderMonster(){
+  const meta = currentMonsterMeta();
+  document.getElementById('monsterEmoji').textContent = meta.emoji;
+  document.getElementById('monsterName').textContent = meta.name;
+  document.getElementById('bossTag').style.display = state.isBoss ? 'block' : 'none';
+  
+  const progressEl = document.getElementById('killProgressText');
+  if(state.mode === 'tower'){
+    document.getElementById('floorBadge').textContent = state.towerCleared ? '🏆 TOWER CLEAR! (100/100)' : ('TOWER ' + state.towerFloor + ' / 100F');
+    progressEl.textContent = `무한의 탑 진행 중`;
+  } else {
+    document.getElementById('floorBadge').textContent = 'FLOOR ' + state.floor;
+    if(state.isBoss){
+      progressEl.textContent = '보스전 진행 중';
+    } else {
+      progressEl.textContent = `처치: ${state.killsOnFloor} / 5`;
+    }
+  }
+}
+
+function renderAll(){
+  const s = stats();
+  document.getElementById('goldDisplay').textContent = Math.floor(state.gold).toLocaleString();
+  document.getElementById('soulDisplay').textContent = Math.floor(state.soul).toLocaleString();
+  document.getElementById('lvlDisplay').textContent = state.level;
+
+  document.getElementById('statAtk').textContent = s.atk;
+  document.getElementById('statDef').textContent = s.def;
+  document.getElementById('statHp').textContent = s.maxHp;
+  document.getElementById('statSpd').textContent = (1000/s.tickMs).toFixed(2)+'/s';
+  document.getElementById('statGold').textContent = 'x'+s.goldMult.toFixed(2);
+  document.getElementById('statExpMult').textContent = 'x'+s.expMult.toFixed(2);
+
+  const needed = expNeeded(state.level);
+  document.getElementById('expText').textContent = `${state.exp} / ${needed}`;
+  document.getElementById('expBar').style.width = Math.min(100,(state.exp/needed*100)) + '%';
+
+  renderMonster();
+
+  const mhPct = Math.max(0,(state.monsterHp/state.monsterMaxHp*100));
+  document.getElementById('monsterHpBar').style.width = mhPct+'%';
+  document.getElementById('monsterHpText').textContent = `${Math.max(0,Math.ceil(state.monsterHp))} / ${state.monsterMaxHp}`;
+
+  const phPct = Math.max(0,(state.playerHp/s.maxHp*100));
+  document.getElementById('playerHpBar').style.width = phPct+'%';
+  document.getElementById('playerHpText').textContent = `${Math.max(0,Math.ceil(state.playerHp))} / ${s.maxHp}`;
+
+  renderShop();
+  renderSoulShop();
+  renderRelics();
+  renderPets();
+  updateRebirthAvailability();
+  checkDailyReset();
+  renderDailyQuests();
+  renderRepeatableQuests();
+  state.relicsOwnedCount = RELICS.filter(r=>state.relics[r.key]>0).length;
+  state.usedCouponsCount = Object.keys(state.usedCoupons||{}).length;
+  renderAchievements();
+  renderCouponList();
+  renderRaidPanel();
+}
+

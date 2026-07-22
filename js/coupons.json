@@ -1,0 +1,14 @@
+{
+  "coupons": [
+    { "code": "TWILIGHT01", "reward": 5, "description": "기본 유물 파편 보상" },
+    { "code": "TWILIGHT02", "reward": 5, "description": "기본 유물 파편 보상" },
+    { "code": "EVENT2026A", "reward": 5, "description": "이벤트 유물 파편 보상" },
+    { "code": "REICFRAG05", "reward": 5, "description": "유물 파편 지급 쿠폰" },
+    { "code": "WELCOME202", "reward": 5, "description": "신규 환영 쿠폰" },
+    { "code": "COUPON1538", "reward": 5, "description": "특별 보상 쿠폰 1" },
+    { "code": "COUPON1539", "reward": 5, "description": "특별 보상 쿠폰 2" },
+    { "code": "HAPPYLUNCH", "reward": 15, "description": "점심쿠폰" },
+    { "code": "JIPEGALEYO", "reward": 5, "description": "집갈래쿠폰" },
+    { "code": "BAPMUKEURO", "reward": 5, "description": "개발자밥먹으러감쿠폰" }
+  ]
+}
