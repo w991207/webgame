@@ -1,28 +1,42 @@
-// 1. 버전 정의 (배포 시 버전 업)[cite: 1]
-const MY_VERSION = "2.0.2"; 
+// 현재 실행 중인 게임 버전
+const MY_VERSION = "2.0.2";
 
-// 2. Netlify 패치 감지 함수
+// 패치 확인
 async function checkPatch() {
   try {
-    const response = await fetch("/js/patch.js?t=" + Date.now(), {
+    const response = await fetch("/patch.json?t=" + Date.now(), {
       cache: "no-store"
     });
 
-    const text = await response.text();
-    const match = text.match(/const\s+MY_VERSION\s*=\s*["']([^"']+)["']/);
+    const patch = await response.json();
 
-    if (!match) return;
+    if (patch.version !== MY_VERSION) {
 
-    const latestVersion = match[1];
+      const modal = document.getElementById("patchModal");
 
-    if (latestVersion !== MY_VERSION) {
-      document.getElementById("patchModal").style.display = "flex";
+      const title = modal.querySelector(".patch-title");
+      const body = modal.querySelector(".patch-body");
+
+      if (title)
+        title.textContent = `🚀 v${patch.version} 업데이트`;
+
+      if (body)
+        body.innerHTML = patch.notes.map(x => `• ${x}`).join("<br>");
+
+      modal.style.display = "flex";
     }
+
   } catch (e) {
     console.log("패치 확인 실패");
   }
 }
 
-setInterval(checkPatch, 10000);
-// 10초마다 체크
+function applyPatch() {
+  location.reload();
+}
+
+// 최초 1회
+checkPatch();
+
+// 이후 10초마다 확인
 setInterval(checkPatch, 10000);
