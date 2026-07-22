@@ -83,7 +83,7 @@ function stats(){
   const goldMult = (1 + gu.goldGain*0.10) * (1 + su.goldMult*0.20) * (1 + re.goldRelic*0.04) * (1 + rg.raidRing*0.04);
   const expMult = (1 + (gu.expGain||0)*0.10) * (1 + re.expRelic*0.04) * (1 + rg.raidRing*0.04);
   const spdMult = (1 + Math.min(gu.atkSpeed,50)*0.05) * (1 + re.spdRelic*0.02);
-  const tickMs = Math.max(300, Math.round(1000 / spdMult));
+  const tickMs = Math.max(Math.round(1000 / spdMult));
   const dropChance = Math.min(0.6, 0.15 + re.dropRelic*0.015);
   return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance};
 }
