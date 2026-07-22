@@ -1,30 +1,28 @@
 // 1. 버전 정의 (배포 시 버전 업)[cite: 1]
-const MY_VERSION = "1.1.5"; 
+const MY_VERSION = "1.1.6"; 
 
 // 2. Netlify 패치 감지 함수
-async function checkNetlifyPatch() {
+async function checkPatch() {
   try {
-    const response = await fetch(window.location.href.split('#')[0] + '?t=' + new Date().getTime(), {
-      cache: 'no-store'
+    const response = await fetch("/js/patch.js?t=" + Date.now(), {
+      cache: "no-store"
     });
-    const htmlText = await response.text();
-    const match = htmlText.match(/const\s+MY_VERSION\s*=\s*["']([^"']+)["']/);
 
-    if (match && match[1]) {
-      const latestServerVersion = match[1];
-      if (latestServerVersion !== MY_VERSION) {
-        const modal = document.getElementById('patchModal');
-        if (modal) modal.style.display = 'flex';
-      }
+    const text = await response.text();
+    const match = text.match(/const\s+MY_VERSION\s*=\s*["']([^"']+)["']/);
+
+    if (!match) return;
+
+    const latestVersion = match[1];
+
+    if (latestVersion !== MY_VERSION) {
+      document.getElementById("patchModal").style.display = "flex";
     }
-  } catch (error) {
-    console.log('패치 확인 중...');
+  } catch (e) {
+    console.log("패치 확인 실패");
   }
 }
 
-function applyPatch() {
-  window.location.reload(true);
-}
-
+setInterval(checkPatch, 10000);
 // 10초마다 체크
-setInterval(checkNetlifyPatch, 10000);
+setInterval(checkPatch, 10000);
