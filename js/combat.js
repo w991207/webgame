@@ -237,8 +237,14 @@ function scheduleMonsterTick(){
 }
 
 // ---------- Mode Switching ----------
+const TOWER_UNLOCK_LEVEL = 10;
+
 function setMode(mode){
   if(state.mode === mode) return;
+  if(mode === 'tower' && state.level < TOWER_UNLOCK_LEVEL){
+    alert(`무한의 탑은 레벨 ${TOWER_UNLOCK_LEVEL}부터 입장할 수 있습니다. (현재 레벨: ${state.level})`);
+    return;
+  }
   state.mode = mode;
   document.getElementById('modeNormalBtn').classList.toggle('active', mode==='normal');
   document.getElementById('modeTowerBtn').classList.toggle('active', mode==='tower');

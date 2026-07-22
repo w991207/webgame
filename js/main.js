@@ -3,6 +3,9 @@ async function init(){
   await loadCouponsJSON();
 
   const loaded = await loadState();
+  if(wasVersionReset){
+    log('⚠️ 밸런스 개편으로 인해 진행 상황이 초기화되었습니다. 새로운 밸런스로 다시 시작해주세요!', 'warn');
+  }
   if(loaded && !state.bugfixCompGranted){
     state.soul += 1;
     state.bugfixCompGranted = true;

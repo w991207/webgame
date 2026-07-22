@@ -1,5 +1,5 @@
 // 1. 버전 정의 (배포 시 버전 업)[cite: 1]
-const MY_VERSION = "1.1.6"; 
+const MY_VERSION = "1.2.1"; 
 
 // 2. Netlify 패치 감지 함수
 async function checkPatch() {

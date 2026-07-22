@@ -25,10 +25,18 @@ function renderAll(){
   document.getElementById('soulDisplay').textContent = Math.floor(state.soul).toLocaleString();
   document.getElementById('lvlDisplay').textContent = state.level;
 
+  const towerBtn = document.getElementById('modeTowerBtn');
+  if(towerBtn){
+    const unlocked = state.level >= TOWER_UNLOCK_LEVEL;
+    towerBtn.textContent = unlocked ? '무한의 탑' : `무한의 탑 🔒(Lv.${TOWER_UNLOCK_LEVEL})`;
+    towerBtn.classList.toggle('locked', !unlocked);
+  }
+
   document.getElementById('statAtk').textContent = s.atk;
   document.getElementById('statDef').textContent = s.def;
   document.getElementById('statHp').textContent = s.maxHp;
-  document.getElementById('statSpd').textContent = (1000/s.tickMs).toFixed(2)+'/s';
+  const spdRelicBonus = state.relics.spdRelic > 0 ? ` <span style="color:var(--frag);font-size:10px;">(유물 +${state.relics.spdRelic*3}%)</span>` : '';
+  document.getElementById('statSpd').innerHTML = (1000/s.tickMs).toFixed(3)+'/s' + spdRelicBonus;
   document.getElementById('statGold').textContent = 'x'+s.goldMult.toFixed(2);
   document.getElementById('statExpMult').textContent = 'x'+s.expMult.toFixed(2);
 

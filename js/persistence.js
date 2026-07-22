@@ -18,6 +18,10 @@ function processImportedData(jsonStr){
   try{
     const loaded = JSON.parse(jsonStr);
     if(!loaded || typeof loaded !== 'object') return false;
+    if(loaded.saveVersion !== SAVE_VERSION){
+      alert(`이 세이브 파일은 이전 버전(${loaded.saveVersion || '알 수 없음'})입니다.\n밸런스 개편으로 인해 더 이상 불러올 수 없습니다. 새로 시작해주세요.`);
+      return false;
+    }
     state = Object.assign(defaultState(), loaded);
     state.goldUpgrades = Object.assign({atk:0,def:0,hp:0,goldGain:0,atkSpeed:0,expGain:0}, loaded.goldUpgrades||{});
     state.soulUpgrades = Object.assign({atkMult:0,goldMult:0,defMult:0}, loaded.soulUpgrades||{});
@@ -111,11 +115,22 @@ async function saveState(manual){
   }
 }
 
+let wasVersionReset = false; // 버전 불일치로 인한 강제 초기화였는지 여부 (main.js에서 안내 메시지에 사용)
+
 async function loadState(){
   try{
     const result = await storageGet('save');
     if(result && result.value){
       const loaded = JSON.parse(result.value);
+
+      // 버전이 다른(예전) 세이브는 무효화하고 새 게임으로 시작
+      if(loaded.saveVersion !== SAVE_VERSION){
+        state = defaultState();
+        wasVersionReset = true;
+        console.log(`세이브 버전 불일치 (저장됨: ${loaded.saveVersion || '없음'}, 현재: ${SAVE_VERSION}) — 새 게임으로 시작합니다.`);
+        return false;
+      }
+
       state = Object.assign(defaultState(), loaded);
       state.goldUpgrades = Object.assign({atk:0,def:0,hp:0,goldGain:0,atkSpeed:0,expGain:0}, loaded.goldUpgrades||{});
       state.soulUpgrades = Object.assign({atkMult:0,goldMult:0,defMult:0}, loaded.soulUpgrades||{});

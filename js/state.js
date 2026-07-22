@@ -1,5 +1,10 @@
+// 세이브 데이터 버전. 이 값을 올리면 그보다 낮은 버전의 세이브(자동 로드 + 가져오기 모두)가
+// 전부 무효화되고 새 게임으로 시작됩니다. 밸런스 개편 등으로 전체 초기화가 필요할 때 사용.
+const SAVE_VERSION = '2.0';
+
 function defaultState(){
   return {
+    saveVersion: SAVE_VERSION,
     mode: 'normal',
     gold: 0,
     soul: 0,
@@ -82,8 +87,8 @@ function stats(){
   const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05));
   const goldMult = (1 + gu.goldGain*0.10) * (1 + su.goldMult*0.20) * (1 + re.goldRelic*0.04) * (1 + rg.raidRing*0.04);
   const expMult = (1 + (gu.expGain||0)*0.10) * (1 + re.expRelic*0.04) * (1 + rg.raidRing*0.04);
-  const spdMult = (1 + Math.min(gu.atkSpeed,50)*0.05) * (1 + re.spdRelic*0.02);
-  const tickMs = Math.max(Math.round(1000 / spdMult));
+  const spdMult = (1 + Math.min(gu.atkSpeed,50)*0.05) * (1 + re.spdRelic*0.03);
+  const tickMs = Math.max(150, Math.round(1000 / spdMult));
   const dropChance = Math.min(0.6, 0.15 + re.dropRelic*0.015);
   return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance};
 }
