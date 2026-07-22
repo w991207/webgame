@@ -217,7 +217,7 @@ function monsterAttackTick(){
       state.floor = Math.max(1, state.floor-1);
       state.killsOnFloor = 0;
       state.playerHp = s.maxHp;
-      log(`쓰러져서 ${state.floor}층으로 후퇴했습니다. -${lostGold}🪙`, 'warn');
+      log(`쓰러져서 ${state.floor}층으로 후퇴했습니다.`, 'warn');
     }
     spawnMonster();
   }
