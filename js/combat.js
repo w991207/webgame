@@ -207,9 +207,7 @@ function monsterAttackTick(){
   floatText('-'+dmgToPlayer, 'dmgToPlayer');
 
   if(state.playerHp <= 0){
-    const lostGold = Math.round(state.gold*0.1);
-    state.gold -= lostGold;
-
+    
     if(state.mode === 'tower'){
       state.playerHp = s.maxHp;
       log(`[무한의 탑] 쓰러졌습니다. 현재 층(${state.towerFloor}층)에 재도합니다.`, 'warn');
