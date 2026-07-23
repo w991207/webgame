@@ -49,6 +49,10 @@ function defaultState(){
     totalPetSummons: 0,
     usedCoupons: {},
     lastSave: Date.now(),
+    attendance: {
+      day: 0,
+      lastClaim: 0
+    },
 
     // ---------- Raid (1인 레이드) ----------
     raidTicket: 3,

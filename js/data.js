@@ -168,3 +168,13 @@ const RAID_GEAR = [
   {key:'raidCrown', name:'파멸의 왕관', icon:'👑', perLevel:5, descFn:v=>`최대 체력 +${v}%`},
   {key:'raidRing', name:'천공의 인장', icon:'💍', perLevel:4, descFn:v=>`골드/경험치 획득 +${v}%`},
 ];
+
+const ATTENDANCE_REWARDS = [
+    { type:"gold", amount:5000,  text:"🪙 골드 5,000" },
+    { type:"soul", amount:5,     text:"✦ 영혼석 5" },
+    { type:"frag", amount:30,    text:"◈ 유물 파편 30" },
+    { type:"gold", amount:20000, text:"🪙 골드 20,000" },
+    { type:"soul", amount:15,    text:"✦ 영혼석 15" },
+    { type:"frag", amount:100,   text:"◈ 유물 파편 100" },
+    { type:"special", amount:1,  text:"🎁 랜덤 유물 무료 뽑기" }
+];

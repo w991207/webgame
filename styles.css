@@ -570,3 +570,64 @@
     background:var(--soul-dim);color:#fff;border:none;padding:10px 22px;border-radius:8px;
     cursor:pointer;font-family:'Noto Serif KR',serif;font-weight:700;font-size:14px;
   }
+.attendance-grid{
+
+display:grid;
+
+grid-template-columns:repeat(7,1fr);
+
+gap:8px;
+
+margin-top:12px;
+
+}
+
+.attendance-card{
+
+background:var(--bg-deep);
+
+border:1px solid var(--border);
+
+border-radius:8px;
+
+padding:12px 6px;
+
+text-align:center;
+
+font-size:11px;
+
+}
+
+.attendance-card.done{
+
+border-color:#3cb371;
+
+background:#163225;
+
+}
+
+.attendance-card.today{
+
+border-color:var(--gold);
+
+box-shadow:0 0 12px rgba(232,163,61,.25);
+
+}
+
+.attendance-day{
+
+font-weight:bold;
+
+margin-bottom:6px;
+
+}
+
+.attendance-reward{
+
+font-size:10px;
+
+color:var(--text-dim);
+
+margin-top:4px;
+
+}

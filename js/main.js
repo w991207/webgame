@@ -67,7 +67,7 @@ async function init(){
       document.getElementById('newCouponModal').style.display = 'none';
     });
   }
-
+  renderAttendance();
   checkNetlifyPatch();
 }
 
