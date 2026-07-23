@@ -2,7 +2,7 @@ let latestPatch = null;
 
 async function checkPatch() {
   try {
-    const response = await fetch("/patch.json?t=" + Date.now(), {
+    const response = await fetch("patch.json?t=" + Date.now(), {
       cache: "no-store"
     });
 
@@ -58,7 +58,7 @@ function applyPatch() {
 
 async function openPatchHistory(){
 
-    const res=await fetch("/patch-history.json?t="+Date.now());
+    const res=await fetch("patch-history.json?t="+Date.now());
 
     const history=await res.json();
 

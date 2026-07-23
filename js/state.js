@@ -49,7 +49,6 @@ function defaultState(){
     totalPetSummons: 0,
     usedCoupons: {},
     lastSave: Date.now(),
-    lastRebirthPower: 0, // 직전 환생 시점의 전투력 (환생 후 "이전보다 강해졌는지" 비교용)
     attendance: {
       day: 0,
       lastClaim: 0
@@ -66,27 +65,16 @@ function defaultState(){
     raidBossMaxHp: 0,
     raidPlayerHp: 0,
 
-    // ---------- Gold/Relic Dungeon (10단계 순차 던전) ----------
-    goldDungeon: {
-      ticket: 3,
-      ticketLastRefill: Date.now(),
-      active: false,
-      stage: 1,
-      monsterHp: 0,
-      monsterMaxHp: 0,
-      playerHp: 0,
-      bestStage: 0
-    },
-    relicDungeon: {
-      ticket: 3,
-      ticketLastRefill: Date.now(),
-      active: false,
-      stage: 1,
-      monsterHp: 0,
-      monsterMaxHp: 0,
-      playerHp: 0,
-      bestStage: 0
-    },
+    // ---------- Gold Dungeon (골드 던전) ----------
+    gdFloor: 1,
+    gdTicket: 3,
+    gdTicketLastRefill: Date.now(),
+    gdActive: false,
+    gdMonsterHp: 0,
+    gdMonsterMaxHp: 0,
+    gdPlayerHp: 0,
+    gdCleared: false,
+    peakCombatPower: 0,
   };
 }
 
@@ -122,15 +110,17 @@ function stats(){
   const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배
   return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance, critChance, critDamageMult};
 }
-// 여러 스탯을 하나의 "전투력" 수치로 환산 (환생 전/후 비교, 성장 체감용).
-// 절대값 자체는 의미 없고, 같은 세이브 내에서 상대적으로 비교하는 용도.
-function combatPower(s){
-  s = s || stats();
-  const effAtk = s.atk * (1 + (s.critChance/100) * (s.critDamageMult - 1)); // 치명타 반영 평균 공격력
-  const atkSpeed = 1000 / s.tickMs; // 초당 공격 횟수
-  return Math.round(effAtk * atkSpeed * 2.5 + s.def * 8 + s.maxHp * 0.35);
-}
 
+// ---------- 전투력(Combat Power) 계산 ----------
+// 공격력 × 초당 공격횟수 × 치명타 기대배율(=DPS)을 중심으로, 방어력/체력을 생존력으로 가중 합산.
+// 환생/성장 비교용 단일 지표라 절대값 자체는 의미 없고, "이전 대비 몇 %인지" 상대 비교로 사용.
+function calcCombatPower(s){
+  const attacksPerSec = 1000 / s.tickMs;
+  const critFactor = 1 + (s.critChance/100) * (s.critDamageMult - 1); // 치명타 기대 데미지 배율
+  const dps = s.atk * attacksPerSec * critFactor;
+  const survivability = s.def * 8 + s.maxHp * 0.5;
+  return Math.round(dps * 12 + survivability);
+}
 function expNeeded(lvl){ return Math.round(50 * Math.pow(lvl, 1.4)); }
 function tryLevelUp(){
   let needed = expNeeded(state.level);
@@ -141,3 +131,4 @@ function tryLevelUp(){
     needed = expNeeded(state.level);
   }
 }
+

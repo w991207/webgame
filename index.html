@@ -30,8 +30,12 @@
     <!-- LEFT: Player stats -->
     <div class="panel">
       <h2>모험가</h2>
-      <div class="stat-row"><span class="label">⚔️ 전투력</span><span class="val" id="statPower" style="color:var(--gold);">-</span></div>
-      <div class="stat-row" id="powerCompareRow" style="display:none;"><span class="label">환생 전 대비</span><span class="val" id="statPowerCompare">-</span></div>
+      <div class="cp-box" id="cpBox">
+        <div class="cp-label">전투력</div>
+        <div class="cp-value" id="cpValue">0</div>
+        <div class="cp-compare" id="cpCompare"></div>
+        <div class="cp-bar-outer"><div class="cp-bar-inner" id="cpBar" style="width:0%"></div></div>
+      </div>
       <div class="stat-row"><span class="label">공격력</span><span class="val" id="statAtk">-</span></div>
       <div class="stat-row"><span class="label">방어력</span><span class="val" id="statDef">-</span></div>
       <div class="stat-row"><span class="label">최대 체력</span><span class="val" id="statHp">-</span></div>
@@ -142,63 +146,28 @@
     </div>
   </div>
 
-  <!-- 💰 골드 던전 (10단계 순차 던전) -->
   <div class="panel relic-panel">
-    <h2>💰 골드 던전 (10단계)</h2>
-    <div id="goldDungeonLockedBox" style="display:none;">
-      <p style="font-size:12px;color:var(--text-dim);line-height:1.6;" id="goldDungeonLockText"></p>
+    <h2>골드 던전</h2>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+      순서대로 도전하는 10층짜리 골드 전용 던전입니다. 클리어할 때마다 확정 골드를 지급하며, 층이 오를수록 몬스터도 보상도 크게 강해집니다.
+    </p>
+    <div class="relic-pull-row">
+      <div class="frag-count">📍 층수: <span id="gdFloorText">1/10</span></div>
+      <div class="frag-count">🎫 티켓: <span id="gdTicketText">0/3</span> <span id="gdTicketTimer" style="color:var(--text-dim);font-size:11px;"></span></div>
     </div>
-    <div id="goldDungeonUnlockedBox" style="display:none;">
-      <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-        1단계부터 10단계까지 순서대로 몬스터를 격파하는 골드 특화 던전입니다. 단계를 돌파할 때마다 골드를 즉시 획득하며, 10단계를 모두 돌파하면 큰 보너스(골드+영혼석+파편)를 받습니다. 패배해도 그동안 획득한 보상은 그대로 유지됩니다.
-      </p>
-      <div class="relic-pull-row">
-        <div class="frag-count">🎫 티켓: <span id="goldDungeonTicketText">0/3</span> <span id="goldDungeonTicketTimer" style="color:var(--text-dim);font-size:11px;"></span></div>
-        <button class="pull-relic" id="goldDungeonEnterBtn">던전 입장</button>
-      </div>
-      <div class="frag-count" style="margin-top:6px;">최고 기록: <span id="goldDungeonBestStageText">0 / 10</span> 단계</div>
+    <div class="frag-count" style="margin-top:6px;">다음 클리어 보상: <span id="gdNextReward">-</span> 🪙</div>
+    <button class="pull-relic" id="gdEnterBtn" style="width:100%;margin-top:10px;">도전</button>
 
-      <div id="goldDungeonBattleBox" style="display:none;margin-top:14px;">
-        <div class="floor-badge" id="goldDungeonStageText">1 / 10 단계</div>
-        <div class="arch" style="max-width:200px;">
-          <div class="monster-emoji" id="goldDungeonMonsterEmoji">🪙</div>
-        </div>
-        <div class="monster-name" id="goldDungeonMonsterName">-</div>
-        <div class="hp-bar-outer"><div class="hp-bar-inner" id="goldDungeonMonsterHpBar" style="width:100%"></div></div>
-        <div class="hp-text" id="goldDungeonMonsterHpText">0 / 0</div>
-        <div class="player-hp-outer"><div class="player-hp-inner" id="goldDungeonPlayerHpBar" style="width:100%"></div></div>
-        <div class="player-hp-label"><span>내 체력</span><span id="goldDungeonPlayerHpText">0 / 0</span></div>
+    <div id="gdBattleBox" style="display:none;margin-top:14px;">
+      <div class="floor-badge">GOLD DUNGEON</div>
+      <div class="arch" style="max-width:200px;">
+        <div class="monster-emoji" id="gdMonsterEmoji">💰</div>
       </div>
-    </div>
-  </div>
-
-  <!-- 🏺 유물 던전 (10단계 순차 던전) -->
-  <div class="panel relic-panel">
-    <h2>🏺 유물 던전 (10단계)</h2>
-    <div id="relicDungeonLockedBox" style="display:none;">
-      <p style="font-size:12px;color:var(--text-dim);line-height:1.6;" id="relicDungeonLockText"></p>
-    </div>
-    <div id="relicDungeonUnlockedBox" style="display:none;">
-      <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-        1단계부터 10단계까지 순서대로 몬스터를 격파하는 유물 특화 던전입니다. 단계를 돌파할 때마다 ◈ 유물 파편을 획득하며, 10단계를 모두 돌파하면 큰 보너스(파편+영혼석)를 받습니다. 패배해도 그동안 획득한 보상은 그대로 유지됩니다.
-      </p>
-      <div class="relic-pull-row">
-        <div class="frag-count">🎫 티켓: <span id="relicDungeonTicketText">0/3</span> <span id="relicDungeonTicketTimer" style="color:var(--text-dim);font-size:11px;"></span></div>
-        <button class="pull-relic" id="relicDungeonEnterBtn">던전 입장</button>
-      </div>
-      <div class="frag-count" style="margin-top:6px;">최고 기록: <span id="relicDungeonBestStageText">0 / 10</span> 단계</div>
-
-      <div id="relicDungeonBattleBox" style="display:none;margin-top:14px;">
-        <div class="floor-badge" id="relicDungeonStageText">1 / 10 단계</div>
-        <div class="arch" style="max-width:200px;">
-          <div class="monster-emoji" id="relicDungeonMonsterEmoji">🏺</div>
-        </div>
-        <div class="monster-name" id="relicDungeonMonsterName">-</div>
-        <div class="hp-bar-outer"><div class="hp-bar-inner" id="relicDungeonMonsterHpBar" style="width:100%"></div></div>
-        <div class="hp-text" id="relicDungeonMonsterHpText">0 / 0</div>
-        <div class="player-hp-outer"><div class="player-hp-inner" id="relicDungeonPlayerHpBar" style="width:100%"></div></div>
-        <div class="player-hp-label"><span>내 체력</span><span id="relicDungeonPlayerHpText">0 / 0</span></div>
-      </div>
+      <div class="monster-name" id="gdMonsterName">-</div>
+      <div class="hp-bar-outer"><div class="hp-bar-inner" id="gdMonsterHpBar" style="width:100%"></div></div>
+      <div class="hp-text" id="gdMonsterHpText">0 / 0</div>
+      <div class="player-hp-outer"><div class="player-hp-inner" id="gdPlayerHpBar" style="width:100%"></div></div>
+      <div class="player-hp-label"><span>내 체력</span><span id="gdPlayerHpText">0 / 0</span></div>
     </div>
   </div>
 
@@ -274,10 +243,15 @@
 
     <div class="patch-title"></div>
 
-    <div class="patch-body"></div>
+    <div class="patch-modal-scroll">
+      <div class="patch-body"></div>
+    </div>
 
     <button class="patch-btn" onclick="applyPatch()">
       새로고침
+    </button>
+    <button class="patch-btn secondary" onclick="document.getElementById('patchModal').style.display='none'">
+      닫기
     </button>
 
   </div>
@@ -287,7 +261,9 @@
 <div id="newCouponModal" class="patch-modal-overlay">
   <div class="patch-modal-card">
     <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">🎟️ 새로운 쿠폰이 등록되었습니다!</div>
-    <div id="newCouponListText" style="font-size: 14px; color: #666; margin-top: 8px;">
+    <div class="patch-modal-scroll">
+      <div id="newCouponListText" style="font-size: 14px; color: #666; margin-top: 8px;">
+      </div>
     </div>
     <button class="patch-btn" id="newCouponCloseBtn">확인</button>
   </div>
@@ -298,7 +274,9 @@
 
         <h2>📜 패치노트</h2>
 
-        <div id="patchHistoryBody"></div>
+        <div class="patch-modal-scroll">
+          <div id="patchHistoryBody"></div>
+        </div>
 
         <button class="patch-btn"
             onclick="document.getElementById('patchHistoryModal').style.display='none'">
@@ -314,7 +292,7 @@
 <script src="js/state.js"></script>
 <script src="js/combat.js"></script>
 <script src="js/raid.js"></script>
-<script src="js/dungeon.js"></script>
+<script src="js/golddungeon.js"></script>
 <script src="js/ui-render.js"></script>
 <script src="js/shop.js"></script>
 <script src="js/relics-pets.js"></script>

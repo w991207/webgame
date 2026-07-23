@@ -1,7 +1,13 @@
 // ---------- Rendering ----------
 function renderMonster(){
   const meta = currentMonsterMeta();
-  document.getElementById('monsterEmoji').textContent = meta.emoji;
+  const emojiEl = document.getElementById('monsterEmoji');
+  if(meta.img){
+    emojiEl.innerHTML = `<img src="${meta.img}" alt="${meta.name}" class="monster-img">`;
+  } else {
+    emojiEl.textContent = meta.emoji;
+  }
+  
   document.getElementById('monsterName').textContent = meta.name;
   document.getElementById('bossTag').style.display = state.isBoss ? 'block' : 'none';
   
@@ -32,23 +38,29 @@ function renderAll(){
     towerBtn.classList.toggle('locked', !unlocked);
   }
 
-  const power = combatPower(s);
-  document.getElementById('statPower').textContent = power.toLocaleString();
-  const compareRow = document.getElementById('powerCompareRow');
-  if(state.lastRebirthPower > 0){
-    compareRow.style.display = 'flex';
-    const ratio = power / state.lastRebirthPower;
-    const pct = Math.round(ratio*100);
-    const compareEl = document.getElementById('statPowerCompare');
-    const arrow = ratio >= 1 ? '▲' : '▼';
-    compareEl.textContent = `${arrow} ${pct}% (기준 ${state.lastRebirthPower.toLocaleString()})`;
-    compareEl.style.color = ratio >= 1 ? '#39b854' : 'var(--hp)';
-  } else {
-    compareRow.style.display = 'none';
-  }
-
   document.getElementById('statAtk').textContent = s.atk;
   document.getElementById('statDef').textContent = s.def;
+
+  // 전투력 계산 및 표시
+  const cp = calcCombatPower(s);
+  if(cp > state.peakCombatPower) state.peakCombatPower = cp;
+  document.getElementById('cpValue').textContent = cp.toLocaleString();
+  const cpCompareEl = document.getElementById('cpCompare');
+  const cpBarEl = document.getElementById('cpBar');
+  if(state.peakCombatPower > 0){
+    const pct = Math.min(100, (cp / state.peakCombatPower) * 100);
+    cpBarEl.style.width = pct.toFixed(1) + '%';
+    if(cp >= state.peakCombatPower){
+      cpCompareEl.textContent = `⚡ 역대 최고 전투력 달성!`;
+      cpCompareEl.classList.add('recovered');
+    } else {
+      cpCompareEl.textContent = `최고 기록 ${state.peakCombatPower.toLocaleString()} 대비 ${pct.toFixed(1)}%`;
+      cpCompareEl.classList.remove('recovered');
+    }
+  } else {
+    cpBarEl.style.width = '0%';
+    cpCompareEl.textContent = '';
+  }
   document.getElementById('statHp').textContent = s.maxHp;
   const spdRelicBonus = state.relics.spdRelic > 0 ? ` <span style="color:var(--frag);font-size:10px;">(유물 +${state.relics.spdRelic*3}%)</span>` : '';
   document.getElementById('statSpd').innerHTML = (1000/s.tickMs).toFixed(3)+'/s' + spdRelicBonus;
@@ -93,8 +105,6 @@ function renderAll(){
   renderAchievements();
   renderCouponList();
   renderRaidPanel();
-  if(typeof renderDungeonPanel === 'function'){
-    renderDungeonPanel('gold');
-    renderDungeonPanel('relic');
-  }
+  renderGoldDungeonPanel();
 }
+

@@ -9,7 +9,6 @@
     { "code": "COUPON1539", "reward": 5, "description": "특별 보상 쿠폰 2" },
     { "code": "HAPPYLUNCH", "reward": 15, "description": "점심쿠폰" },
     { "code": "JIPEGALEYO", "reward": 5, "description": "집갈래쿠폰" },
-    { "code": "BAPMUKEURO", "reward": 5, "description": "개발자밥먹으러감쿠폰" },
-     { "code": "VERRYSORRY", "reward": 50, "description": "님들ㅈㅅ요" }
+    { "code": "BAPMUKEURO", "reward": 5, "description": "개발자밥먹으러감쿠폰" }
   ]
 }

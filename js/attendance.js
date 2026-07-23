@@ -102,7 +102,7 @@ renderAttendance();
 
 renderAll();
 
-saveState();
+saveState(true);
 
 }
 
