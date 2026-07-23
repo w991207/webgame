@@ -93,6 +93,8 @@ function renderAll(){
   renderAchievements();
   renderCouponList();
   renderRaidPanel();
-  renderDungeonPanel('gold');
-  renderDungeonPanel('relic');
+  if(typeof renderDungeonPanel === 'function'){
+    renderDungeonPanel('gold');
+    renderDungeonPanel('relic');
+  }
 }
