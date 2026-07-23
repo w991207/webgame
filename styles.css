@@ -16,7 +16,16 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     max-width: 320px;
     width: 85%;
+    max-height: 80vh;
     color: #333;
+    display: flex;
+    flex-direction: column;
+  }
+  .patch-modal-scroll {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    text-align: left;
   }
   .patch-btn {
     background-color: #28a745;
@@ -29,6 +38,11 @@
     cursor: pointer;
     width: 100%;
     margin-top: 15px;
+    flex-shrink: 0;
+  }
+  .patch-btn.secondary {
+    background-color: #6c757d;
+    margin-top: 8px;
   }
   :root{
     --bg: #120f1c;

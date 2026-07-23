@@ -64,6 +64,16 @@ function defaultState(){
     raidBossHp: 0,
     raidBossMaxHp: 0,
     raidPlayerHp: 0,
+
+    // ---------- Gold Dungeon (골드 던전) ----------
+    gdFloor: 1,
+    gdTicket: 3,
+    gdTicketLastRefill: Date.now(),
+    gdActive: false,
+    gdMonsterHp: 0,
+    gdMonsterMaxHp: 0,
+    gdPlayerHp: 0,
+    gdCleared: false,
   };
 }
 

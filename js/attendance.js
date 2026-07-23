@@ -100,9 +100,9 @@ log("📅 출석 보상 획득!", "good");
 
 renderAttendance();
 
-render();
+renderAll();
 
-saveGame();
+saveState();
 
 }
 

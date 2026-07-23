@@ -84,5 +84,6 @@ function renderAll(){
   renderAchievements();
   renderCouponList();
   renderRaidPanel();
+  renderGoldDungeonPanel();
 }
 

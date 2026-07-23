@@ -47,6 +47,10 @@ function enterRaid(){
     return;
   }
   if(state.raidActive) return;
+  if(state.gdActive){
+    alert('골드 던전 진행 중에는 레이드에 입장할 수 없습니다.');
+    return;
+  }
   refreshRaidTickets();
   if(state.raidTicket <= 0){
     alert('레이드 티켓이 부족합니다. (1시간마다 1개씩 충전됩니다)');
