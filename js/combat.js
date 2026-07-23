@@ -41,7 +41,7 @@ function monsterDefFor(floor, boss){
     if(boss) g *= 3;
     return g;
   }
-  let g = Math.round(4 + floor * 1.8);
+  let g = Math.round(6 + floor * 2.2);
   if(boss) g *= 8;
   return g;
 }
