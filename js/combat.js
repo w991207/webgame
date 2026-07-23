@@ -15,11 +15,11 @@ function monsterAtkFor(floor, boss){
 
   if(state.mode === 'tower'){
     return Math.round(
-      8 + floor*6
+      10 + floor*8
     );
   }
   let atk =
-  5 + floor*2;
+  8 + floor*2.5;
   if(boss)
     atk *= 2.2;
   return Math.round(atk);
@@ -247,10 +247,24 @@ function schedulePlayerTick(){
   playerTickHandle = setTimeout(playerAttackTick, s.tickMs);
 }
 
-function scheduleMonsterTick(){
+
+  function scheduleMonsterTick(){
   clearTimeout(monsterTickHandle);
-  // 몬스터의 공격 주기 고정 (1초 = 1000ms)
-  monsterTickHandle = setTimeout(monsterAttackTick, 1000);
+  const floor =
+    state.mode === 'tower'
+    ? state.towerFloor
+    : state.floor;
+  // 층이 올라갈수록 빨라짐 (최소 0.8초)
+  const speed = Math.max(
+    800,
+    1500 - floor * 3
+  );
+  monsterTickHandle =
+    setTimeout(
+      monsterAttackTick,
+      speed
+    );
+
 }
 
 // ---------- Mode Switching ----------
