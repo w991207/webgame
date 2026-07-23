@@ -1,13 +1,7 @@
 // ---------- Rendering ----------
 function renderMonster(){
   const meta = currentMonsterMeta();
-  const emojiEl = document.getElementById('monsterEmoji');
-  if(meta.img){
-    emojiEl.innerHTML = `<img src="${meta.img}" alt="${meta.name}" class="monster-img">`;
-  } else {
-    emojiEl.textContent = meta.emoji;
-  }
-  
+  document.getElementById('monsterEmoji').textContent = meta.emoji;
   document.getElementById('monsterName').textContent = meta.name;
   document.getElementById('bossTag').style.display = state.isBoss ? 'block' : 'none';
   
@@ -36,6 +30,21 @@ function renderAll(){
     const unlocked = state.level >= TOWER_UNLOCK_LEVEL;
     towerBtn.textContent = unlocked ? '무한의 탑' : `무한의 탑 🔒(Lv.${TOWER_UNLOCK_LEVEL})`;
     towerBtn.classList.toggle('locked', !unlocked);
+  }
+
+  const power = combatPower(s);
+  document.getElementById('statPower').textContent = power.toLocaleString();
+  const compareRow = document.getElementById('powerCompareRow');
+  if(state.lastRebirthPower > 0){
+    compareRow.style.display = 'flex';
+    const ratio = power / state.lastRebirthPower;
+    const pct = Math.round(ratio*100);
+    const compareEl = document.getElementById('statPowerCompare');
+    const arrow = ratio >= 1 ? '▲' : '▼';
+    compareEl.textContent = `${arrow} ${pct}% (기준 ${state.lastRebirthPower.toLocaleString()})`;
+    compareEl.style.color = ratio >= 1 ? '#39b854' : 'var(--hp)';
+  } else {
+    compareRow.style.display = 'none';
   }
 
   document.getElementById('statAtk').textContent = s.atk;
@@ -84,6 +93,6 @@ function renderAll(){
   renderAchievements();
   renderCouponList();
   renderRaidPanel();
-  renderGoldDungeonPanel();
+  renderDungeonPanel('gold');
+  renderDungeonPanel('relic');
 }
-

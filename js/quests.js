@@ -178,7 +178,7 @@ function updateRebirthAvailability(){
   const gainFrag = Math.floor(state.highestFloor / 3);
   btn.disabled = !canRebirth;
   if(canRebirth){
-    desc.innerHTML = `최고 도달 층: <b>${state.highestFloor}층</b><br>환생 시 <span style="color:var(--soul)">✦ ${gainSoul}</span>개의 영혼석과 <span style="color:var(--frag)">◈ ${gainFrag}</span>개의 유물 파편을 얻습니다. 층수/레벨/골드 강화는 초기화되지만 영구 강화와 보유 영혼석/유물은 유지됩니다.`;
+    desc.innerHTML = `최고 도달 층: <b>${state.highestFloor}층</b><br>환생 시 <span style="color:var(--soul)">✦ ${gainSoul}</span>개의 영혼석과 <span style="color:var(--frag)">◈ ${gainFrag}</span>개의 유물 파편을 얻습니다. 층수/레벨/골드 강화는 초기화되지만 영구 강화와 보유 영혼석/유물은 유지됩니다.<br><span style="color:var(--text-dim);font-size:11px;">현재 전투력 <b style="color:var(--gold)">${combatPower().toLocaleString()}</b>이(가) 환생 후 비교 기준으로 저장됩니다.</span>`;
   } else {
     desc.textContent = `15층 이상 도달 시 환생이 가능합니다. (현재 최고: ${state.highestFloor}층)`;
   }
@@ -189,6 +189,10 @@ document.getElementById('rebirthBtn').addEventListener('click', ()=>{
   const gainSoul = Math.floor(state.highestFloor / 2.5);
   const gainFrag = Math.floor(state.highestFloor / 3);
   if(!confirm(`환생하시겠습니까?\n✦ ${gainSoul}개의 영혼석과 ◈ ${gainFrag}개의 유물 파편을 얻고 층수/레벨/골드가 초기화됩니다.`)) return;
+
+  // 리셋 직전의 전투력을 저장 — 환생 후 "이전보다 강해졌는지" 비교 기준으로 사용
+  state.lastRebirthPower = combatPower();
+
   state.soul += gainSoul;
   state.fragments += gainFrag;
   state.rebirthCount++;
@@ -210,7 +214,6 @@ document.getElementById('rebirthBtn').addEventListener('click', ()=>{
   const s = stats();
   state.playerHp = s.maxHp;
   spawnMonster();
-  log(`환생 완료! ✦ ${gainSoul} 영혼석, ◈ ${gainFrag} 유물 파편 획득.`, 'good');
+  log(`환생 완료! ✦ ${gainSoul} 영혼석, ◈ ${gainFrag} 유물 파편 획득. (환생 전 전투력 ${state.lastRebirthPower.toLocaleString()} 기록됨)`, 'good');
   renderAll();
 });
-
