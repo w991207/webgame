@@ -1,29 +1,41 @@
 // ---------- Monster generation ----------
 function monsterHpFor(floor, boss){
   if(state.mode === 'tower'){
-    return Math.round(35 * Math.pow(floor, 1.25));
+    return Math.round(50 * Math.pow(floor, 1.3));
   }
-  let hp = Math.round(22 * Math.pow(floor, 1.16));
-  if(boss) hp *= 5;
+  let hp =
+  Math.round(
+    35 * Math.pow(floor, 1.22)
+  );
+  if(boss)
+    hp *= 6;
   return hp;
 }
 function monsterAtkFor(floor, boss){
+
   if(state.mode === 'tower'){
-    return Math.round(3 + floor*5.0);
+    return Math.round(
+      8 + floor*6
+    );
   }
-  let atk = 2 + floor*1.3;
-  if(boss) atk *= 1.8;
+  let atk =
+  5 + floor*2;
+  if(boss)
+    atk *= 2.2;
   return Math.round(atk);
 }
 function monsterDefFor(floor, boss){
   if(state.mode === 'tower'){
-    return Math.round(floor*0.6);
+    return Math.round(
+      floor*0.8
+    );
   }
-  let def = floor*0.5;
-  if(boss) def *= 1.5;
+  let def =
+  floor*0.7;
+  if(boss)
+    def *= 1.8;
   return Math.round(def);
-}
-function goldDropFor(floor, boss){
+}function goldDropFor(floor, boss){
   if(state.mode === 'tower'){
     let g = Math.round(200 * Math.pow(1.03, floor - 1));
     if(boss) g *= 3;
