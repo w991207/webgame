@@ -9,6 +9,7 @@ const MONSTERS = [
   {name:'늪지 트트롤', emoji:'🧌'},
   {name:'망각의 눈', emoji:'👁️'},
   {name:'서리 늑대', emoji:'🐺'},
+  {name:'밤샌 웹툰작가', img:'image/monsters/bamsenyeonwoo.png'},
 ];
 const BOSSES = [
   {name:'회랑의 문지기', emoji:'🗿'},

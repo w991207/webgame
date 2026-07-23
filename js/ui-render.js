@@ -1,7 +1,13 @@
 // ---------- Rendering ----------
 function renderMonster(){
   const meta = currentMonsterMeta();
-  document.getElementById('monsterEmoji').textContent = meta.emoji;
+  const emojiEl = document.getElementById('monsterEmoji');
+  if(meta.img){
+    emojiEl.innerHTML = `<img src="${meta.img}" alt="${meta.name}" class="monster-img">`;
+  } else {
+    emojiEl.textContent = meta.emoji;
+  }
+  
   document.getElementById('monsterName').textContent = meta.name;
   document.getElementById('bossTag').style.display = state.isBoss ? 'block' : 'none';
   
