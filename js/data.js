@@ -170,6 +170,37 @@ const RAID_GEAR = [
   {key:'raidRing', name:'천공의 인장', icon:'💍', perLevel:4, descFn:v=>`골드/경험치 획득 +${v}%`},
 ];
 
+// ---------- Equipment (장비 뽑기 시스템) ----------
+// 등급별 메인 옵션(무기=공격력%, 방어구=방어력%) 범위와, 희귀 등급 이상부터 붙는 서브 옵션 범위.
+// sellBase는 미장착 장비를 판매할 때 돌려받는 대략적인 골드 기준값.
+const EQUIP_RARITIES = [
+  {key:'common',    name:'일반', color:'#9d9d9d', mainMin:8,  mainMax:14, subMin:0,  subMax:0,  sellBase:400},
+  {key:'rare',      name:'희귀', color:'#4fa3e3', mainMin:15, mainMax:25, subMin:3,  subMax:6,  sellBase:4000},
+  {key:'epic',      name:'영웅', color:'#b968e0', mainMin:26, mainMax:40, subMin:7,  subMax:12, sellBase:35000},
+  {key:'legendary', name:'전설', color:'#e8a33d', mainMin:42, mainMax:65, subMin:13, subMax:20, sellBase:250000},
+];
+
+const WEAPON_SUBSTATS = [
+  {key:'crit',    name:'치명타 확률', unit:'%p'},
+  {key:'critDmg', name:'치명타 피해', unit:'%p'},
+  {key:'spd',     name:'공격 속도',   unit:'%'},
+];
+const ARMOR_SUBSTATS = [
+  {key:'hp',   name:'최대 체력',       unit:'%'},
+  {key:'gold', name:'골드 획득',       unit:'%'},
+  {key:'exp',  name:'경험치 획득',     unit:'%'},
+];
+
+// 뽑기 등급이 오를수록 기본 비용이 크게 오르고(현재 진행도 기준 결코 싸지 않은 값), 같은 등급을
+// 반복해서 뽑을수록 costMult 비율로 추가 상승한다. 등급별 rarity 가중치(weights) 합은 100.
+// unlockReq: 이전 등급을 count회 뽑아야 다음 등급이 해금됨 (null이면 처음부터 해금).
+const GACHA_TIERS = [
+  {key:'t1', name:'초급 뽑기', baseCost:8000,     costMult:1.05, weights:{common:72, rare:26, epic:2,  legendary:0}, unlockReq:null},
+  {key:'t2', name:'중급 뽑기', baseCost:80000,    costMult:1.06, weights:{common:35, rare:45, epic:19, legendary:1}, unlockReq:{tier:'t1', count:30}},
+  {key:'t3', name:'고급 뽑기', baseCost:600000,   costMult:1.07, weights:{common:10, rare:39, epic:47, legendary:4}, unlockReq:{tier:'t2', count:30}},
+  {key:'t4', name:'전설 뽑기', baseCost:4000000,  costMult:1.08, weights:{common:0,  rare:20, epic:72, legendary:8}, unlockReq:{tier:'t3', count:20}},
+];
+
 const ATTENDANCE_REWARDS = [
     { type:"gold", amount:5000,  text:"🪙 골드 5,000" },
     { type:"soul", amount:5,     text:"✦ 영혼석 5" },

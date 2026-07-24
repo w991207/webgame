@@ -85,6 +85,11 @@ function defaultState(){
     rdMonsterMaxHp: 0,
     rdPlayerHp: 0,
     rdCleared: false,
+
+    // ---------- Equipment (골드 뽑기 장비 시스템) ----------
+    equipment: {weapon:null, armor:null},
+    equipInventory: [],
+    equipPullCounts: {t1:0, t2:0, t3:0, t4:0},
   };
 }
 
@@ -102,22 +107,43 @@ function base(){
   };
 }
 
+// 장착된 무기/방어구의 메인 옵션(공격력%/방어력%)과 서브 옵션(치명타/속도/체력/골드/경험치)을 합산.
+function equipTotals(){
+  const totals = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, spdPct:0};
+  const eq = state.equipment || {};
+  const w = eq.weapon, a = eq.armor;
+  if(w){
+    totals.atkPct += w.mainValue;
+    if(w.subKey === 'crit') totals.critAdd += w.subValue;
+    if(w.subKey === 'critDmg') totals.critDmgAdd += w.subValue;
+    if(w.subKey === 'spd') totals.spdPct += w.subValue;
+  }
+  if(a){
+    totals.defPct += a.mainValue;
+    if(a.subKey === 'hp') totals.hpPct += a.subValue;
+    if(a.subKey === 'gold') totals.goldPct += a.subValue;
+    if(a.subKey === 'exp') totals.expPct += a.subValue;
+  }
+  return totals;
+}
+
 function stats(){
   const b = base();
   const gu = state.goldUpgrades;
   const su = state.soulUpgrades;
   const re = state.relics;
   const rg = state.raidGear;
-  const atk = Math.round((b.atk + gu.atk*2) * (1 + su.atkMult*0.15) * (1 + re.atkRelic*0.03) * (1 + rg.raidWeapon*0.06));
-  const def = Math.round((b.def + gu.def*1) * (1 + su.defMult*0.15) * (1 + re.defRelic*0.03) * (1 + rg.raidArmor*0.06));
-  const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05));
-  const goldMult = (1 + gu.goldGain*0.10) * (1 + su.goldMult*0.20) * (1 + re.goldRelic*0.04) * (1 + rg.raidRing*0.04);
-  const expMult = (1 + (gu.expGain||0)*0.10) * (1 + re.expRelic*0.04) * (1 + rg.raidRing*0.04);
-  const spdMult = (1 + Math.min(gu.atkSpeed,50)*0.05) * (1 + re.spdRelic*0.03);
+  const eq = equipTotals();
+  const atk = Math.round((b.atk + gu.atk*2) * (1 + su.atkMult*0.15) * (1 + re.atkRelic*0.03) * (1 + rg.raidWeapon*0.06) * (1 + eq.atkPct/100));
+  const def = Math.round((b.def + gu.def*1) * (1 + su.defMult*0.15) * (1 + re.defRelic*0.03) * (1 + rg.raidArmor*0.06) * (1 + eq.defPct/100));
+  const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05) * (1 + eq.hpPct/100));
+  const goldMult = (1 + gu.goldGain*0.10) * (1 + su.goldMult*0.20) * (1 + re.goldRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.goldPct/100);
+  const expMult = (1 + (gu.expGain||0)*0.10) * (1 + re.expRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.expPct/100);
+  const spdMult = (1 + Math.min(gu.atkSpeed,50)*0.05) * (1 + re.spdRelic*0.03) * (1 + eq.spdPct/100);
   const tickMs = Math.max(150, Math.round(1000 / spdMult));
   const dropChance = Math.min(0.6, 0.15 + re.dropRelic*0.015);
-  const critChance = Math.min(100, (gu.critChance||0) * 1); // 레벨당 1%, 최대 100%
-  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배
+  const critChance = Math.min(100, (gu.critChance||0) * 1 + eq.critAdd); // 레벨당 1%, 최대 100%
+  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배
   return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance, critChance, critDamageMult};
 }
 

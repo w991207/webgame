@@ -423,6 +423,11 @@
     padding:3px 8px;border-radius:5px;cursor:pointer;
   }
   .buy-mult-btn.active{background:var(--gold-dim);color:#fff;border-color:var(--gold);}
+  .equip-mult-btn{
+    background:none;border:1px solid var(--border);color:var(--text-dim);
+    font-size:10px;padding:3px 8px;border-radius:6px;cursor:pointer;
+  }
+  .equip-mult-btn.active{background:var(--gold-dim);color:#fff;border-color:var(--gold);}
   button.buy{
     background:var(--panel-2);
     border:1px solid var(--border);
@@ -456,6 +461,41 @@
   .quest-panel{margin-top:16px;}
 
   .relic-panel{margin-top:16px;}
+  .equip-slots-row{display:flex;gap:10px;margin-bottom:4px;}
+  .equip-slot{
+    flex:1;border:1px solid var(--border);border-radius:10px;padding:10px 12px;
+    background:var(--panel-2);text-align:center;
+  }
+  .equip-slot.empty{border-style:dashed;opacity:.65;}
+  .equip-slot .eq-rarity{font-size:11px;font-weight:700;letter-spacing:1px;}
+  .equip-slot .eq-slot-name{font-size:13px;margin:2px 0 4px;}
+  .equip-slot .eq-desc{font-size:11px;color:var(--text-dim);line-height:1.5;margin-bottom:6px;}
+  .equip-slot .eq-unequip-btn{
+    font-size:10px;padding:3px 10px;border-radius:6px;border:1px solid var(--soul-dim);
+    background:transparent;color:var(--text-dim);cursor:pointer;
+  }
+  .equip-slot .eq-unequip-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .equip-card .eq-card-btns{display:flex;gap:6px;margin-top:8px;}
+  .equip-card .eq-equip-btn,.equip-card .eq-sell-btn{
+    flex:1;font-size:10px;padding:5px 6px;border-radius:6px;border:1px solid var(--border);
+    background:transparent;color:var(--text);cursor:pointer;
+  }
+  .equip-card .eq-equip-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .equip-card .eq-sell-btn:hover{border-color:#e05656;color:#e05656;}
+  .rarity-common{border-color:#8a8a8a;}
+  .rarity-rare{border-color:#4fa3e3;}
+  .rarity-epic{border-color:#b968e0;}
+  .rarity-legendary{border-color:var(--gold);}
+  .equip-info-table{
+    background:var(--bg-deep);border:1px solid var(--border);border-radius:8px;
+    padding:10px 12px;margin-bottom:12px;
+  }
+  .equip-info-title{font-size:11px;color:var(--text-dim);margin-bottom:6px;letter-spacing:.5px;}
+  .equip-info-row{display:flex;justify-content:space-between;gap:10px;font-size:11px;padding:3px 0;flex-wrap:wrap;}
+  .equip-info-rarity{font-weight:700;min-width:60px;}
+  .equip-info-detail{color:var(--text-dim);}
+  .shop-item.locked-tier{opacity:.55;}
+  .shop-item.locked-tier .desc{color:var(--text-dim);}
   .relic-pull-row{
     display:flex;justify-content:space-between;align-items:center;gap:12px;
     margin-bottom:14px;flex-wrap:wrap;

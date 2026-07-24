@@ -94,6 +94,7 @@ function renderAll(){
 
   renderShop();
   renderSoulShop();
+  renderEquipment();
   renderRelics();
   renderPets();
   updateRebirthAvailability();
