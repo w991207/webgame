@@ -3,13 +3,13 @@ const MONSTERS = [
   {name:'동굴 박쥐', emoji:'🦇'},
   {name:'해골 병사', emoji:'💀'},
   {name:'독거미', emoji:'🕷️'},
-  {name:'슬라임', emoji:'🟣'},
-  {name:'고블린 척후병', emoji:'👺'},
   {name:'미믹', emoji:'📦'},
   {name:'늪지 트트롤', emoji:'🧌'},
   {name:'망각의 눈', emoji:'👁️'},
   {name:'서리 늑대', emoji:'🐺'},
   {name:'밤샌 웹툰작가', img:'image/monsters/bamsenyeonwoo.png'},
+  {name:'사족보행작가', img:'image/monsters/sajok.png'},
+  {name:'잔상인데용', img:'image/monsters/jansang.png'},
 ];
 const BOSSES = [
   {name:'회랑의 문지기', emoji:'🗿'},
