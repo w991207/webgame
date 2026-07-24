@@ -11,6 +11,14 @@ document.querySelectorAll('.equip-mult-btn').forEach(btn => {
   });
 });
 
+// 보유 장비 목록은 기본적으로 접혀 있고, 제목을 클릭하면 펼쳐진다 (기본 접힘: 계속 쌓이는 목록이
+// 화면을 밀어내리는 문제를 막기 위함). 펼쳐진 상태에서도 최대 높이를 넘으면 내부 스크롤 처리.
+let equipInvExpanded = false;
+document.getElementById('equipInvHeader')?.addEventListener('click', () => {
+  equipInvExpanded = !equipInvExpanded;
+  renderEquipment();
+});
+
 function rand(min, max){ return min + Math.random() * (max - min); }
 
 function weightedPickRarity(weights){
@@ -159,6 +167,19 @@ function sellEquipment(id){
   renderAll();
 }
 
+// 미장착 장비를 등급 단위로 한 번에 정리. 전설 등급은 실수로 한꺼번에 팔리지 않도록 제외(개별 판매만 가능).
+function sellEquipmentByRarity(rarityKey){
+  if(rarityKey === 'legendary') return;
+  const items = state.equipInventory.filter(i => i.rarity === rarityKey);
+  if(items.length === 0) return;
+  const rarity = EQUIP_RARITIES.find(r => r.key === rarityKey);
+  const total = items.length * rarity.sellBase;
+  state.equipInventory = state.equipInventory.filter(i => i.rarity !== rarityKey);
+  state.gold += total;
+  log(`장비 일괄 판매: [${rarity.name}] ${items.length}개 → +${total.toLocaleString()}🪙`);
+  renderAll();
+}
+
 function renderEquipRarityInfo(){
   const box = document.getElementById('equipRarityInfo');
   if(!box) return;
@@ -245,28 +266,65 @@ function renderEquipment(){
   renderEquipRarityInfo();
 
   const grid = document.getElementById('equipInventoryGrid');
-  if(grid){
-    grid.innerHTML = '';
-    if(state.equipInventory.length === 0){
-      grid.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:6px 2px;">보유한 미장착 장비가 없습니다.</div>';
+  const invCountEl = document.getElementById('equipInvCount');
+  const invToggleIcon = document.getElementById('equipInvToggleIcon');
+  const invActions = document.getElementById('equipInvActions');
+
+  if(invCountEl) invCountEl.textContent = `(${state.equipInventory.length}개)`;
+  if(invToggleIcon) invToggleIcon.textContent = equipInvExpanded ? '▲' : '▼';
+
+  if(invActions){
+    if(!equipInvExpanded || state.equipInventory.length === 0){
+      invActions.style.display = 'none';
+      invActions.innerHTML = '';
     } else {
-      const sorted = [...state.equipInventory].sort((a, b) => b.createdAt - a.createdAt);
-      sorted.forEach(item => {
-        const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
-        const card = document.createElement('div');
-        card.className = 'relic-card equip-card rarity-' + item.rarity;
-        card.innerHTML = `
-          <div class="rname"><span style="color:${rarity.color}">[${rarity.name}] ${item.slot === 'weapon' ? '⚔️ 무기' : '🛡️ 방어구'}</span></div>
-          <div class="rdesc">${equipItemLabel(item)}</div>
-          <div class="eq-card-btns">
-            <button class="eq-equip-btn" type="button">장착</button>
-            <button class="eq-sell-btn" type="button">판매 (${rarity.sellBase.toLocaleString()}🪙)</button>
-          </div>
-        `;
-        grid.appendChild(card);
-        card.querySelector('.eq-equip-btn').addEventListener('click', () => equipItem(item.id));
-        card.querySelector('.eq-sell-btn').addEventListener('click', () => sellEquipment(item.id));
-      });
+      const counts = {common:0, rare:0, epic:0, legendary:0};
+      state.equipInventory.forEach(i => counts[i.rarity]++);
+      const sellable = EQUIP_RARITIES.filter(r => r.key !== 'legendary' && counts[r.key] > 0);
+      if(sellable.length === 0){
+        invActions.style.display = 'none';
+        invActions.innerHTML = '';
+      } else {
+        invActions.style.display = 'flex';
+        invActions.innerHTML = sellable.map(r => `<button type="button" data-rarity="${r.key}">[${r.name}] 전체 판매 (${counts[r.key]}개)</button>`).join('');
+        invActions.querySelectorAll('button').forEach(btn => {
+          btn.addEventListener('click', () => sellEquipmentByRarity(btn.dataset.rarity));
+        });
+      }
+    }
+  }
+
+  if(grid){
+    grid.style.display = equipInvExpanded ? 'grid' : 'none';
+    if(equipInvExpanded){
+      grid.innerHTML = '';
+      if(state.equipInventory.length === 0){
+        grid.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:6px 2px;">보유한 미장착 장비가 없습니다.</div>';
+      } else {
+        const rarityRank = {legendary:3, epic:2, rare:1, common:0};
+        const sorted = [...state.equipInventory].sort((a, b) => {
+          const rd = rarityRank[b.rarity] - rarityRank[a.rarity];
+          if(rd !== 0) return rd;
+          if(b.mainValue !== a.mainValue) return b.mainValue - a.mainValue;
+          return b.createdAt - a.createdAt;
+        });
+        sorted.forEach(item => {
+          const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
+          const card = document.createElement('div');
+          card.className = 'relic-card equip-card rarity-' + item.rarity;
+          card.innerHTML = `
+            <div class="rname"><span style="color:${rarity.color}">[${rarity.name}] ${item.slot === 'weapon' ? '⚔️ 무기' : '🛡️ 방어구'}</span></div>
+            <div class="rdesc">${equipItemLabel(item)}</div>
+            <div class="eq-card-btns">
+              <button class="eq-equip-btn" type="button">장착</button>
+              <button class="eq-sell-btn" type="button">판매 (${rarity.sellBase.toLocaleString()}🪙)</button>
+            </div>
+          `;
+          grid.appendChild(card);
+          card.querySelector('.eq-equip-btn').addEventListener('click', () => equipItem(item.id));
+          card.querySelector('.eq-sell-btn').addEventListener('click', () => sellEquipment(item.id));
+        });
+      }
     }
   }
 }

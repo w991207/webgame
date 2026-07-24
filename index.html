@@ -107,8 +107,12 @@
       <div class="equip-slot empty" id="equipArmorSlot"></div>
     </div>
     <div id="gachaTierList" style="margin-top:10px;"></div>
-    <h2 style="margin-top:16px;font-size:15px;">보유 장비 (미장착)</h2>
-    <div class="relic-grid" id="equipInventoryGrid"></div>
+    <div class="equip-inv-title" id="equipInvHeader">
+      보유 장비 (미장착) <span id="equipInvCount" style="color:var(--text-dim);font-weight:400;font-size:12px;">(0개)</span>
+      <span id="equipInvToggleIcon" style="float:right;">▼</span>
+    </div>
+    <div class="equip-inv-actions" id="equipInvActions" style="display:none;"></div>
+    <div class="relic-grid equip-inv-scroll" id="equipInventoryGrid" style="display:none;"></div>
   </div>
 
   <div class="panel relic-panel">
