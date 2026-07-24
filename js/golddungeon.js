@@ -44,8 +44,8 @@ function enterGoldDungeon(){
     return;
   }
   if(state.gdActive) return;
-  if(state.raidActive){
-    alert('레이드 진행 중에는 골드 던전에 입장할 수 없습니다.');
+  if(state.raidActive || state.rdActive){
+    alert('다른 전투(레이드/유물 던전) 진행 중에는 골드 던전에 입장할 수 없습니다.');
     return;
   }
   refreshGoldDungeonTickets();

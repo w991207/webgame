@@ -47,8 +47,8 @@ function enterRaid(){
     return;
   }
   if(state.raidActive) return;
-  if(state.gdActive){
-    alert('골드 던전 진행 중에는 레이드에 입장할 수 없습니다.');
+  if(state.gdActive || state.rdActive){
+    alert('다른 전투(골드 던전/유물 던전) 진행 중에는 레이드에 입장할 수 없습니다.');
     return;
   }
   refreshRaidTickets();

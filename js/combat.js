@@ -5,7 +5,7 @@ function monsterHpFor(floor, boss){
   }
   let hp =
   Math.round(
-    35 * Math.pow(floor, 1.22)
+    35 * Math.pow(floor, 1.45)
   );
   if(boss)
     hp *= 6;
@@ -19,7 +19,7 @@ function monsterAtkFor(floor, boss){
     );
   }
   let atk =
-  8 + floor*2.5;
+  8 + Math.pow(floor, 1.15) * 2.5;
   if(boss)
     atk *= 2.2;
   return Math.round(atk);
@@ -31,7 +31,7 @@ function monsterDefFor(floor, boss){
     );
   }
   let def =
-  floor*0.7;
+  Math.pow(floor, 1.35) * 0.7;
   if(boss)
     def *= 1.8;
   return Math.round(def);

@@ -75,6 +75,16 @@ function defaultState(){
     gdPlayerHp: 0,
     gdCleared: false,
     peakCombatPower: 0,
+
+    // ---------- Relic Dungeon (유물 던전) ----------
+    rdFloor: 1,
+    rdTicket: 3,
+    rdTicketLastRefill: Date.now(),
+    rdActive: false,
+    rdMonsterHp: 0,
+    rdMonsterMaxHp: 0,
+    rdPlayerHp: 0,
+    rdCleared: false,
   };
 }
 

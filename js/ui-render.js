@@ -106,5 +106,6 @@ function renderAll(){
   renderCouponList();
   renderRaidPanel();
   renderGoldDungeonPanel();
+  renderRelicDungeonPanel();
 }
 
