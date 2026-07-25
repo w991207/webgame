@@ -39,6 +39,11 @@ function processImportedData(jsonStr){
     state.raidBossHp = 0;
     state.raidBossMaxHp = 0;
     state.raidPlayerHp = 0;
+    state.wbActive = false;
+    state.wbHp = 0;
+    state.wbMaxHp = 0;
+    state.wbPlayerHp = 0;
+    state.wbSessionDamage = 0;
 
     document.getElementById('modeNormalBtn').classList.toggle('active', state.mode==='normal');
     document.getElementById('modeTowerBtn').classList.toggle('active', state.mode==='tower');
@@ -151,6 +156,11 @@ async function loadState(){
       state.raidBossHp = 0;
       state.raidBossMaxHp = 0;
       state.raidPlayerHp = 0;
+      state.wbActive = false;
+      state.wbHp = 0;
+      state.wbMaxHp = 0;
+      state.wbPlayerHp = 0;
+      state.wbSessionDamage = 0;
       return true;
     }
   }catch(e){

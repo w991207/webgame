@@ -2,6 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // 오늘 날짜(한국시간 KST 기준) 정수 ID. 서버 시간(request.time) 기준이라 클라이언트가 위조 불가능.
+    function todayId() {
+      return int(math.floor((request.time.toMillis() + 32400000) / 86400000));
+    }
+
     // 세이브 데이터: 본인 계정(uid)만 읽고 쓸 수 있음
     match /saves/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
@@ -10,6 +15,49 @@ service cloud.firestore {
     // 랭킹 데이터: 누구나 열람 가능(리더보드 표시용), 쓰기는 본인 uid 문서만 가능
     match /rankings/{uid} {
       allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    match /gifts/{giftId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow update: if request.auth != null
+                    && resource.data.uid == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimed'])
+                    && request.resource.data.claimed == true;
+      allow create, delete: if false;
+    }
+
+    // ---------- 월드보스 ----------
+    // 전 유저가 공유하는 보스 HP 하나를 함께 깎는 컨텐츠. 매일 자정(KST) 초기화.
+    // 최초 문서(worldboss/state)는 Firebase 콘솔에서 관리자가 직접 생성해야 함
+    // 예: { hp: 800000, maxHp: 800000, resetDate: <오늘의 todayId 정수값> }
+    match /worldboss/state {
+      allow read: if true;
+      allow create: if false;
+      allow update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['hp', 'maxHp', 'resetDate'])
+        && request.resource.data.maxHp == resource.data.maxHp
+        && (
+          // 케이스 A: 같은 날 안에서 데미지만큼 hp를 깎는 정상적인 공격
+          (
+            request.resource.data.resetDate == resource.data.resetDate &&
+            request.resource.data.hp <= resource.data.hp &&
+            request.resource.data.hp >= 0 &&
+            resource.data.hp - request.resource.data.hp <= 80000
+          )
+          ||
+          // 케이스 B: 날짜가 바뀌어서 서버 시간 기준 오늘 날짜로 리셋하는 경우 (hp는 반드시 만땅으로)
+          (
+            request.resource.data.resetDate == todayId() &&
+            request.resource.data.resetDate > resource.data.resetDate &&
+            request.resource.data.hp == request.resource.data.maxHp
+          )
+        );
+    }
+
+    // 유저별 일일 누적 데미지 (리더보드 표시용). 본인 문서만 쓸 수 있음.
+    match /worldboss_damage/{dayId}/hits/{uid} {
+      allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.uid == uid;
     }
   }

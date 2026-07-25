@@ -91,6 +91,15 @@ function defaultState(){
     equipInventory: [],
     equipPullCounts: {t1:0, t2:0, t3:0, t4:0},
 
+    // ---------- World Boss (월드보스, 1일 1회) ----------
+    wbLastEnterDay: 0, // 마지막으로 도전한 날짜(dayId). 오늘과 같으면 이미 도전 완료.
+    wbActive: false,
+    wbHp: 0,
+    wbMaxHp: 0,
+    wbPlayerHp: 0,
+    wbSessionDamage: 0,
+    wbGotKillingBlow: false,
+
     // ---------- Account / Ranking ----------
     nickname: '',
   };

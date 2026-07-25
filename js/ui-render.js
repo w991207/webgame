@@ -108,5 +108,6 @@ function renderAll(){
   renderRaidPanel();
   renderGoldDungeonPanel();
   renderRelicDungeonPanel();
+  if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
 }
 

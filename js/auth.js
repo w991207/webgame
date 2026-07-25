@@ -236,6 +236,7 @@ fbAuth.onAuthStateChanged(async (user) => {
   hideAuthGate();
   renderAccountPanel(user);
   if(typeof startRankingSync === 'function') startRankingSync();
+  if(typeof startWorldBossSync === 'function') startWorldBossSync();
 
   // 로그인/회원가입/게스트 진입이 확정된 시점에 실제 게임을 시작 (최초 1회만)
   if(!gameStarted){
