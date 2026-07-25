@@ -125,6 +125,14 @@
     </div>
   </div>
 
+  <div class="tab-nav" id="tabNav">
+    <button class="tab-nav-btn active" data-tab="tab-growth">⚔️ 성장</button>
+    <button class="tab-nav-btn" data-tab="tab-dungeon">🏰 던전</button>
+    <button class="tab-nav-btn" data-tab="tab-event">🎁 이벤트</button>
+    <button class="tab-nav-btn" data-tab="tab-account">👤 계정</button>
+  </div>
+
+  <div class="tab-content" id="tab-growth" style="display:block;">
   <div class="panel relic-panel">
     <h2>장비
       <span id="equipMultGroup" style="float:right;display:flex;gap:4px;">
@@ -174,7 +182,9 @@
     </div>
     <div class="relic-grid" id="petGrid"></div>
   </div>
+  </div><!-- /tab-growth -->
 
+  <div class="tab-content" id="tab-dungeon" style="display:none;">
   <div class="panel relic-panel">
     <h2>1인 레이드</h2>
     <div id="raidLockedBox" style="display:none;">
@@ -257,7 +267,9 @@
       <div class="player-hp-label"><span>내 체력</span><span id="rdPlayerHpText">0 / 0</span></div>
     </div>
   </div>
+  </div><!-- /tab-dungeon -->
 
+  <div class="tab-content" id="tab-event" style="display:none;">
   <div class="panel quest-panel">
     <h2>퀘스트</h2>
     <div class="quest-grid">
@@ -304,7 +316,9 @@
       <div style="font-size:12px; color:var(--text-dim);">쿠폰 목록을 가져오는 중...</div>
     </div>
   </div>
+  </div><!-- /tab-event -->
 
+  <div class="tab-content" id="tab-account" style="display:none;">
   <!-- Account / Firebase Login Section -->
   <div class="panel account-panel">
     <h2>계정</h2>
@@ -361,6 +375,7 @@
     </div>
     <div id="rankingMyRow" class="ranking-my-row"></div>
   </div>
+  </div><!-- /tab-account -->
 
   <div class="footer-controls">
     <button id="patchHistoryBtn">
@@ -455,6 +470,8 @@
 <script src="js/auth.js"></script>
 <script src="js/ranking.js"></script>
 
+<script src="js/tabs.js"></script>
+<script src="js/gifts.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

@@ -13,6 +13,9 @@ async function init(){
   } else if(!loaded){
     state.bugfixCompGranted = true;
   }
+
+  // 선물함 확인은 세이브 로드가 완전히 끝난 뒤에 해야 함 (먼저 하면 로드 시 값이 덮여씌워짐)
+  if(typeof checkGifts === 'function') checkGifts();
   if(loaded && !state.bonusGrant1Given){
     state.soul += 3;
     state.bonusGrant1Given = true;
