@@ -560,6 +560,42 @@
 
   /* Coupon Panel UI Styles */
   .coupon-panel{margin-top:16px;}
+
+  /* Account panel */
+  .account-panel{margin-top:16px;}
+  .account-status{
+    font-size:12px;color:var(--text-dim);background:var(--bg-deep);
+    border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:12px;
+  }
+  .account-nickname-row{display:flex;gap:8px;margin-bottom:12px;}
+  .account-desc{font-size:12px;color:var(--text-dim);line-height:1.6;margin:0 0 10px;}
+  .account-form{display:flex;flex-direction:column;gap:8px;margin-bottom:8px;}
+  .account-google-btn,.account-logout-btn{
+    width:100%;background:var(--bg-deep);border:1px solid var(--border);color:var(--text);
+    font-family:'Noto Serif KR',serif;font-weight:700;font-size:13px;padding:10px;
+    border-radius:6px;cursor:pointer;transition:.15s;
+  }
+  .account-google-btn:hover{border-color:var(--frag);color:var(--frag);}
+  .account-logout-btn:hover{border-color:#e05656;color:#e05656;}
+
+  /* Ranking panel */
+  .ranking-panel{margin-top:16px;}
+  .ranking-refresh-btn{
+    float:right;font-size:11px;padding:4px 10px;border-radius:6px;
+    border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;
+  }
+  .ranking-refresh-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .ranking-header-row,.ranking-row{
+    display:grid;grid-template-columns:44px 1fr 90px 70px;gap:6px;align-items:center;
+    padding:6px 8px;font-size:12px;
+  }
+  .ranking-header-row{color:var(--text-dim);font-size:11px;border-bottom:1px solid var(--border);}
+  .ranking-list{max-height:360px;overflow-y:auto;}
+  .ranking-row{border-bottom:1px solid rgba(255,255,255,.04);}
+  .ranking-row.me{background:rgba(232,163,61,.12);border-radius:6px;font-weight:700;color:var(--gold);}
+  .rk-rank{color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
+  .rk-cp,.rk-floor{font-family:'JetBrains Mono',monospace;text-align:right;}
+  .ranking-my-row{font-size:11px;color:var(--text-dim);text-align:center;margin-top:8px;}
   .coupon-desc{
     font-size:12px;
     color:var(--text-dim);
@@ -732,4 +768,129 @@ color:var(--text-dim);
 
 margin-top:4px;
 
+}
+
+/* ---------- 로그인/회원가입 게이트 ---------- */
+.auth-gate-overlay{
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse at 50% -10%, #241a38 0%, transparent 60%),
+    var(--bg-deep);
+  z-index:1000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  overflow-y:auto;
+}
+.auth-gate-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:32px 28px;
+  max-width:380px;
+  width:100%;
+  text-align:center;
+  box-shadow:0 0 40px rgba(0,0,0,.5);
+}
+.auth-gate-title{
+  font-family:'Noto Serif KR',serif;
+  font-weight:900;
+  font-size:28px;
+  letter-spacing:1px;
+  margin:0 0 2px;
+  background:linear-gradient(180deg,#f3d38a,var(--gold) 60%,var(--gold-dim));
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.auth-gate-subtitle{
+  color:var(--text-dim);
+  font-size:11px;
+  letter-spacing:3px;
+  margin-bottom:22px;
+}
+.auth-gate-tabs{
+  display:flex;
+  gap:8px;
+  margin-bottom:16px;
+}
+.auth-gate-tab{
+  flex:1;
+  background:var(--panel-2);
+  border:1px solid var(--border);
+  color:var(--text-dim);
+  font-family:'Noto Serif KR',serif;
+  font-weight:700;
+  font-size:13px;
+  padding:9px 0;
+  border-radius:8px;
+  cursor:pointer;
+  transition:.15s;
+}
+.auth-gate-tab:hover{ color:var(--text); }
+.auth-gate-tab.active{
+  background:linear-gradient(180deg,#3a2a5c,#241a3d);
+  border-color:var(--gold);
+  color:var(--gold);
+}
+.auth-gate-error{
+  background:rgba(217,83,79,.12);
+  border:1px solid var(--hp-dim);
+  color:#ff9a92;
+  font-size:12px;
+  padding:8px 10px;
+  border-radius:6px;
+  margin-bottom:12px;
+  text-align:left;
+  line-height:1.5;
+}
+.auth-gate-form{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-bottom:6px;
+}
+.auth-gate-submit{
+  width:100%;
+}
+.auth-gate-divider{
+  display:flex;
+  align-items:center;
+  color:var(--text-dim);
+  font-size:11px;
+  margin:16px 0 12px;
+}
+.auth-gate-divider::before,
+.auth-gate-divider::after{
+  content:"";
+  flex:1;
+  border-bottom:1px solid var(--border);
+}
+.auth-gate-divider span{
+  padding:0 10px;
+}
+.auth-gate-guest-btn{
+  width:100%;
+  background:none;
+  border:1px solid var(--border);
+  color:var(--text-dim);
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  padding:10px;
+  border-radius:8px;
+  cursor:pointer;
+  margin-top:8px;
+  transition:.15s;
+}
+.auth-gate-guest-btn:hover{
+  color:var(--text);
+  border-color:var(--text-dim);
+}
+.auth-gate-note{
+  font-size:10.5px;
+  color:var(--text-dim);
+  line-height:1.6;
+  margin:14px 0 0;
 }

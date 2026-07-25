@@ -26,6 +26,12 @@ async function storageSet(key, value){
     try{ await window.storage.set(key, value, false); }
     catch(e){ }
   }
+
+  // Firebase 계정에 로그인/게스트로 연결되어 있다면 세이브를 클라우드에도 백업 (실패해도 로컬 저장에는 영향 없음)
+  if(key === 'save' && typeof cloudPushSave === 'function'){
+    cloudPushSave(value);
+  }
+
   return localSuccess ? {key, value, shared:false} : null;
 }
 

@@ -68,7 +68,10 @@ async function init(){
     });
   }
   renderAttendance();
-  checkNetlifyPatch();
 }
 
-init();
+// 로그인/회원가입/게스트 로그인이 완료된 시점에 auth.js가 이 함수를 호출해 게임을 시작한다.
+// (더 이상 페이지 로드와 동시에 자동으로 시작하지 않음 — 로그인 게이트를 먼저 통과해야 함)
+function startGame(){
+  init();
+}

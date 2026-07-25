@@ -10,7 +10,43 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="wrap">
+
+<!-- ---------- 로그인/회원가입 게이트 (인증 전까지 게임 화면을 가림) ---------- -->
+<div id="authGateOverlay" class="auth-gate-overlay">
+  <div class="auth-gate-card">
+    <h1 class="auth-gate-title">황혼의 회랑</h1>
+    <div class="auth-gate-subtitle">TWILIGHT CORRIDOR</div>
+
+    <div class="auth-gate-tabs">
+      <button class="auth-gate-tab active" id="gateTabLogin">로그인</button>
+      <button class="auth-gate-tab" id="gateTabSignup">회원가입</button>
+    </div>
+
+    <div id="gateError" class="auth-gate-error" style="display:none;"></div>
+
+    <div id="gateLoginForm" class="auth-gate-form">
+      <input type="email" class="coupon-input" id="gateLoginEmail" placeholder="이메일" autocomplete="username">
+      <input type="password" class="coupon-input" id="gateLoginPassword" placeholder="비밀번호" autocomplete="current-password">
+      <button class="coupon-submit auth-gate-submit" id="gateLoginBtn">로그인</button>
+    </div>
+
+    <div id="gateSignupForm" class="auth-gate-form" style="display:none;">
+      <input type="email" class="coupon-input" id="gateSignupEmail" placeholder="이메일" autocomplete="username">
+      <input type="password" class="coupon-input" id="gateSignupPassword" placeholder="비밀번호 (6자 이상)" autocomplete="new-password">
+      <input type="password" class="coupon-input" id="gateSignupPassword2" placeholder="비밀번호 확인" autocomplete="new-password">
+      <button class="coupon-submit auth-gate-submit" id="gateSignupBtn">회원가입</button>
+    </div>
+
+    <div class="auth-gate-divider"><span>또는</span></div>
+
+    <button class="account-google-btn" id="gateGoogleBtn">🔵 Google로 계속하기</button>
+    <button class="auth-gate-guest-btn" id="gateGuestBtn">게스트로 시작하기</button>
+
+    <p class="auth-gate-note">게스트로 시작해도 진행 상황은 이 브라우저에 저장되며, 이후 게임 내 [계정] 패널에서 언제든 이메일/Google 계정으로 전환해 데이터를 안전하게 지킬 수 있습니다.</p>
+  </div>
+</div>
+
+<div class="wrap" id="mainWrap" style="display:none;">
   <header>
     <h1>황혼의 회랑</h1>
     <div class="subtitle">TWILIGHT CORRIDOR · 방치형 던전 RPG</div>
@@ -269,6 +305,63 @@
     </div>
   </div>
 
+  <!-- Account / Firebase Login Section -->
+  <div class="panel account-panel">
+    <h2>계정</h2>
+    <div class="account-status" id="accountStatusBox">
+      <span id="accountStatusText">🔌 연결 중...</span>
+    </div>
+
+    <div class="account-nickname-row">
+      <input type="text" class="coupon-input" id="nicknameInput" placeholder="랭킹에 표시할 닉네임 (최대 12자)" maxlength="12">
+      <button class="coupon-submit" id="nicknameSaveBtn">닉네임 저장</button>
+    </div>
+
+    <div id="accountUpgradeBox" style="display:none;">
+      <p class="account-desc">
+        지금은 <b>게스트</b>로 플레이 중입니다. 이 상태로는 브라우저 데이터를 지우거나 기기를 바꾸면 진행 상황을 잃어버릴 수 있어요.
+        아래에서 계정을 만들면 <b>지금까지의 진행 상황이 그대로</b> 그 계정에 연결됩니다.
+      </p>
+      <div class="account-form">
+        <input type="email" class="coupon-input" id="linkEmailInput" placeholder="이메일">
+        <input type="password" class="coupon-input" id="linkPasswordInput" placeholder="비밀번호 (6자 이상)">
+        <button class="coupon-submit" id="linkEmailBtn">이메일로 계정 만들고 데이터 지키기</button>
+      </div>
+      <button class="account-google-btn" id="linkGoogleBtn">Google 계정으로 전환</button>
+    </div>
+
+    <div id="accountLoginBox" style="display:none;">
+      <p class="account-desc">이미 계정이 있다면 로그인하세요. 그 계정에 저장된 데이터를 불러옵니다.</p>
+      <div class="account-form">
+        <input type="email" class="coupon-input" id="loginEmailInput" placeholder="이메일">
+        <input type="password" class="coupon-input" id="loginPasswordInput" placeholder="비밀번호">
+        <button class="coupon-submit" id="loginEmailBtn">로그인</button>
+      </div>
+      <button class="account-google-btn" id="loginGoogleBtn">Google로 로그인</button>
+    </div>
+
+    <div id="accountLoggedInBox" style="display:none;">
+      <button class="account-logout-btn" id="logoutBtn">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- Ranking Section -->
+  <div class="panel ranking-panel">
+    <h2>🏆 랭킹
+      <button id="rankingRefreshBtn" class="ranking-refresh-btn">새로고침</button>
+    </h2>
+    <div class="ranking-header-row">
+      <span class="rk-rank">순위</span>
+      <span class="rk-name">닉네임</span>
+      <span class="rk-cp">전투력</span>
+      <span class="rk-floor">최고층</span>
+    </div>
+    <div id="rankingList" class="ranking-list">
+      <div style="font-size:12px;color:var(--text-dim);">불러오는 중...</div>
+    </div>
+    <div id="rankingMyRow" class="ranking-my-row"></div>
+  </div>
+
   <div class="footer-controls">
     <button id="patchHistoryBtn">
     📜 패치노트
@@ -353,6 +446,15 @@
 <script src="js/quests.js"></script>
 <script src="js/attendance.js"></script>
 <script src="js/persistence.js"></script>
+
+<!-- Firebase (로그인 + 랭킹) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ranking.js"></script>
+
 <script src="js/main.js"></script>
 </body>
 </html>

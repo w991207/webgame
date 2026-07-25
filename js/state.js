@@ -90,6 +90,9 @@ function defaultState(){
     equipment: {weapon:null, armor:null},
     equipInventory: [],
     equipPullCounts: {t1:0, t2:0, t3:0, t4:0},
+
+    // ---------- Account / Ranking ----------
+    nickname: '',
   };
 }
 

@@ -1,0 +1,303 @@
+// ---------- Auth (Firebase 로그인 시스템) ----------
+// 전략: 모든 방문자를 즉시 '익명(Anonymous) 로그인' 시켜 Firebase uid를 부여한다.
+// 이렇게 하면 로그인 없이 플레이해도 세이브가 그 uid로 클라우드에 자동 백업되고,
+// 나중에 이메일/Google 계정으로 "전환(linkWithCredential)"하면 uid가 그대로 유지되어
+// 데이터 이전 코드 없이도 기존 진행 상황이 그대로 새 계정에 연결된다.
+
+const LAST_UID_KEY = 'twilight-corridor-last-uid';
+
+function authErrorMessage(e){
+  const map = {
+    'auth/email-already-in-use': '이미 가입된 이메일입니다. 아래 로그인을 이용해주세요.',
+    'auth/invalid-email': '올바르지 않은 이메일 형식입니다.',
+    'auth/weak-password': '비밀번호는 6자 이상이어야 합니다.',
+    'auth/wrong-password': '비밀번호가 일치하지 않습니다.',
+    'auth/user-not-found': '가입되지 않은 이메일입니다.',
+    'auth/invalid-credential': '이메일 또는 비밀번호가 올바르지 않습니다.',
+    'auth/credential-already-in-use': '이미 다른 계정에 연결된 정보입니다.',
+    'auth/popup-closed-by-user': '로그인 창이 닫혔습니다.',
+    'auth/network-request-failed': '네트워크 연결을 확인해주세요.',
+  };
+  return map[e.code] || ('오류: ' + e.message);
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+// ---------- 클라우드 세이브 저장/불러오기 ----------
+// saves/{uid} 문서에 세이브 전체를 JSON 문자열 그대로 저장한다 (내보내기/가져오기와 동일한 포맷).
+async function cloudPushSave(jsonStr){
+  const user = fbAuth.currentUser;
+  if(!user) return;
+  try{
+    await fbDb.collection('saves').doc(user.uid).set({
+      data: jsonStr,
+      updatedAt: Date.now(),
+    });
+  }catch(e){
+    console.warn('클라우드 저장 실패', e);
+  }
+}
+
+async function cloudPullSave(uid){
+  try{
+    const doc = await fbDb.collection('saves').doc(uid).get();
+    if(doc.exists) return doc.data();
+  }catch(e){
+    console.warn('클라우드 불러오기 실패', e);
+  }
+  return null;
+}
+
+// ---------- 계정 패널 렌더링 ----------
+function renderAccountPanel(user){
+  const statusText = document.getElementById('accountStatusText');
+  const upgradeBox = document.getElementById('accountUpgradeBox');
+  const loginBox = document.getElementById('accountLoginBox');
+  const loggedInBox = document.getElementById('accountLoggedInBox');
+  if(!statusText) return;
+
+  if(!user){
+    statusText.textContent = '🔌 연결 중...';
+    return;
+  }
+
+  if(user.isAnonymous){
+    statusText.textContent = '👤 게스트로 플레이 중 (이 브라우저에만 저장됨)';
+    if(upgradeBox) upgradeBox.style.display = 'block';
+    if(loginBox) loginBox.style.display = 'block';
+    if(loggedInBox) loggedInBox.style.display = 'none';
+  } else {
+    const providerId = user.providerData[0] && user.providerData[0].providerId;
+    const label = user.email || (providerId === 'google.com' ? 'Google 계정' : '계정');
+    statusText.textContent = `✅ ${label} 로 로그인됨 — 데이터가 계정에 안전하게 백업됩니다`;
+    if(upgradeBox) upgradeBox.style.display = 'none';
+    if(loginBox) loginBox.style.display = 'none';
+    if(loggedInBox) loggedInBox.style.display = 'block';
+  }
+
+  const nicknameInput = document.getElementById('nicknameInput');
+  if(nicknameInput && document.activeElement !== nicknameInput){
+    nicknameInput.value = state.nickname || '';
+  }
+}
+
+// ---------- 로그인 게이트 표시/숨김 ----------
+function showAuthGate(){
+  const gate = document.getElementById('authGateOverlay');
+  const wrap = document.getElementById('mainWrap');
+  if(gate) gate.style.display = 'flex';
+  if(wrap) wrap.style.display = 'none';
+}
+function hideAuthGate(){
+  const gate = document.getElementById('authGateOverlay');
+  const wrap = document.getElementById('mainWrap');
+  if(gate) gate.style.display = 'none';
+  if(wrap) wrap.style.display = '';
+}
+function showGateError(msg){
+  const el = document.getElementById('gateError');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function clearGateError(){
+  const el = document.getElementById('gateError');
+  if(el) el.style.display = 'none';
+}
+function setGateButtonsDisabled(disabled){
+  ['gateLoginBtn','gateSignupBtn','gateGoogleBtn','gateGuestBtn'].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(btn) btn.disabled = disabled;
+  });
+}
+
+document.getElementById('gateTabLogin')?.addEventListener('click', () => {
+  document.getElementById('gateTabLogin').classList.add('active');
+  document.getElementById('gateTabSignup').classList.remove('active');
+  document.getElementById('gateLoginForm').style.display = 'flex';
+  document.getElementById('gateSignupForm').style.display = 'none';
+  clearGateError();
+});
+document.getElementById('gateTabSignup')?.addEventListener('click', () => {
+  document.getElementById('gateTabSignup').classList.add('active');
+  document.getElementById('gateTabLogin').classList.remove('active');
+  document.getElementById('gateSignupForm').style.display = 'flex';
+  document.getElementById('gateLoginForm').style.display = 'none';
+  clearGateError();
+});
+
+document.getElementById('gateLoginBtn')?.addEventListener('click', async () => {
+  const email = document.getElementById('gateLoginEmail').value.trim();
+  const pw = document.getElementById('gateLoginPassword').value;
+  if(!email || !pw){ showGateError('이메일과 비밀번호를 입력해주세요.'); return; }
+  clearGateError();
+  setGateButtonsDisabled(true);
+  try{
+    await fbAuth.signInWithEmailAndPassword(email, pw);
+  }catch(e){
+    showGateError(authErrorMessage(e));
+  }finally{
+    setGateButtonsDisabled(false);
+  }
+});
+
+document.getElementById('gateSignupBtn')?.addEventListener('click', async () => {
+  const email = document.getElementById('gateSignupEmail').value.trim();
+  const pw = document.getElementById('gateSignupPassword').value;
+  const pw2 = document.getElementById('gateSignupPassword2').value;
+  if(!email || !pw){ showGateError('이메일과 비밀번호를 입력해주세요.'); return; }
+  if(pw !== pw2){ showGateError('비밀번호가 일치하지 않습니다.'); return; }
+  clearGateError();
+  setGateButtonsDisabled(true);
+  try{
+    await fbAuth.createUserWithEmailAndPassword(email, pw);
+  }catch(e){
+    showGateError(authErrorMessage(e));
+  }finally{
+    setGateButtonsDisabled(false);
+  }
+});
+
+document.getElementById('gateGoogleBtn')?.addEventListener('click', async () => {
+  clearGateError();
+  setGateButtonsDisabled(true);
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try{
+    await fbAuth.signInWithPopup(provider);
+  }catch(e){
+    showGateError(authErrorMessage(e));
+  }finally{
+    setGateButtonsDisabled(false);
+  }
+});
+
+document.getElementById('gateGuestBtn')?.addEventListener('click', async () => {
+  clearGateError();
+  setGateButtonsDisabled(true);
+  try{
+    await fbAuth.signInAnonymously();
+  }catch(e){
+    showGateError('게스트 로그인에 실패했습니다. 잠시 후 다시 시도해주세요.');
+  }finally{
+    setGateButtonsDisabled(false);
+  }
+});
+
+// ---------- 인증 상태 변화 처리 ----------
+let previousKnownUid = null;
+try{ previousKnownUid = window.localStorage.getItem(LAST_UID_KEY); }catch(e){}
+let gameStarted = false; // 로그인 성공 후 게임을 단 한 번만 초기화하기 위한 가드
+
+fbAuth.onAuthStateChanged(async (user) => {
+  if(!user){
+    // 로그인된 세션이 없으면 게이트를 띄우고 사용자의 선택(로그인/회원가입/Google/게스트)을 기다린다.
+    // (더 이상 자동으로 익명 로그인을 하지 않음)
+    showAuthGate();
+    return;
+  }
+
+  // uid가 이전과 다르고, 이번엔 익명이 아니라면 → 다른(기존) 계정으로 방금 "로그인"한 상황.
+  // (전환/linking은 uid가 그대로 유지되므로 이 분기를 타지 않는다.)
+  const isSwitchToExistingAccount = previousKnownUid && previousKnownUid !== user.uid && !user.isAnonymous;
+
+  if(isSwitchToExistingAccount){
+    const cloud = await cloudPullSave(user.uid);
+    if(cloud && cloud.data){
+      const useCloud = confirm(
+        '이 계정에 저장된 진행 상황을 발견했습니다.\n' +
+        '[확인] = 계정에 저장된 데이터를 불러옵니다 (현재 기기의 진행 상황은 대체됩니다)\n' +
+        '[취소] = 현재 기기의 진행 상황을 그대로 유지합니다'
+      );
+      if(useCloud && typeof processImportedData === 'function'){
+        processImportedData(cloud.data);
+      }
+    }
+  }
+
+  previousKnownUid = user.uid;
+  try{ window.localStorage.setItem(LAST_UID_KEY, user.uid); }catch(e){}
+
+  hideAuthGate();
+  renderAccountPanel(user);
+  if(typeof startRankingSync === 'function') startRankingSync();
+
+  // 로그인/회원가입/게스트 진입이 확정된 시점에 실제 게임을 시작 (최초 1회만)
+  if(!gameStarted){
+    gameStarted = true;
+    if(typeof startGame === 'function') startGame();
+  }
+});
+
+// ---------- 버튼 이벤트 ----------
+document.getElementById('nicknameSaveBtn')?.addEventListener('click', () => {
+  const input = document.getElementById('nicknameInput');
+  const val = input.value.trim().slice(0, 12);
+  if(!val){ alert('닉네임을 입력해주세요.'); return; }
+  state.nickname = val;
+  log(`닉네임이 "${val}"(으)로 설정되었습니다.`, 'good');
+  if(typeof pushRanking === 'function') pushRanking();
+  if(typeof saveState === 'function') saveState(false);
+});
+
+document.getElementById('linkEmailBtn')?.addEventListener('click', async () => {
+  const email = document.getElementById('linkEmailInput').value.trim();
+  const pw = document.getElementById('linkPasswordInput').value;
+  if(!email || !pw){ alert('이메일과 비밀번호를 입력해주세요.'); return; }
+  const user = fbAuth.currentUser;
+  try{
+    const cred = firebase.auth.EmailAuthProvider.credential(email, pw);
+    await user.linkWithCredential(cred);
+    log('🎉 계정이 생성되었습니다! 지금까지의 진행 상황이 그대로 이 계정에 연결됐어요.', 'good');
+    renderAccountPanel(fbAuth.currentUser);
+  }catch(e){
+    alert(authErrorMessage(e));
+  }
+});
+
+document.getElementById('linkGoogleBtn')?.addEventListener('click', async () => {
+  const user = fbAuth.currentUser;
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try{
+    await user.linkWithPopup(provider);
+    log('🎉 Google 계정으로 전환되었습니다! 진행 상황이 그대로 유지됩니다.', 'good');
+    renderAccountPanel(fbAuth.currentUser);
+  }catch(e){
+    if(e.code === 'auth/credential-already-in-use' && e.credential){
+      const ok = confirm('이미 가입된 Google 계정입니다. 그 계정으로 로그인할까요?\n(현재 기기의 진행 상황은 그 계정 데이터로 대체될 수 있습니다)');
+      if(ok){
+        try{ await fbAuth.signInWithCredential(e.credential); }
+        catch(e2){ alert(authErrorMessage(e2)); }
+      }
+    } else {
+      alert(authErrorMessage(e));
+    }
+  }
+});
+
+document.getElementById('loginEmailBtn')?.addEventListener('click', async () => {
+  const email = document.getElementById('loginEmailInput').value.trim();
+  const pw = document.getElementById('loginPasswordInput').value;
+  if(!email || !pw){ alert('이메일과 비밀번호를 입력해주세요.'); return; }
+  try{
+    await fbAuth.signInWithEmailAndPassword(email, pw);
+  }catch(e){
+    alert(authErrorMessage(e));
+  }
+});
+
+document.getElementById('loginGoogleBtn')?.addEventListener('click', async () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try{
+    await fbAuth.signInWithPopup(provider);
+  }catch(e){
+    alert(authErrorMessage(e));
+  }
+});
+
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+  if(!confirm('로그아웃하시겠습니까? (다음 접속 시 새 게스트로 시작하며, 다시 로그인하면 이 계정 데이터로 이어할 수 있습니다)')) return;
+  await fbAuth.signOut();
+  location.reload();
+});
