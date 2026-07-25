@@ -11,7 +11,7 @@
 //    (resetDate를 0으로 두면 접속한 유저가 처음 열었을 때 자동으로 오늘 날짜로 리셋되며 시작합니다)
 
 const WORLD_BOSS_META = {name:'멸망을 고하는 태초종, 아스모드', emoji:'👹'};
-const WB_ATK = 5000;
+const WB_ATK = 10000;
 const WB_DEF = 1500;
 const WB_TIME_LIMIT_MS = 60 * 1000; // 도전 1회당 제한시간 1분
 const WB_GOLD_PER_DMG = 0.6;
