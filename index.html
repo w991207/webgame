@@ -227,7 +227,7 @@
     </div>
     <div id="wbUnlockedBox" style="display:none;">
       <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-        전 유저가 체력 하나를 함께 나눠 깎는 컨텐츠입니다. <b>하루에 한 번</b> 도전할 수 있고, 쓰러질 때까지(또는 보스가 죽을 때까지) 자동으로 전투가 진행됩니다. 그 회차에 <span style="color:var(--frag)">내가 실제로 입힌 데미지량</span>에 비례해 보상을 받으며, 마지막 일격을 넣으면 추가 보너스가 있습니다. 매일 자정(00:00)에 체력이 초기화됩니다.
+        전 유저가 체력 하나를 함께 나눠 깎는 컨텐츠입니다. <b>하루에 한 번</b>, <b>제한시간 1분</b> 동안 자동으로 전투가 진행됩니다 (쓰러지거나 보스가 죽으면 그 전에 종료). 그 회차에 <span style="color:var(--frag)">내가 실제로 입힌 데미지량</span>에 비례해 보상을 받으며, 마지막 일격을 넣으면 추가 보너스가 있습니다. 매일 자정(00:00)에 체력이 초기화됩니다.
       </p>
       <div class="floor-badge">WORLD BOSS</div>
       <div class="arch" style="max-width:200px;">
@@ -246,6 +246,7 @@
         <div class="player-hp-outer"><div class="player-hp-inner" id="wbPlayerHpBar" style="width:100%"></div></div>
         <div class="player-hp-label"><span>내 체력</span><span id="wbPlayerHpText">0 / 0</span></div>
         <div class="frag-count" style="margin-top:6px;">이번 도전 누적 데미지: <span id="wbSessionDmgText">0</span></div>
+        <div class="frag-count" style="margin-top:6px;">⏳ 남은 시간: <span id="wbTimeLeftText" style="color:var(--gold);">01:00</span></div>
       </div>
 
       <div style="margin-top:16px;">
