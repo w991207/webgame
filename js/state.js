@@ -92,7 +92,7 @@ function defaultState(){
     equipPullCounts: {t1:0, t2:0, t3:0, t4:0},
 
     // ---------- World Boss (월드보스, 1일 1회) ----------
-    wbLastEnterDay: 0, // 마지막으로 도전한 날짜(dayId). 오늘과 같으면 이미 도전 완료.
+    wbLastEnterAt: 0, // 마지막으로 도전한 시각(ms). 4시간 쿨타임 + 관리자 강제 리셋 판단에 사용.
     wbActive: false,
     wbHp: 0,
     wbMaxHp: 0,

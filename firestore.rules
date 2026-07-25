@@ -25,12 +25,15 @@ service cloud.firestore {
     // ---------- 월드보스 ----------
     // 전 유저가 공유하는 보스 HP 하나를 함께 깎는 컨텐츠. 매일 자정(KST) 초기화.
     // 최초 문서(worldboss/state)는 Firebase 콘솔에서 관리자가 직접 생성해야 함
-    // 예: { hp: 800000, maxHp: 800000, resetDate: 0 }  (전부 숫자/int64 타입)
+    // 예: { hp: 800000, maxHp: 800000, resetDate: 0, manualResetAt: 0 }  (전부 숫자/int64 타입)
+    // manualResetAt: 관리자가 전 유저 도전 기록을 강제 초기화할 때만 콘솔에서 직접 바꾸는 필드.
+    //   클라이언트는 이 필드를 절대 쓰지 않으므로(affectedKeys에 없음) 문서에 존재해도
+    //   아래 검증에 영향을 주지 않는다 (diff 방식이라 "실제로 바뀌는 필드"만 검사함).
     match /worldboss/state {
       allow read: if true;
       allow create: if false;
       allow update: if request.auth != null
-        && request.resource.data.keys().hasOnly(['hp', 'maxHp', 'resetDate'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hp', 'maxHp', 'resetDate'])
         && request.resource.data.maxHp == resource.data.maxHp
         && request.resource.data.hp >= 0
         && (

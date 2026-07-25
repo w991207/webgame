@@ -227,7 +227,7 @@
     </div>
     <div id="wbUnlockedBox" style="display:none;">
       <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-        전 유저가 체력 하나를 함께 나눠 깎는 컨텐츠입니다. <b>하루에 한 번</b>, <b>제한시간 1분</b> 동안 자동으로 전투가 진행됩니다 (쓰러지거나 보스가 죽으면 그 전에 종료). 그 회차에 <span style="color:var(--frag)">내가 실제로 입힌 데미지량</span>에 비례해 보상을 받으며, 마지막 일격을 넣으면 추가 보너스가 있습니다. 매일 자정(00:00)에 체력이 초기화됩니다.
+        전 유저가 체력 하나를 함께 나눠 깎는 컨텐츠입니다. <b>4시간마다</b> 도전할 수 있고, <b>제한시간 1분</b> 동안 자동으로 전투가 진행됩니다 (쓰러지거나 보스가 죽으면 그 전에 종료). 그 회차에 <span style="color:var(--frag)">내가 실제로 입힌 데미지량</span>에 비례해 보상을 받으며, 마지막 일격을 넣으면 추가 보너스가 있습니다. 보스 체력은 매일 자정(00:00)에 초기화됩니다.
       </p>
       <div class="floor-badge">WORLD BOSS</div>
       <div class="arch" style="max-width:200px;">
@@ -238,9 +238,10 @@
       <div class="hp-text" id="wbBossHpText">불러오는 중...</div>
 
       <div class="relic-pull-row" style="margin-top:10px;">
-        <div class="frag-count" id="wbResetTimer">초기화까지 --:--:--</div>
-        <button class="pull-relic" id="wbEnterBtn">월드보스 도전 (1일 1회)</button>
+        <div class="frag-count" id="wbResetTimer">보스 체력 초기화까지 --:--:--</div>
+        <button class="pull-relic" id="wbEnterBtn">월드보스 도전</button>
       </div>
+      <div class="frag-count" id="wbCooldownText" style="margin-top:6px;">지금 도전 가능!</div>
 
       <div id="wbBattleBox" style="display:none;margin-top:14px;">
         <div class="player-hp-outer"><div class="player-hp-inner" id="wbPlayerHpBar" style="width:100%"></div></div>
