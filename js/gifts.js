@@ -42,10 +42,11 @@ async function checkGifts(){
     await batch.commit(); // claimed 표시를 실제로 반영 (실패해도 로컬엔 이미 지급된 상태)
 
     const parts = [];
-    if(totalGold > 0) parts.push(`🪙${totalGold.toLocaleString()}`);
-    if(totalFrag > 0) parts.push(`◈${totalFrag.toLocaleString()}`);
-    if(totalSoul > 0) parts.push(`✦${totalSoul.toLocaleString()}`);
+    if(totalGold > 0) parts.push(`🪙 골드 ${totalGold.toLocaleString()}`);
+    if(totalFrag > 0) parts.push(`◈ 유물 파편 ${totalFrag.toLocaleString()}`);
+    if(totalSoul > 0) parts.push(`✦ 영혼석 ${totalSoul.toLocaleString()}`);
     log(`🎁 관리자로부터 선물을 받았습니다! (${parts.join(' ')})`, 'good');
+    showGiftModal(parts);
 
     if(typeof renderAll === 'function') renderAll();
     if(typeof saveState === 'function') saveState(false);
@@ -53,6 +54,30 @@ async function checkGifts(){
     console.warn('선물함 확인 실패', e);
   }
 }
+
+// 선물 도착 팝업 표시 (여러 선물이 겹치면 줄바꿈으로 이어붙여 큐처럼 보여줌)
+function showGiftModal(parts){
+  const modal = document.getElementById('giftModal');
+  const textEl = document.getElementById('giftText');
+  if(!modal || !textEl) return;
+
+  const line = parts.join('<br>');
+  if(modal.style.display === 'flex' || modal.style.display === 'block'){
+    textEl.innerHTML += '<br>─────────<br>' + line;
+  }else{
+    textEl.innerHTML = line;
+    modal.style.display = 'flex';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const giftCloseBtn = document.getElementById('giftCloseBtn');
+  if(giftCloseBtn){
+    giftCloseBtn.addEventListener('click', ()=>{
+      document.getElementById('giftModal').style.display = 'none';
+    });
+  }
+});
 
 // 로그인 상태에서 1분마다 자동으로 확인 (관리자가 접속 중에 선물을 넣어줘도 바로 받게)
 setInterval(()=>{
