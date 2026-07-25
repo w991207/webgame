@@ -198,20 +198,34 @@ fbAuth.onAuthStateChanged(async (user) => {
     return;
   }
 
-  // uid가 이전과 다르고, 이번엔 익명이 아니라면 → 다른(기존) 계정으로 방금 "로그인"한 상황.
-  // (전환/linking은 uid가 그대로 유지되므로 이 분기를 타지 않는다.)
-  const isSwitchToExistingAccount = previousKnownUid && previousKnownUid !== user.uid && !user.isAnonymous;
+  // 게스트(익명)가 아니라면 → 이 기기의 로컬 세이브 유무를 기준으로 클라우드 데이터를 확인한다.
+  // (이전엔 "이 기기에서 로그인했던 적 있는지"로 판단해서, 처음 로그인하는 새 기기/모바일에서는
+  //  로컬 세이브가 없으니 클라우드 확인 자체를 스킵하고 그냥 새 캐릭터로 시작해버리는 버그가 있었음)
+  if(!user.isAnonymous){
+    let hasLocalSave = false;
+    try{
+      const local = await storageGet('save');
+      hasLocalSave = !!(local && local.value);
+    }catch(e){}
 
-  if(isSwitchToExistingAccount){
-    const cloud = await cloudPullSave(user.uid);
-    if(cloud && cloud.data){
-      const useCloud = confirm(
-        '이 계정에 저장된 진행 상황을 발견했습니다.\n' +
-        '[확인] = 계정에 저장된 데이터를 불러옵니다 (현재 기기의 진행 상황은 대체됩니다)\n' +
-        '[취소] = 현재 기기의 진행 상황을 그대로 유지합니다'
-      );
-      if(useCloud && typeof processImportedData === 'function'){
-        processImportedData(cloud.data);
+    const isNewUidOnThisDevice = previousKnownUid !== user.uid;
+
+    if(!hasLocalSave || isNewUidOnThisDevice){
+      const cloud = await cloudPullSave(user.uid);
+      if(cloud && cloud.data){
+        if(!hasLocalSave){
+          // 이 기기에는 잃을 진행 상황이 없으므로 바로 클라우드 데이터를 적용
+          if(typeof processImportedData === 'function') processImportedData(cloud.data);
+        } else {
+          const useCloud = confirm(
+            '이 계정에 저장된 진행 상황을 발견했습니다.\n' +
+            '[확인] = 계정에 저장된 데이터를 불러옵니다 (현재 기기의 진행 상황은 대체됩니다)\n' +
+            '[취소] = 현재 기기의 진행 상황을 그대로 유지합니다'
+          );
+          if(useCloud && typeof processImportedData === 'function'){
+            processImportedData(cloud.data);
+          }
+        }
       }
     }
   }
