@@ -1,18 +1,32 @@
 // ---------- 월드보스 ----------
 // 전 유저가 공유하는 보스 체력 하나를 함께 깎는 컨텐츠 (Firestore worldboss/state 문서 1개 공유).
 // 해금 조건: 1인 레이드와 동일 (무한의 탑 100층 클리어)
-// 도전 방식: 레이드처럼 1일 1회 입장, 쓰러질 때까지(또는 보스가 죽을 때까지) 자동 전투
+// 도전 방식: 개인당 4시간마다 입장 가능, 제한시간 1분(또는 쓰러질 때까지/보스가 죽을 때까지) 자동 전투
 // 보상: 내가 그 회차에 실제로 넣은 데미지량에 비례 (킬을 낸 사람에게는 추가 보너스)
-// 초기화: 매일 자정(KST) - Firestore 보안 규칙이 서버 시간(request.time) 기준으로 검증하므로
+// 보스 체력 초기화: 매일 자정(KST) - Firestore 보안 규칙이 서버 시간(request.time) 기준으로 검증하므로
 //         클라이언트 시계를 조작해도 실제 초기화 타이밍은 위조할 수 없음.
+//         (개인 도전 쿨타임 4시간은 보스 체력 초기화와는 별개로 독립적으로 동작함)
 //
 // ⚠️ 최초 1회, Firebase 콘솔에서 worldboss/state 문서를 직접 만들어야 합니다:
-//    컬렉션 'worldboss' > 문서 ID 'state' > 필드: hp(숫자), maxHp(숫자, hp와 동일한 값), resetDate(숫자, 0)
+//    컬렉션 'worldboss' > 문서 ID 'state' > 필드:
+//      - hp(숫자), maxHp(숫자, hp와 동일한 값), resetDate(숫자, 0)
+//      - manualResetAt(숫자, 0) ← 전 유저 도전 기록 강제 초기화용 (아래 설명)
 //    (resetDate를 0으로 두면 접속한 유저가 처음 열었을 때 자동으로 오늘 날짜로 리셋되며 시작합니다)
+//
+// 🔧 관리자가 "전 유저 도전 기록"을 마음대로 초기화하고 싶을 때:
+//    Firebase 콘솔 > Firestore > worldboss/state 문서 > manualResetAt 필드 값을
+//    "현재 시각의 밀리초 타임스탬프"로 바꿔서 저장하면 됩니다.
+//    (브라우저 콘솔에서 Date.now()를 입력하면 바로 그 값이 나옵니다)
+//    이 값보다 이전에 도전한 유저는 전부 즉시 재도전 가능해집니다 — 즉, 4시간 쿨타임과 무관하게
+//    "지금 이 순간부터 전원 재도전 가능"하게 만드는 스위치입니다.
+//    참고: 이 필드를 고쳐도 보스의 공유 체력(hp)은 그대로입니다. 체력까지 같이 리셋하고 싶다면
+//    hp 필드를 maxHp와 같은 값으로 함께 바꿔주세요.
 
 const WORLD_BOSS_META = {name:'멸망을 고하는 태초종, 아스모드', emoji:'👹'};
-const WB_ATK = 1400;
-const WB_DEF = 220;
+const WB_ATK = 10000;
+const WB_DEF = 5000;
+const WB_TIME_LIMIT_MS = 60 * 1000; // 도전 1회당 제한시간 1분
+const WB_COOLDOWN_MS = 4 * 3600 * 1000; // 개인 도전 쿨타임 (4시간마다 재도전 가능)
 const WB_GOLD_PER_DMG = 0.6;
 const WB_FRAG_PER_DMG = 1/250;
 const WB_KILL_BONUS_GOLD = 5000;
@@ -20,6 +34,7 @@ const WB_KILL_BONUS_FRAG = 50;
 
 let wbPlayerTickHandle = null;
 let wbMonsterTickHandle = null;
+let wbTimeLimitHandle = null;
 let wbStatusCache = null; // 전투 중이 아닐 때 화면에 보여줄, 마지막으로 받아온 서버 상태
 let wbLeaderboard = [];
 
@@ -49,9 +64,11 @@ async function ensureWorldBossFreshAndGet(){
     const d = snap.data();
     const day = wbDayId();
     if((d.resetDate||0) < day){
-      const fresh = {hp: d.maxHp, maxHp: d.maxHp, resetDate: day};
-      tx.update(ref, fresh);
-      return fresh;
+      // 주의: manualResetAt은 여기서 절대 쓰지 않는다 (보안 규칙이 클라이언트의 hp/maxHp/resetDate
+      // 변경만 허용하도록 diff 기반으로 검증하므로, 굳이 넣지 않아도 문서에 남아있던 값은 그대로 유지된다)
+      const freshWrite = {hp: d.maxHp, maxHp: d.maxHp, resetDate: day};
+      tx.update(ref, freshWrite);
+      return {...freshWrite, manualResetAt: d.manualResetAt||0};
     }
     return d;
   });
@@ -65,11 +82,6 @@ async function enterWorldBoss(){
   if(state.wbActive) return;
   if(state.raidActive || state.gdActive || state.rdActive){
     alert('다른 전투(레이드/골드 던전/유물 던전) 진행 중에는 월드보스에 도전할 수 없습니다.');
-    return;
-  }
-  const day = wbDayId();
-  if(state.wbLastEnterDay === day){
-    alert('오늘은 이미 월드보스에 도전했습니다. 내일 자정(00:00)에 다시 도전할 수 있습니다.');
     return;
   }
   const user = fbAuth.currentUser;
@@ -90,20 +102,35 @@ async function enterWorldBoss(){
     alert('월드보스가 아직 준비되지 않았습니다. (관리자 설정이 필요합니다)');
     return;
   }
+
+  // 개인 도전 쿨타임 체크 (4시간마다 재도전 가능).
+  // 단, 관리자가 worldboss/state 문서의 manualResetAt을 현재시각(또는 그 이후)으로 갱신해두면
+  // 마지막 도전 시각이 그보다 이전인 모든 유저는 쿨타임과 무관하게 즉시 재도전 가능해진다
+  // → 이 값을 콘솔에서 바꾸는 것만으로 "전 유저 도전 기록 강제 초기화"가 가능.
+  const manualResetAt = bossDoc.manualResetAt || 0;
+  const lastEnter = state.wbLastEnterAt || 0;
+  const cooldownEndsAt = (lastEnter < manualResetAt) ? 0 : (lastEnter + WB_COOLDOWN_MS);
+  if(Date.now() < cooldownEndsAt){
+    alert(`아직 도전 쿨타임입니다. (남은 시간: ${wbFormatCountdown(cooldownEndsAt - Date.now()).slice(3)})`);
+    renderWorldBossPanel();
+    return;
+  }
+
   if(bossDoc.hp <= 0){
     alert('오늘의 월드보스는 이미 다른 모험가들에게 쓰러졌습니다! 내일 자정에 다시 부활합니다.');
     wbStatusCache = bossDoc;
     renderWorldBossPanel();
     return;
   }
-  if(!confirm(`${WORLD_BOSS_META.name}에게 도전하시겠습니까?\n하루에 한 번만 도전할 수 있으며, 쓰러질 때까지(또는 보스가 죽을 때까지) 자동으로 전투가 진행됩니다.\n입힌 데미지량에 비례해 보상을 받습니다.`)) return;
+  if(!confirm(`${WORLD_BOSS_META.name}에게 도전하시겠습니까?\n제한시간 1분 동안(또는 쓰러질 때까지) 자동으로 전투가 진행됩니다.\n입힌 데미지량에 비례해 보상을 받으며, 재도전은 ${WB_COOLDOWN_MS/3600000}시간 후 가능합니다.`)) return;
 
-  state.wbLastEnterDay = day;
+  state.wbLastEnterAt = Date.now();
   state.wbActive = true;
   state.wbMaxHp = bossDoc.maxHp;
   state.wbHp = bossDoc.hp;
   state.wbSessionDamage = 0;
   state.wbGotKillingBlow = false;
+  state.wbEnterTime = Date.now();
   const s = stats();
   state.wbPlayerHp = s.maxHp;
 
@@ -111,10 +138,17 @@ async function enterWorldBoss(){
   clearTimeout(playerTickHandle);
   clearTimeout(monsterTickHandle);
 
-  log(`${WORLD_BOSS_META.emoji} [월드보스] ${WORLD_BOSS_META.name}에게 도전합니다! (전 유저 공유 체력 ${Math.ceil(state.wbHp).toLocaleString()} / ${state.wbMaxHp.toLocaleString()})`, 'new');
+  log(`${WORLD_BOSS_META.emoji} [월드보스] ${WORLD_BOSS_META.name}에게 도전합니다! (제한시간 1분, 전 유저 공유 체력 ${Math.ceil(state.wbHp).toLocaleString()} / ${state.wbMaxHp.toLocaleString()})`, 'new');
   renderAll();
   scheduleWbPlayerTick();
   scheduleWbMonsterTick();
+
+  clearTimeout(wbTimeLimitHandle);
+  wbTimeLimitHandle = setTimeout(()=>{
+    if(!state.wbActive) return;
+    log(`⏰ [월드보스] 제한시간(1분)이 종료되었습니다. 지금까지 입힌 피해만큼 보상을 받습니다.`, 'warn');
+    finalizeWorldBossSession();
+  }, WB_TIME_LIMIT_MS);
 }
 
 function scheduleWbPlayerTick(){
@@ -196,9 +230,11 @@ function wbMonsterAttackTick(){
 }
 
 async function finalizeWorldBossSession(){
+  if(!state.wbActive) return; // 이미 종료 처리된 세션에 대해 중복 실행 방지 (타임아웃과 사망 등 여러 경로가 겹칠 수 있음)
   state.wbActive = false;
   clearTimeout(wbPlayerTickHandle);
   clearTimeout(wbMonsterTickHandle);
+  clearTimeout(wbTimeLimitHandle);
 
   const dmg = Math.round(state.wbSessionDamage);
   const goldGain = Math.round(dmg * WB_GOLD_PER_DMG);
@@ -294,12 +330,24 @@ function renderWorldBossPanel(){
   unlockedBox.style.display = 'block';
 
   const day = wbDayId();
-  const alreadyEntered = state.wbLastEnterDay === day;
 
   const kstNow = Date.now() + 9*3600*1000;
   const msLeft = 86400000 - (kstNow % 86400000);
   const timerEl = document.getElementById('wbResetTimer');
-  if(timerEl) timerEl.textContent = `초기화까지 ${wbFormatCountdown(msLeft)}`;
+  if(timerEl) timerEl.textContent = `보스 체력 초기화까지 ${wbFormatCountdown(msLeft)}`;
+
+  // 개인 도전 쿨타임 (4시간) — 관리자가 manualResetAt을 갱신하면 모든 유저가 즉시 재도전 가능해짐
+  const manualResetAt = (wbStatusCache && wbStatusCache.manualResetAt) || 0;
+  const lastEnter = state.wbLastEnterAt || 0;
+  const cooldownEndsAt = (lastEnter < manualResetAt) ? 0 : (lastEnter + WB_COOLDOWN_MS);
+  const onCooldown = Date.now() < cooldownEndsAt;
+  const cdEl = document.getElementById('wbCooldownText');
+  if(cdEl){
+    cdEl.textContent = onCooldown
+      ? `다음 도전까지 ${wbFormatCountdown(cooldownEndsAt - Date.now()).slice(3)}`
+      : '지금 도전 가능!';
+    cdEl.style.color = onCooldown ? 'var(--text-dim)' : 'var(--gold)';
+  }
 
   const dispHp = state.wbActive ? state.wbHp : (wbStatusCache ? wbStatusCache.hp : null);
   const dispMax = state.wbActive ? state.wbMaxHp : (wbStatusCache ? wbStatusCache.maxHp : null);
@@ -318,11 +366,11 @@ function renderWorldBossPanel(){
 
   const enterBtn = document.getElementById('wbEnterBtn');
   if(enterBtn){
-    enterBtn.disabled = state.wbActive || alreadyEntered || bossDead;
+    enterBtn.disabled = state.wbActive || onCooldown || bossDead;
     if(state.wbActive) enterBtn.textContent = '전투 진행 중...';
     else if(bossDead) enterBtn.textContent = '오늘의 보스는 이미 쓰러짐';
-    else if(alreadyEntered) enterBtn.textContent = '오늘은 이미 도전함';
-    else enterBtn.textContent = `${WORLD_BOSS_META.emoji} 월드보스 도전 (1일 1회)`;
+    else if(onCooldown) enterBtn.textContent = '쿨타임 중';
+    else enterBtn.textContent = `${WORLD_BOSS_META.emoji} 월드보스 도전`;
   }
 
   const battleBox = document.getElementById('wbBattleBox');
@@ -337,6 +385,11 @@ function renderWorldBossPanel(){
       if(pHpText) pHpText.textContent = `${Math.max(0,Math.ceil(state.wbPlayerHp))} / ${s.maxHp}`;
       const dmgText = document.getElementById('wbSessionDmgText');
       if(dmgText) dmgText.textContent = Math.round(state.wbSessionDamage).toLocaleString();
+      const timeLeftEl = document.getElementById('wbTimeLeftText');
+      if(timeLeftEl){
+        const remain = Math.max(0, WB_TIME_LIMIT_MS - (Date.now() - (state.wbEnterTime||Date.now())));
+        timeLeftEl.textContent = wbFormatCountdown(remain).slice(3); // 시간 부분(00:) 제거하고 mm:ss만 표시
+      }
     } else {
       battleBox.style.display = 'none';
     }
