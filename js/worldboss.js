@@ -27,10 +27,23 @@ const WB_ATK = 10000;
 const WB_DEF = 5000;
 const WB_TIME_LIMIT_MS = 60 * 1000; // 도전 1회당 제한시간 1분
 const WB_COOLDOWN_MS = 4 * 3600 * 1000; // 개인 도전 쿨타임 (4시간마다 재도전 가능)
-const WB_GOLD_PER_DMG = 0.6;
-const WB_FRAG_PER_DMG = 1/250;
 const WB_KILL_BONUS_GOLD = 5000;
 const WB_KILL_BONUS_FRAG = 50;
+
+// 데미지량이 아니라 "오늘 이 시점까지의 내 순위"로 보상을 고정 지급한다.
+// (캐릭터 스탯이 앞으로 얼마나 커지든 보상 액수가 같이 폭증하지 않도록 데미지와 완전히 분리함)
+// maxRank: 이 순위 이하일 때 해당 보상을 받음. 배열 순서대로 검사하므로 오름차순 유지 필요.
+const WB_RANK_REWARDS = [
+  {maxRank:1,        gold:8000, frag:80, soul:3},
+  {maxRank:3,        gold:5000, frag:50, soul:2},
+  {maxRank:10,       gold:3000, frag:30, soul:1},
+  {maxRank:30,       gold:1500, frag:15, soul:0},
+  {maxRank:Infinity, gold:500,  frag:5,  soul:0}, // 31위 이하 참여 보상
+];
+function wbRewardForRank(rank){
+  const tier = WB_RANK_REWARDS.find(t => rank <= t.maxRank) || WB_RANK_REWARDS[WB_RANK_REWARDS.length-1];
+  return {...tier}; // 원본 상수 객체를 나중에 실수로 변형하지 않도록 항상 복사본을 반환
+}
 
 let wbPlayerTickHandle = null;
 let wbMonsterTickHandle = null;
@@ -237,22 +250,20 @@ async function finalizeWorldBossSession(){
   clearTimeout(wbTimeLimitHandle);
 
   const dmg = Math.round(state.wbSessionDamage);
-  const goldGain = Math.round(dmg * WB_GOLD_PER_DMG);
-  let fragGain = Math.round(dmg * WB_FRAG_PER_DMG);
-  let bonusMsg = '';
+
+  // 데미지에 비례한 즉시 보상은 지급하지 않는다 — 자정(KST)이 지나 그날의 순위가
+  // 완전히 확정된 뒤, checkWorldBossDailyRewards()가 "최종 순위" 기준으로 확정 지급한다.
+  // 막타(킬) 보너스는 순위와 무관한 그 순간의 성과이므로 즉시 지급.
   if(state.wbGotKillingBlow){
-    fragGain += WB_KILL_BONUS_FRAG;
     state.gold += WB_KILL_BONUS_GOLD;
-    bonusMsg = ` (처치 보너스 🪙${WB_KILL_BONUS_GOLD.toLocaleString()} ◈${WB_KILL_BONUS_FRAG} 포함)`;
+    state.fragments += WB_KILL_BONUS_FRAG;
+    log(`⚔️ [월드보스] 처치 보너스! 🪙${WB_KILL_BONUS_GOLD.toLocaleString()} ◈${WB_KILL_BONUS_FRAG} (순위 보상은 자정 이후 확정 지급됩니다)`, 'good');
   }
-  state.gold += goldGain;
-  state.fragments += fragGain;
-
   if(dmg > 0){
-    log(`🎁 [월드보스] 오늘 입힌 피해 ${dmg.toLocaleString()} 기준 보상: 🪙${goldGain.toLocaleString()} ◈${fragGain}${bonusMsg}`, 'good');
+    log(`🎁 [월드보스] 오늘 입힌 피해 ${dmg.toLocaleString()} 기록됨. 오늘의 최종 순위 보상은 내일 접속 시 확정되어 지급됩니다.`, 'good');
   }
 
-  // 리더보드용 일일 누적 데미지 기록 (실패해도 이미 지급된 로컬 보상엔 영향 없음)
+  // 리더보드/일일 순위 산정용 누적 데미지 기록
   try{
     const user = fbAuth.currentUser;
     if(user && dmg > 0){
@@ -282,6 +293,58 @@ async function finalizeWorldBossSession(){
   fetchWorldBossLeaderboard();
 }
 
+// ---------- 일일 순위 보상 확정 지급 ----------
+// 자정(KST)이 지나면 그 날짜의 데미지 기록엔 더 이상 아무도 쓰지 않으므로, 그 시점부터
+// "어제(혹은 그 이전) 날짜"의 순위는 이미 확정된 것으로 본다. 각자 접속할 때 자기 uid로만
+// 조회/지급하므로 다른 유저의 문서를 건드릴 필요가 없어 보안 규칙 변경 없이 동작한다.
+async function settleWorldBossDayReward(day){
+  const user = fbAuth.currentUser;
+  if(!user) return;
+  try{
+    const myRef = fbDb.collection('worldboss_damage').doc(String(day)).collection('hits').doc(user.uid);
+    const mySnap = await myRef.get();
+    if(!mySnap.exists) return; // 그날 참여하지 않았으면 보상 없음
+    const myDamage = mySnap.data().damage || 0;
+    if(myDamage <= 0) return;
+
+    const allSnap = await fbDb.collection('worldboss_damage').doc(String(day)).collection('hits')
+      .orderBy('damage', 'desc').get();
+    let rank = null;
+    let i = 0;
+    allSnap.forEach(doc => {
+      i++;
+      if(doc.id === user.uid) rank = i;
+    });
+    if(!rank) rank = allSnap.size || 1;
+
+    const reward = wbRewardForRank(rank);
+    state.gold += reward.gold;
+    state.fragments += reward.frag;
+    if(reward.soul) state.soul += reward.soul;
+    log(`🏆 [월드보스] ${day}일자 최종 ${rank}위 확정! 보상: 🪙${reward.gold.toLocaleString()} ◈${reward.frag}${reward.soul?` ✦${reward.soul}`:''}`, 'good');
+  }catch(e){
+    console.warn(`월드보스 ${day}일자 순위 보상 정산 실패`, e);
+  }
+}
+
+async function checkWorldBossDailyRewards(){
+  const user = fbAuth.currentUser;
+  if(!user) return;
+  const today = wbDayId();
+  // 한 번도 정산한 적 없는 유저는 "어제부터"만 정산 대상으로 삼는다 (과거 무한 소급 방지)
+  let lastClaimed = (state.wbLastRewardClaimedDay || (today - 1));
+  let anySettled = false;
+  for(let day = lastClaimed + 1; day < today; day++){
+    await settleWorldBossDayReward(day);
+    state.wbLastRewardClaimedDay = day;
+    anySettled = true;
+  }
+  if(anySettled){
+    renderAll();
+    if(typeof saveState === 'function') saveState(false);
+  }
+}
+
 // ---------- 상태 조회 / 리더보드 (전투 중이 아닐 때 화면 표시용) ----------
 async function fetchWorldBossStatus(){
   try{
@@ -309,6 +372,7 @@ async function fetchWorldBossLeaderboard(){
 function startWorldBossSync(){
   fetchWorldBossStatus();
   fetchWorldBossLeaderboard();
+  checkWorldBossDailyRewards(); // 접속 시점에 정산 안 된 지난 날짜 순위 보상이 있으면 확정 지급
   setInterval(fetchWorldBossStatus, 15000);
   setInterval(fetchWorldBossLeaderboard, 30000);
 }
