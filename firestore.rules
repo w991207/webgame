@@ -41,7 +41,7 @@ service cloud.firestore {
           (
             request.resource.data.resetDate == resource.data.resetDate &&
             request.resource.data.hp <= resource.data.hp &&
-            resource.data.hp - request.resource.data.hp <= 80000
+            resource.data.hp - request.resource.data.hp <=resource.data.maxHp
           )
           ||
           // 케이스 B: 날짜값이 이전보다 커지는(=하루 지난) 리셋. hp는 반드시 만땅으로.

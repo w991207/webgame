@@ -44,7 +44,7 @@ function defaultState(){
     maxCritAnnounced: false,
     fragments: 0,
     totalRelicPulls: 0,
-    relics: {hpRelic:0, atkRelic:0, defRelic:0, goldRelic:0, expRelic:0, dropRelic:0, spdRelic:0},
+    relics: {hpRelic:0, atkRelic:0, defRelic:0, goldRelic:0, expRelic:0, dropRelic:0, spdRelic:0, critDmgRelic:0},
     pets: {dragonPet:0, jellyPet:0, crowPet:0, owlPet:0, fairyPet:0, wolfPet:0},
     totalPetSummons: 0,
     usedCoupons: {},
@@ -155,7 +155,7 @@ function stats(){
   const tickMs = Math.max(150, Math.round(1000 / spdMult));
   const dropChance = Math.min(0.6, 0.15 + re.dropRelic*0.015);
   const critChance = Math.min(100, (gu.critChance||0) * 1 + eq.critAdd); // 레벨당 1%, 최대 100%
-  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배
+  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100 + (re.critDmgRelic||0)*0.02; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배 (+유물)
   return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance, critChance, critDamageMult};
 }
 
@@ -179,4 +179,3 @@ function tryLevelUp(){
     needed = expNeeded(state.level);
   }
 }
-

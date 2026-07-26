@@ -35,14 +35,15 @@ const RELICS = [
   {key:'expRelic', name:'지혜의 유물', icon:'📖', perLevel:4, descFn:v=>`경험치 획득 +${v}%`},
   {key:'dropRelic', name:'행운의 유물', icon:'🍀', perLevel:1.5, descFn:v=>`파편 드랍 확률 +${v}%p`},
   {key:'spdRelic', name:'가속의 유물', icon:'⚡', perLevel:3, descFn:v=>`공격 속도 +${v}%`},
+  {key:'critDmgRelic', name:'파괴의 유물', icon:'💥', perLevel:2, descFn:v=>`치명타 피해 +${v}%`},
 ];
 
 const PETS = [
   {
     key:'dragonPet', name:'아기 드래곤', icon:'🐲', interval:8,
-    descFn:lvl=>`${8}초마다 공격력의 ${Math.round((0.4+lvl*0.15)*100)}%만큼 몬스터에게 추가 피해`,
+    descFn:lvl=>`${8}초마다 공격력의 ${Math.round((0.4+lvl*0.026)*100)}%만큼 몬스터에게 추가 피해`,
     trigger:(lvl,s)=>{
-      const dmg = Math.max(1, Math.round(s.atk * (0.4 + lvl*0.15)));
+      const dmg = Math.max(1, Math.round(s.atk * (0.4 + lvl*0.026)));
       state.monsterHp -= dmg;
       if(state.monsterHp < 1) state.monsterHp = 1;
       floatText('🔥-'+dmg, null);
@@ -84,18 +85,18 @@ const PETS = [
   },
   {
     key:'fairyPet', name:'요정', icon:'🧚', interval:15,
-    descFn:lvl=>`${300}초마다 유물 파편 ${Math.floor(lvl/2)+1}개 획득`,
+    descFn:lvl=>`${15}초마다 유물 파편 ${Math.floor(Math.sqrt(lvl)*2)+1}개 획득`,
     trigger:(lvl,s)=>{
-      const f = Math.floor(lvl/2)+1;
+      const f = Math.floor(Math.sqrt(lvl)*2)+1;
       state.fragments += f;
       log(`🧚 요정이 파편을 선물했습니다! +${f}◈`, 'good');
     }
   },
   {
     key:'wolfPet', name:'서리 늑대', icon:'🐺', interval:10,
-    descFn:lvl=>`${10}초마다 몬스터 최대 체력의 ${Math.round((0.02+lvl*0.01)*100)}% 피해`,
+    descFn:lvl=>`${10}초마다 몬스터 최대 체력의 ${Math.round((0.02+lvl*0.0013)*100)}% 피해`,
     trigger:(lvl,s)=>{
-      const dmg = Math.max(1, Math.round(state.monsterMaxHp * (0.02+lvl*0.01)));
+      const dmg = Math.max(1, Math.round(state.monsterMaxHp * (0.02+lvl*0.0013)));
       state.monsterHp -= dmg;
       if(state.monsterHp < 1) state.monsterHp = 1;
       floatText('❄-'+dmg, null);
