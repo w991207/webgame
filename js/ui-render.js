@@ -15,6 +15,9 @@ function renderMonster(){
   if(state.mode === 'tower'){
     document.getElementById('floorBadge').textContent = state.towerCleared ? '🏆 TOWER CLEAR! (100/100)' : ('TOWER ' + state.towerFloor + ' / 100F');
     progressEl.textContent = `무한의 탑 진행 중`;
+  } else if(state.mode === 'towerHard'){
+    document.getElementById('floorBadge').textContent = state.htCleared ? '👑 HARD TOWER CLEAR! (100/100)' : ('HARD TOWER ' + state.htFloor + ' / 100F');
+    progressEl.textContent = `무한의 탑(어려움) 진행 중`;
   } else {
     document.getElementById('floorBadge').textContent = 'FLOOR ' + state.floor;
     if(state.isBoss){
@@ -36,6 +39,13 @@ function renderAll(){
     const unlocked = state.level >= TOWER_UNLOCK_LEVEL;
     towerBtn.textContent = unlocked ? '무한의 탑' : `무한의 탑 🔒(Lv.${TOWER_UNLOCK_LEVEL})`;
     towerBtn.classList.toggle('locked', !unlocked);
+  }
+
+  const towerHardBtn = document.getElementById('modeTowerHardBtn');
+  if(towerHardBtn){
+    const hardUnlocked = !!state.towerCleared;
+    towerHardBtn.textContent = hardUnlocked ? '무한의 탑(어려움)' : '무한의 탑(어려움) 🔒(탑 100층 클리어)';
+    towerHardBtn.classList.toggle('locked', !hardUnlocked);
   }
 
   document.getElementById('statAtk').textContent = s.atk;

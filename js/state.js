@@ -17,6 +17,10 @@ function defaultState(){
     towerHighestFloor: 1,
     towerRewardsClaimed: {},
     towerCleared: false,
+    htFloor: 1,
+    htHighestFloor: 1,
+    htRewardsClaimed: {},
+    htCleared: false,
 
     monsterHp: 0,
     monsterMaxHp: 0,

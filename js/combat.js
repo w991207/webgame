@@ -3,6 +3,9 @@ function monsterHpFor(floor, boss){
   if(state.mode === 'tower'){
     return Math.round(50 * Math.pow(floor, 1.3));
   }
+  if(state.mode === 'towerHard'){
+    return Math.round(300 * Math.pow(floor, 1.5));
+  }
   let hp =
   Math.round(
     35 * Math.pow(floor, 1.45)
@@ -18,6 +21,9 @@ function monsterAtkFor(floor, boss){
       10 + floor*8
     );
   }
+  if(state.mode === 'towerHard'){
+    return Math.round(40 + floor*25);
+  }
   let atk =
   8 + Math.pow(floor, 1.15) * 2.5;
   if(boss)
@@ -30,6 +36,9 @@ function monsterDefFor(floor, boss){
       floor*0.8
     );
   }
+  if(state.mode === 'towerHard'){
+    return Math.round(floor*3.5);
+  }
   let def =
   Math.pow(floor, 1.35) * 0.7;
   if(boss)
@@ -41,6 +50,11 @@ function monsterDefFor(floor, boss){
     if(boss) g *= 3;
     return g;
   }
+  if(state.mode === 'towerHard'){
+    let g = Math.round(600 * Math.pow(1.035, floor - 1));
+    if(boss) g *= 3;
+    return g;
+  }
   let g = Math.round(6 + floor * 2.2);
   if(boss) g *= 8;
   return g;
@@ -48,6 +62,9 @@ function monsterDefFor(floor, boss){
 function expDropFor(floor, boss){
   if(state.mode === 'tower'){
     return Math.round(5 + floor*2.0);
+  }
+  if(state.mode === 'towerHard'){
+    return Math.round(15 + floor*4.0);
   }
   let e = Math.round(3 + floor*1.5);
   if(boss) e *= 8;
@@ -67,6 +84,18 @@ function spawnMonster(){
       state.monsterMaxHp = monsterHpFor(state.towerFloor, state.isBoss);
       state.monsterHp = state.monsterMaxHp;
     }
+  } else if(state.mode === 'towerHard'){
+    if(state.htCleared){
+      state.isBoss = false;
+      state.monsterIndex = -1;
+      state.monsterMaxHp = 1;
+      state.monsterHp = 1;
+    } else {
+      state.isBoss = (state.htFloor % 10 === 0);
+      state.monsterIndex = (state.htFloor - 1) % TOWER_MONSTERS.length;
+      state.monsterMaxHp = monsterHpFor(state.htFloor, state.isBoss);
+      state.monsterHp = state.monsterMaxHp;
+    }
   } else {
     const boss = state.floor % 10 === 0;
     state.isBoss = boss;
@@ -82,6 +111,12 @@ function currentMonsterMeta(){
   if(state.mode === 'tower'){
     if(state.towerCleared){
       return {name:'무한의 탑 정복 완료', emoji:'🏆'};
+    }
+    return TOWER_MONSTERS[state.monsterIndex] || TOWER_MONSTERS[0];
+  }
+  if(state.mode === 'towerHard'){
+    if(state.htCleared){
+      return {name:'무한의 탑(어려움) 정복 완료', emoji:'👑'};
     }
     return TOWER_MONSTERS[state.monsterIndex] || TOWER_MONSTERS[0];
   }
@@ -119,9 +154,13 @@ function playerAttackTick(){
     schedulePlayerTick();
     return;
   }
+  if(state.mode === 'towerHard' && state.htCleared){
+    schedulePlayerTick();
+    return;
+  }
   if(state.monsterHp <= 0) return; // 이미 처치된 경우 무시
 
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : state.floor;
+  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
 
   let dmgToMonster = Math.round(Math.max(1, s.atk - monsterDefFor(currentFloor, state.isBoss)));
   const isCrit = Math.random() * 100 < s.critChance;
@@ -171,6 +210,22 @@ function playerAttackTick(){
         state.towerCleared = true;
         log(`[무한의 탑] 100층 정복 완료! 무한의 탑을 완전히 정복했습니다. 환생 후 다시 도전할 수 있습니다.`, 'good');
       }
+    } else if(state.mode === 'towerHard'){
+      if(state.htFloor % 10 === 0 && !state.htRewardsClaimed[state.htFloor]){
+        state.soul += 3;
+        state.fragments += 8;
+        state.htRewardsClaimed[state.htFloor] = true;
+        log(`[무한의 탑(어려움)] ${state.htFloor}층 첫 돌파 보상! ✦ 영혼석 3개, ◈ 유물 파편 8개 획득!`, 'good');
+      }
+
+      if(state.htFloor < 100){
+        state.htFloor++;
+        state.htHighestFloor = Math.max(state.htHighestFloor, state.htFloor);
+        log(`[무한의 탑(어려움)] ${state.htFloor}층으로 상승합니다!`, 'good');
+      } else if(!state.htCleared){
+        state.htCleared = true;
+        log(`[무한의 탑(어려움)] 100층 정복 완료! 무한의 탑(어려움)을 완전히 정복했습니다. 환생 후 다시 도전할 수 있습니다.`, 'good');
+      }
     } else {
       state.killsOnFloor++;
       const killsNeeded = boss ? 1 : 5;
@@ -211,8 +266,12 @@ function monsterAttackTick(){
     scheduleMonsterTick();
     return;
   }
+  if(state.mode === 'towerHard' && state.htCleared){
+    scheduleMonsterTick();
+    return;
+  }
 
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : state.floor;
+  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
   const monAtk = monsterAtkFor(currentFloor, state.isBoss);
   const dmgToPlayer = Math.round(Math.max(1, monAtk - s.def));
   state.playerHp -= dmgToPlayer;
@@ -223,6 +282,9 @@ function monsterAttackTick(){
     if(state.mode === 'tower'){
       state.playerHp = s.maxHp;
       log(`[무한의 탑] 쓰러졌습니다. 현재 층(${state.towerFloor}층)에 재도합니다.`, 'warn');
+    } else if(state.mode === 'towerHard'){
+      state.playerHp = s.maxHp;
+      log(`[무한의 탑(어려움)] 쓰러졌습니다. 현재 층(${state.htFloor}층)에 재도전합니다.`, 'warn');
     } else {
       state.floor = Math.max(1, state.floor-1);
       state.killsOnFloor = 0;
@@ -253,7 +315,7 @@ function schedulePlayerTick(){
   const floor =
     state.mode === 'tower'
     ? state.towerFloor
-    : state.floor;
+    : (state.mode === 'towerHard' ? state.htFloor : state.floor);
   // 층이 올라갈수록 빨라짐 (최소 0.8초)
   const speed = Math.max(
     800,
@@ -276,12 +338,21 @@ function setMode(mode){
     alert(`무한의 탑은 레벨 ${TOWER_UNLOCK_LEVEL}부터 입장할 수 있습니다. (현재 레벨: ${state.level})`);
     return;
   }
+  if(mode === 'towerHard' && !state.towerCleared){
+    alert('무한의 탑(어려움)은 무한의 탑(100층)을 먼저 정복해야 입장할 수 있습니다.');
+    return;
+  }
   state.mode = mode;
   document.getElementById('modeNormalBtn').classList.toggle('active', mode==='normal');
   document.getElementById('modeTowerBtn').classList.toggle('active', mode==='tower');
-  
-  document.getElementById('arenaTitle').textContent = mode === 'tower' ? '무한의 탑 (100층)' : '회랑';
-  log(`[모드 변경] ${mode==='tower'?'무한의 탑':'황혼의 회랑'} 모드로 전환했습니다.`, 'new');
+  const hardBtn = document.getElementById('modeTowerHardBtn');
+  if(hardBtn) hardBtn.classList.toggle('active', mode==='towerHard');
+
+  document.getElementById('arenaTitle').textContent =
+    mode === 'tower' ? '무한의 탑 (100층)' :
+    mode === 'towerHard' ? '무한의 탑(어려움) (100층)' :
+    '회랑';
+  log(`[모드 변경] ${mode==='tower'?'무한의 탑':mode==='towerHard'?'무한의 탑(어려움)':'황혼의 회랑'} 모드로 전환했습니다.`, 'new');
   
   const s = stats();
   state.playerHp = s.maxHp;
@@ -291,4 +362,6 @@ function setMode(mode){
 
 document.getElementById('modeNormalBtn').addEventListener('click', ()=>setMode('normal'));
 document.getElementById('modeTowerBtn').addEventListener('click', ()=>setMode('tower'));
+const modeTowerHardBtnEl = document.getElementById('modeTowerHardBtn');
+if(modeTowerHardBtnEl) modeTowerHardBtnEl.addEventListener('click', ()=>setMode('towerHard'));
 

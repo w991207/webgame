@@ -203,6 +203,10 @@ document.getElementById('rebirthBtn').addEventListener('click', ()=>{
   state.towerHighestFloor = 1;
   state.towerRewardsClaimed = {};
   state.towerCleared = false;
+  state.htFloor = 1;
+  state.htHighestFloor = 1;
+  state.htRewardsClaimed = {};
+  state.htCleared = false;
   state.mode = 'normal';
   document.getElementById('modeNormalBtn').classList.toggle('active', true);
   document.getElementById('modeTowerBtn').classList.toggle('active', false);
