@@ -22,6 +22,13 @@ async function pushRanking(){
       cp,
       highestFloor: state.highestFloor || state.floor || 1,
       towerHighestFloor: state.towerHighestFloor || 1,
+      // PvP 시뮬레이션(js/pvp.js)에 쓰이는 전투 스탯 스냅샷
+      atk: s.atk,
+      def: s.def,
+      maxHp: s.maxHp,
+      critChance: s.critChance,
+      critDamageMult: s.critDamageMult,
+      tickMs: s.tickMs,
       updatedAt: Date.now(),
     });
   }catch(e){
@@ -52,12 +59,16 @@ async function fetchRanking(){
           <span class="rk-name">${escapeHtml(d.nickname || '익명')}</span>
           <span class="rk-cp">⚡${(d.cp || 0).toLocaleString()}</span>
           <span class="rk-floor">${(d.highestFloor || 1).toLocaleString()}층</span>
+          ${isMe ? '<span></span>' : `<button type="button" class="rk-challenge-btn" data-uid="${doc.id}">⚔️ 도전</button>`}
         </div>
       `);
     });
 
     if(listEl){
       listEl.innerHTML = rowsHtml.join('') || '<div style="font-size:12px;color:var(--text-dim);">아직 등록된 랭킹이 없습니다. 닉네임을 설정하면 첫 번째로 랭킹에 오를 수 있어요!</div>';
+      listEl.querySelectorAll('.rk-challenge-btn').forEach(btn => {
+        btn.addEventListener('click', () => challengePvp(btn.dataset.uid));
+      });
     }
 
     if(myRowEl){

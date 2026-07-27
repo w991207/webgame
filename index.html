@@ -6,7 +6,7 @@
 <title>라스트 존 — 방치형 RPG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -418,6 +418,7 @@
       <span class="rk-name">닉네임</span>
       <span class="rk-cp">전투력</span>
       <span class="rk-floor">최고층</span>
+      <span></span>
     </div>
     <div id="rankingList" class="ranking-list">
       <div style="font-size:12px;color:var(--text-dim);">불러오는 중...</div>
@@ -451,6 +452,14 @@
     <h3>🎁 선물 도착</h3>
     <p id="giftText"></p>
     <button id="giftCloseBtn">닫기</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="pvpResultModal" style="display:none;">
+  <div class="modal">
+    <h3>⚔️ PvP 대전 결과</h3>
+    <div id="pvpResultText"></div>
+    <button id="pvpResultCloseBtn">닫기</button>
   </div>
 </div>
 
@@ -527,6 +536,7 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/ranking.js"></script>
+<script src="js/pvp.js"></script>
 <script src="js/worldboss.js"></script>
 
 <script src="js/tabs.js"></script>
