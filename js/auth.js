@@ -198,29 +198,44 @@ fbAuth.onAuthStateChanged(async (user) => {
     return;
   }
 
-  // 게스트(익명)가 아니라면 → 이 기기의 로컬 세이브 유무를 기준으로 클라우드 데이터를 확인한다.
-  // (이전엔 "이 기기에서 로그인했던 적 있는지"로 판단해서, 처음 로그인하는 새 기기/모바일에서는
-  //  로컬 세이브가 없으니 클라우드 확인 자체를 스킵하고 그냥 새 캐릭터로 시작해버리는 버그가 있었음)
+  // 게스트(익명)가 아니라면 → 로그인할 때마다 매번 로컬/클라우드 세이브를 비교한다.
+  // (이전엔 "이 기기에서 이 계정으로 로그인한 적 있는지"만 봐서, 두 기기 모두 이미 로그인 이력이
+  //  있으면 그 이후로는 클라우드 확인 자체를 건너뛰고 각자 자기 로컬 세이브만 계속 밀어올리기만 해서
+  //  기기별로 진행 상황이 점점 벌어지는 문제가 있었음. 매번 비교하도록 수정.)
   if(!user.isAnonymous){
     let hasLocalSave = false;
+    let localData = null;
     try{
       const local = await storageGet('save');
       hasLocalSave = !!(local && local.value);
+      if(hasLocalSave) localData = JSON.parse(local.value);
     }catch(e){}
 
-    const isNewUidOnThisDevice = previousKnownUid !== user.uid;
+    const cloud = await cloudPullSave(user.uid);
 
-    if(!hasLocalSave || isNewUidOnThisDevice){
-      const cloud = await cloudPullSave(user.uid);
-      if(cloud && cloud.data){
-        if(!hasLocalSave){
-          // 이 기기에는 잃을 진행 상황이 없으므로 바로 클라우드 데이터를 적용
-          if(typeof processImportedData === 'function') processImportedData(cloud.data);
-        } else {
+    if(cloud && cloud.data){
+      if(!hasLocalSave){
+        // 이 기기에는 잃을 진행 상황이 없으므로 바로 클라우드 데이터를 적용
+        if(typeof processImportedData === 'function') processImportedData(cloud.data);
+      } else {
+        const localLastSave = localData?.lastSave || 0;
+        const cloudLastSave = cloud.updatedAt || 0;
+
+        // 5초 이상 차이 날 때만 물어봄 (오차/거의 동시 저장으로 인한 불필요한 confirm 방지)
+        if(cloudLastSave > localLastSave + 5000){
+          let cloudSummary = '';
+          try{
+            const cloudData = JSON.parse(cloud.data);
+            cloudSummary = `Lv.${cloudData.level||1}, 최고 ${cloudData.highestFloor||1}층`;
+          }catch(e){ cloudSummary = '(정보 확인 불가)'; }
+          const localSummary = `Lv.${localData.level||1}, 최고 ${localData.highestFloor||1}층`;
+
           const useCloud = confirm(
-            '이 계정에 저장된 진행 상황을 발견했습니다.\n' +
-            '[확인] = 계정에 저장된 데이터를 불러옵니다 (현재 기기의 진행 상황은 대체됩니다)\n' +
-            '[취소] = 현재 기기의 진행 상황을 그대로 유지합니다'
+            '이 계정에 더 최신 진행 상황이 있습니다.\n\n' +
+            `[이 기기]  ${localSummary}\n` +
+            `[클라우드] ${cloudSummary}\n\n` +
+            '[확인] = 클라우드 데이터를 불러옵니다 (이 기기의 진행 상황은 대체됩니다)\n' +
+            '[취소] = 이 기기의 진행 상황을 그대로 유지합니다 (클라우드가 이걸로 갱신됩니다)'
           );
           if(useCloud && typeof processImportedData === 'function'){
             processImportedData(cloud.data);
