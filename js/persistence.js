@@ -35,6 +35,7 @@ function processImportedData(jsonStr){
     state.usedCoupons = loaded.usedCoupons || {};
     state.towerRewardsClaimed = loaded.towerRewardsClaimed || {};
     state.htRewardsClaimed = loaded.htRewardsClaimed || {};
+    state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
     // 세이브 시점에 레이드가 진행 중이었다면 안전하게 종료 처리 (티켓은 이미 소모된 상태로 유지)
     if(state.raidActive) log('가져온 세이브에서 중단된 레이드가 종료 처리되었습니다.', 'warn');
     state.raidActive = false;
@@ -154,6 +155,7 @@ async function loadState(){
       state.usedCoupons = loaded.usedCoupons || {};
       state.towerRewardsClaimed = loaded.towerRewardsClaimed || {};
       state.htRewardsClaimed = loaded.htRewardsClaimed || {};
+      state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
       // 세이브 시점에 레이드가 진행 중이었다면 안전하게 종료 처리 (티켓은 이미 소모된 상태로 유지)
       if(state.raidActive) log('이전에 진행 중이던 레이드가 저장 시점에 중단되어 종료 처리되었습니다.', 'warn');
       state.raidActive = false;

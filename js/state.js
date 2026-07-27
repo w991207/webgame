@@ -53,6 +53,7 @@ function defaultState(){
     totalPetSummons: 0,
     mutation: {points:0, totalEarned:0, nodes:{}},
     usedCoupons: {},
+    claimedGlobalGifts: {},
     lastSave: Date.now(),
     attendance: {
       day: 0,

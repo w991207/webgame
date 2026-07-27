@@ -56,7 +56,65 @@ async function checkGifts(){
   }
 }
 
-// 선물 도착 팝업 표시 (여러 선물이 겹치면 줄바꿈으로 이어붙여 큐처럼 보여줌)
+// ---------- 전체 유저 선물 (브로드캐스트) ----------
+// 위 gifts 컬렉션은 유저 한 명 한 명마다 문서를 만들어야 해서, 전체 지급에는 비효율적입니다.
+// globalGifts 컬렉션은 문서 '딱 1개'만 만들면 접속하는 모든 유저가 각자 알아서 수령합니다.
+// 누가 이미 받았는지는 각 유저의 세이브(state.claimedGlobalGifts)에 문서 id로 기록해서 구분하므로,
+// 관리자가 유저 수만큼 문서를 만들거나 수령 여부를 따로 관리할 필요가 없습니다.
+//
+// Firebase 콘솔에서 globalGifts 컬렉션에 문서 추가 (문서 ID는 자동생성 그대로 둬도 됨):
+//   gold:  50000   (선택, 없으면 0)
+//   frag:  0       (선택, 유산 파편)
+//   soul:  0       (선택, 혈청)
+//   note:  "사유"  (선택, 관리자 참고용, 게임에는 표시 안 됨)
+// claimed 필드는 필요 없습니다 (유저별 수령 여부는 서버가 아니라 각자의 세이브에 저장되기 때문).
+// 이미 지급한 선물 문서를 지우거나 새로 하나 더 추가하면, 지운 건 더 이상 지급되지 않고
+// 새로 추가한 건 아직 못 받은 유저에게만 나갑니다.
+
+async function checkGlobalGifts(){
+  const user = fbAuth.currentUser;
+  if(!user) return;
+
+  try{
+    const snapshot = await fbDb.collection('globalGifts').get();
+    if(snapshot.empty) return;
+
+    let totalGold = 0, totalFrag = 0, totalSoul = 0;
+    let newlyClaimedCount = 0;
+
+    snapshot.forEach(doc=>{
+      if(state.claimedGlobalGifts[doc.id]) return; // 이미 받은 선물
+      const g = doc.data();
+      totalGold += Number(g.gold) || 0;
+      totalFrag += Number(g.frag) || 0;
+      totalSoul += Number(g.soul) || 0;
+      state.claimedGlobalGifts[doc.id] = true;
+      newlyClaimedCount++;
+    });
+
+    if(newlyClaimedCount === 0) return;
+
+    if(totalGold !== 0) state.gold = Math.max(0, state.gold + totalGold);
+    if(totalFrag !== 0) state.fragments = Math.max(0, (state.fragments||0) + totalFrag);
+    if(totalSoul !== 0) state.soul = Math.max(0, state.soul + totalSoul);
+
+    const parts = [];
+    if(totalGold !== 0) parts.push(`📦 물자 ${totalGold.toLocaleString()}`);
+    if(totalFrag !== 0) parts.push(`◈ 유산 파편 ${totalFrag.toLocaleString()}`);
+    if(totalSoul !== 0) parts.push(`🧪 혈청 ${totalSoul.toLocaleString()}`);
+    if(parts.length > 0){
+      log(`🎁 전체 유저 대상 선물을 받았습니다! (${parts.join(' ')})`, 'good');
+      showGiftModal(parts);
+    }
+
+    if(typeof renderAll === 'function') renderAll();
+    if(typeof saveState === 'function') saveState(false); // claimedGlobalGifts 기록을 즉시 저장 (재수령 방지)
+  }catch(e){
+    console.warn('전체 선물 확인 실패', e);
+  }
+}
+
+
 function showGiftModal(parts){
   const modal = document.getElementById('giftModal');
   const textEl = document.getElementById('giftText');
@@ -82,5 +140,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
 
 // 로그인 상태에서 1분마다 자동으로 확인 (관리자가 접속 중에 선물을 넣어줘도 바로 받게)
 setInterval(()=>{
-  if(fbAuth.currentUser) checkGifts();
+  if(fbAuth.currentUser){
+    checkGifts();
+    checkGlobalGifts();
+  }
 }, 60000);
