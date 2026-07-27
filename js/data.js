@@ -66,7 +66,7 @@ const PETS = [
     key:'crowPet', name:'까마귀', icon:'🐦', interval:12,
     descFn:lvl=>`${12}초마다 골드 즉시 획득 (레벨 비례)`,
     trigger:(lvl,s)=>{
-      const currentFloor = state.mode==='tower' ? state.towerFloor : state.floor;
+      const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : state.floor);
       const g = Math.round(goldDropFor(currentFloor,false) * s.goldMult * (0.4+lvl*0.2));
       state.gold += g;
       log(`🐦 까마귀가 골드를 물어왔습니다! +${g}🪙`, 'good');
@@ -76,7 +76,7 @@ const PETS = [
     key:'owlPet', name:'부엉이', icon:'🦉', interval:12,
     descFn:lvl=>`${12}초마다 경험치 즉시 획득 (레벨 비례)`,
     trigger:(lvl,s)=>{
-      const currentFloor = state.mode==='tower' ? state.towerFloor : state.floor;
+      const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : state.floor);
       const e = Math.round(expDropFor(currentFloor,false) * s.expMult * (0.4+lvl*0.2));
       state.exp += e;
       tryLevelUp();
