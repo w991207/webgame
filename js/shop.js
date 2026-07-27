@@ -17,27 +17,28 @@ function bulkCost(baseCost, mult, startLvl, n){
 
 function renderShop(){
   const container = document.getElementById('shopList');
-  container.innerHTML = '';
-  GOLD_UPGRADES.forEach(u=>{
-    const lvl = state.goldUpgrades[u.key] || 0;
-    const maxed = u.maxLevel && lvl >= u.maxLevel;
-    const remainToMax = u.maxLevel ? Math.max(0, u.maxLevel - lvl) : Infinity;
-    const buyN = Math.min(shopBuyMultiplier, remainToMax);
-    const cost = bulkCost(u.baseCost, u.mult, lvl, buyN);
-    const label = maxed ? '최대' : (buyN <= 0 ? '최대' : `${cost.toLocaleString()} 🪙 (x${buyN})`);
-    const row = document.createElement('div');
-    row.className = 'shop-item';
-    row.innerHTML = `
-      <div class="info">
-        <div class="name">${u.name} <span class="lvl-tag">Lv.${lvl}</span></div>
-        <div class="desc">${u.desc}</div>
-      </div>
-      <button class="buy" ${(maxed||buyN<=0)? 'disabled':''} data-key="${u.key}">${label}</button>
-    `;
-    container.appendChild(row);
-    const btn = row.querySelector('button');
-    if(!maxed && buyN > 0){
-      btn.disabled = state.gold < cost;
+
+  const needsFullBuild = container.children.length !== GOLD_UPGRADES.length
+    || container.dataset.builtMult !== String(shopBuyMultiplier);
+
+  if(needsFullBuild){
+    container.innerHTML = '';
+    container.dataset.builtMult = String(shopBuyMultiplier);
+
+    GOLD_UPGRADES.forEach(u=>{
+      const row = document.createElement('div');
+      row.className = 'shop-item';
+      row.dataset.key = u.key;
+      row.innerHTML = `
+        <div class="info">
+          <div class="name"><span class="uname"></span> <span class="lvl-tag"></span></div>
+          <div class="desc">${u.desc}</div>
+        </div>
+        <button class="buy" data-key="${u.key}"></button>
+      `;
+      container.appendChild(row);
+
+      const btn = row.querySelector('button');
       btn.addEventListener('click', ()=>{
         const remain = u.maxLevel ? Math.max(0, u.maxLevel - (state.goldUpgrades[u.key]||0)) : Infinity;
         const n = Math.min(shopBuyMultiplier, remain);
@@ -54,36 +55,77 @@ function renderShop(){
           renderAll();
         }
       });
-    }
+    });
+  }
+
+  // 매번 여기서부터: 기존 요소는 그대로 두고 텍스트/비활성화 상태만 갱신 (클릭 씹힘 방지)
+  GOLD_UPGRADES.forEach(u=>{
+    const row = container.querySelector(`.shop-item[data-key="${u.key}"]`);
+    if(!row) return;
+
+    const lvl = state.goldUpgrades[u.key] || 0;
+    const maxed = u.maxLevel && lvl >= u.maxLevel;
+    const remainToMax = u.maxLevel ? Math.max(0, u.maxLevel - lvl) : Infinity;
+    const buyN = Math.min(shopBuyMultiplier, remainToMax);
+    const cost = bulkCost(u.baseCost, u.mult, lvl, buyN);
+    const label = maxed ? '최대' : (buyN <= 0 ? '최대' : `${cost.toLocaleString()} 🪙 (x${buyN})`);
+
+    row.querySelector('.uname').textContent = u.name;
+    row.querySelector('.lvl-tag').textContent = `Lv.${lvl}`;
+
+    const btn = row.querySelector('button');
+    const disabled = maxed || buyN <= 0 || state.gold < cost;
+    if(btn.disabled !== disabled) btn.disabled = disabled;
+    if(btn.textContent !== label) btn.textContent = label;
   });
 }
 
 function renderSoulShop(){
   const container = document.getElementById('soulShopList');
-  container.innerHTML = '';
+
+  const needsFullBuild = container.children.length !== SOUL_UPGRADES.length;
+
+  if(needsFullBuild){
+    container.innerHTML = '';
+    SOUL_UPGRADES.forEach(u=>{
+      const row = document.createElement('div');
+      row.className = 'shop-item';
+      row.dataset.key = u.key;
+      row.innerHTML = `
+        <div class="info">
+          <div class="name"><span class="uname"></span> <span class="lvl-tag"></span></div>
+          <div class="desc">${u.desc}</div>
+        </div>
+        <button class="buy soul" data-key="${u.key}"></button>
+      `;
+      container.appendChild(row);
+
+      const btn = row.querySelector('button');
+      btn.addEventListener('click', ()=>{
+        const cost = state.soulUpgrades[u.key] + 2;
+        if(state.soul >= cost){
+          state.soul -= cost;
+          state.soulUpgrades[u.key]++;
+          log(`${u.name} 영구 강화! (Lv.${state.soulUpgrades[u.key]})`, 'good');
+          renderAll();
+        }
+      });
+    });
+  }
+
   SOUL_UPGRADES.forEach(u=>{
+    const row = container.querySelector(`.shop-item[data-key="${u.key}"]`);
+    if(!row) return;
     const lvl = state.soulUpgrades[u.key];
     const cost = lvl+2;
-    const row = document.createElement('div');
-    row.className = 'shop-item';
-    row.innerHTML = `
-      <div class="info">
-        <div class="name">${u.name} <span class="lvl-tag">Lv.${lvl}</span></div>
-        <div class="desc">${u.desc}</div>
-      </div>
-      <button class="buy soul" data-key="${u.key}">${cost.toLocaleString()} ✦</button>
-    `;
-    container.appendChild(row);
+
+    row.querySelector('.uname').textContent = u.name;
+    row.querySelector('.lvl-tag').textContent = `Lv.${lvl}`;
+
     const btn = row.querySelector('button');
-    btn.disabled = state.soul < cost;
-    btn.addEventListener('click', ()=>{
-      if(state.soul >= cost){
-        state.soul -= cost;
-        state.soulUpgrades[u.key]++;
-        log(`${u.name} 영구 강화! (Lv.${state.soulUpgrades[u.key]})`, 'good');
-        renderAll();
-      }
-    });
+    const label = `${cost.toLocaleString()} ✦`;
+    const disabled = state.soul < cost;
+    if(btn.disabled !== disabled) btn.disabled = disabled;
+    if(btn.textContent !== label) btn.textContent = label;
   });
 }
-
