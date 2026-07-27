@@ -1,17 +1,17 @@
-// ---------- Gold Dungeon (골드 던전) ----------
+// ---------- Gold Dungeon (물자 구역) ----------
 // 티켓제: 최대 3개, 15분마다 1개 충전 (오프라인 시간도 반영됨 - 확인 시점에 경과시간으로 계산)
 // 층수: 우선 1~10층까지 (추후 업데이트로 확장 예정)
 // 난이도: 1층 = 무한의 탑 10층 정도, 이후 층마다 약 1.33배씩 강해짐
-// 보상: 층수별 확정 골드 지급. 1층 5,000골드부터 시작해 층마다 1.5배씩 증가
+// 보상: 층수별 확정 물자 지급. 1층 5,000물자부터 시작해 층마다 1.5배씩 증가
 
 const GOLD_DUNGEON_TICKET_MAX = 3;
 const GOLD_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
 const GOLD_DUNGEON_MAX_FLOOR = 10;
 
-const GOLD_DUNGEON_META = {name:'황금 수호병', emoji:'💰'};
+const GOLD_DUNGEON_META = {name:'물자 창고 경비병', emoji:'📦'};
 
 // 층별 고정 스탯. 1층은 무한의 탑 10층(보스) 수준으로 맞추고, 10층은 1인 레이드에 근접하는 난이도.
-// 이 네 함수의 배율(1.33, 1.5)만 조절하면 던전 전체 난이도/보상 곡선을 바꿀 수 있음.
+// 이 네 함수의 배율(1.33, 1.5)만 조절하면 구역 전체 난이도/보상 곡선을 바꿀 수 있음.
 function gdHpFor(floor){ return Math.round(1600 * Math.pow(1.33, floor-1)); }
 function gdAtkFor(floor){ return Math.round(27 * Math.pow(1.33, floor-1)); }
 function gdDefFor(floor){ return Math.round(8 * Math.pow(1.33, floor-1)); }
@@ -40,21 +40,21 @@ let gdMonsterTickHandle = null;
 
 function enterGoldDungeon(){
   if(state.gdCleared){
-    alert('골드 던전을 모두 정복했습니다! 다음 업데이트로 층이 추가될 예정입니다.');
+    alert('물자 구역을 모두 정복했습니다! 다음 업데이트로 층이 추가될 예정입니다.');
     return;
   }
   if(state.gdActive) return;
   if(state.raidActive || state.rdActive){
-    alert('다른 전투(레이드/유물 던전) 진행 중에는 골드 던전에 입장할 수 없습니다.');
+    alert('다른 전투(레이드/유산 구역) 진행 중에는 물자 구역에 입장할 수 없습니다.');
     return;
   }
   refreshGoldDungeonTickets();
   if(state.gdTicket <= 0){
-    alert('골드 던전 티켓이 부족합니다. (15분마다 1개씩 충전됩니다)');
+    alert('물자 구역 티켓이 부족합니다. (15분마다 1개씩 충전됩니다)');
     renderGoldDungeonPanel();
     return;
   }
-  if(!confirm(`골드 던전 ${state.gdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
+  if(!confirm(`물자 구역 ${state.gdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
 
   state.gdTicket--;
   state.gdActive = true;
@@ -63,11 +63,11 @@ function enterGoldDungeon(){
   const s = stats();
   state.gdPlayerHp = s.maxHp;
 
-  // 골드 던전 동안 회랑/무한의 탑 메인 전투 루프는 일시 정지
+  // 물자 구역 동안 폐허/무한의 탑 메인 전투 루프는 일시 정지
   clearTimeout(playerTickHandle);
   clearTimeout(monsterTickHandle);
 
-  log(`💰 [골드 던전] ${state.gdFloor}층 ${GOLD_DUNGEON_META.name}에게 도전합니다!`, 'new');
+  log(`📦 [물자 구역] ${state.gdFloor}층 ${GOLD_DUNGEON_META.name}에게 도전합니다!`, 'new');
   renderAll();
   scheduleGdPlayerTick();
   scheduleGdMonsterTick();
@@ -124,11 +124,11 @@ function resolveGoldDungeonVictory(){
   const goldGain = gdGoldFor(state.gdFloor);
   state.gold += goldGain;
   state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + goldGain;
-  log(`🏆 [골드 던전] ${state.gdFloor}층 클리어! +${goldGain.toLocaleString()}🪙`, 'good');
+  log(`🏆 [물자 구역] ${state.gdFloor}층 클리어! +${goldGain.toLocaleString()}📦`, 'good');
 
   if(state.gdFloor >= GOLD_DUNGEON_MAX_FLOOR){
     state.gdCleared = true;
-    log(`💰 골드 던전을 모두 정복했습니다! (추가 층 업데이트 예정)`, 'good');
+    log(`📦 물자 구역을 모두 정복했습니다! (추가 층 업데이트 예정)`, 'good');
   } else {
     state.gdFloor++;
   }
@@ -136,7 +136,7 @@ function resolveGoldDungeonVictory(){
 }
 
 function resolveGoldDungeonDefeat(){
-  log(`💀 [골드 던전] ${state.gdFloor}층에서 패배했습니다. 다음 티켓으로 다시 도전하세요.`, 'warn');
+  log(`💀 [물자 구역] ${state.gdFloor}층에서 패배했습니다. 다음 티켓으로 다시 도전하세요.`, 'warn');
   endGoldDungeon();
 }
 

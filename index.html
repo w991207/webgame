@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>황혼의 회랑 — 방치형 RPG</title>
+<title>라스트 존 — 방치형 RPG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
@@ -14,8 +14,8 @@
 <!-- ---------- 로그인/회원가입 게이트 (인증 전까지 게임 화면을 가림) ---------- -->
 <div id="authGateOverlay" class="auth-gate-overlay">
   <div class="auth-gate-card">
-    <h1 class="auth-gate-title">황혼의 회랑</h1>
-    <div class="auth-gate-subtitle">TWILIGHT CORRIDOR</div>
+    <h1 class="auth-gate-title">라스트 존</h1>
+    <div class="auth-gate-subtitle">LAST ZONE</div>
 
     <div class="auth-gate-tabs">
       <button class="auth-gate-tab active" id="gateTabLogin">로그인</button>
@@ -48,16 +48,16 @@
 
 <div class="wrap" id="mainWrap" style="display:none;">
   <header>
-    <h1>황혼의 회랑</h1>
-    <div class="subtitle">TWILIGHT CORRIDOR · 방치형 던전 RPG</div>
+    <h1>라스트 존</h1>
+    <div class="subtitle">LAST ZONE · 방치형 생존 RPG</div>
     <div class="mode-switch-bar">
-      <button class="mode-btn active" id="modeNormalBtn">회랑 (기본 모드)</button>
+      <button class="mode-btn active" id="modeNormalBtn">폐허 (기본 모드)</button>
       <button class="mode-btn" id="modeTowerBtn">무한의 탑 (100층)</button>
       <button class="mode-btn" id="modeTowerHardBtn">무한의 탑(어려움) 🔒</button>
     </div>
     <div class="currency-bar">
-      <div class="currency gold"><span class="ico">🪙</span><span id="goldDisplay">0</span></div>
-      <div class="currency soul"><span class="ico">✦</span><span id="soulDisplay">0</span></div>
+      <div class="currency gold"><span class="ico">📦</span><span id="goldDisplay">0</span></div>
+      <div class="currency soul"><span class="ico">🧪</span><span id="soulDisplay">0</span></div>
       <div class="currency frag"><span class="ico">◈</span><span id="fragDisplay">0</span></div>
       <div class="currency lvl"><span class="ico">Lv</span><span id="lvlDisplay">1</span></div>
     </div>
@@ -77,7 +77,7 @@
       <div class="stat-row"><span class="label">방어력</span><span class="val" id="statDef">-</span></div>
       <div class="stat-row"><span class="label">최대 체력</span><span class="val" id="statHp">-</span></div>
       <div class="stat-row"><span class="label">공격 속도</span><span class="val" id="statSpd">-</span></div>
-      <div class="stat-row"><span class="label">골드 획득</span><span class="val" id="statGold">-</span></div>
+      <div class="stat-row"><span class="label">물자 획득</span><span class="val" id="statGold">-</span></div>
       <div class="stat-row"><span class="label">경험치 획득</span><span class="val" id="statExpMult">-</span></div>
       <div class="stat-row"><span class="label">치명타 확률</span><span class="val" id="statCritChance">-</span></div>
       <div class="stat-row"><span class="label">치명타 피해</span><span class="val" id="statCritDamage">-</span></div>
@@ -86,14 +86,14 @@
         <div class="exp-bar-outer"><div class="exp-bar-inner" id="expBar" style="width:0%"></div></div>
       </div>
       <div class="rebirth-box">
-        <p id="rebirthDesc">15층 이상 도달 시 <b>환생</b>이 가능합니다. 환생하면 진행이 초기화되지만 영혼석을 얻어 영구 강화를 살 수 있습니다.</p>
+        <p id="rebirthDesc">15층 이상 도달 시 <b>환생</b>이 가능합니다. 환생하면 진행이 초기화되지만 혈청을 얻어 영구 강화를 살 수 있습니다.</p>
         <button class="rebirth" id="rebirthBtn">환생하기</button>
       </div>
     </div>
 
     <!-- CENTER: Arena -->
     <div class="panel arena">
-      <h2 id="arenaTitle">회랑</h2>
+      <h2 id="arenaTitle">폐허</h2>
       <div class="floor-badge" id="floorBadge">FLOOR 1</div>
       <div class="arch" id="arenaBox">
         <div class="boss-tag" id="bossTag" style="display:none;">BOSS</div>
@@ -113,7 +113,7 @@
 
     <!-- RIGHT: Shop -->
     <div class="panel">
-      <h2>강화 (골드)
+      <h2>강화 (물자)
         <span id="buyMultGroup" style="float:right;display:flex;gap:4px;">
           <button class="buy-mult-btn active" data-mult="1">x1</button>
           <button class="buy-mult-btn" data-mult="5">x5</button>
@@ -121,14 +121,14 @@
         </span>
       </h2>
       <div id="shopList"></div>
-      <h2 style="margin-top:16px;">영구 강화 (영혼석)</h2>
+      <h2 style="margin-top:16px;">영구 강화 (혈청)</h2>
       <div id="soulShopList"></div>
     </div>
   </div>
 
   <div class="tab-nav" id="tabNav">
     <button class="tab-nav-btn active" data-tab="tab-growth">⚔️ 성장</button>
-    <button class="tab-nav-btn" data-tab="tab-dungeon">🏰 던전</button>
+    <button class="tab-nav-btn" data-tab="tab-dungeon">🏚️ 구역</button>
     <button class="tab-nav-btn" data-tab="tab-event">🎁 이벤트</button>
     <button class="tab-nav-btn" data-tab="tab-account">👤 계정</button>
   </div>
@@ -142,8 +142,8 @@
       </span>
     </h2>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-      골드로 무기·방어구를 뽑습니다. 뽑기 등급(초급~전설)이 높을수록 비용은 크게 오르지만, 더 높은 희귀도와 좋은 옵션이 나올 확률이 오릅니다.
-      무기는 <b>공격력</b>을, 방어구는 <b>방어력</b>을 올려주며, <span style="color:#4fa3e3">희귀</span> 등급부터는 치명타/공격속도/체력/골드·경험치 획득 같은 추가 옵션이 함께 붙습니다.
+      물자로 무기·방어구를 뽑습니다. 뽑기 등급(초급~전설)이 높을수록 비용은 크게 오르지만, 더 높은 희귀도와 좋은 옵션이 나올 확률이 오릅니다.
+      무기는 <b>공격력</b>을, 방어구는 <b>방어력</b>을 올려주며, <span style="color:#4fa3e3">희귀</span> 등급부터는 치명타/공격속도/체력/물자·경험치 획득 같은 추가 옵션이 함께 붙습니다.
       같은 등급을 반복해서 뽑을수록 비용이 조금씩 오르며, 중급·고급·전설 뽑기는 바로 아래 등급을 일정 횟수 뽑아야 해금됩니다.
     </p>
     <div class="equip-info-table" id="equipRarityInfo"></div>
@@ -161,27 +161,36 @@
   </div>
 
   <div class="panel relic-panel">
-    <h2>유물 뽑기</h2>
+    <h2>유산 뽑기</h2>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-      몬스터 처치 시 15% 확률로 <span style="color:var(--frag)">◈ 유물 파편</span>을 얻습니다. 파편을 모아 유물을 뽑으면 무작위 유물의 레벨이 오르며 효과가 영구적으로 강해집니다.
+      변이체 처치 시 15% 확률로 <span style="color:var(--frag)">◈ 유산 파편</span>을 얻습니다. 파편을 모아 유산을 뽑으면 무작위 유산의 레벨이 오르며 효과가 영구적으로 강해집니다.
     </p>
     <div class="relic-pull-row">
       <div class="frag-count">보유 파편: ◈ <span id="fragDisplay2">0</span></div>
-      <button class="pull-relic" id="pullRelicBtn">유물 뽑기 (<span id="pullCostText">-</span> 파편)</button>
+      <button class="pull-relic" id="pullRelicBtn">유산 뽑기 (<span id="pullCostText">-</span> 파편)</button>
     </div>
     <div class="relic-grid" id="relicGrid"></div>
   </div>
 
   <div class="panel relic-panel">
-    <h2>펫</h2>
+    <h2>동료</h2>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-      유물이 지속 스탯 보너스라면, 펫은 <b>시간마다 자동으로 발동하는 능동 효과</b>를 줍니다 (일정 주기로 추가 피해, 회복, 골드/경험치/파편 즉시 획득 등). 같은 ◈ 파편으로 소환하며, 중복 소환 시 레벨이 올라 효과가 강해집니다.
+      유산이 지속 스탯 보너스라면, 동료는 <b>시간마다 자동으로 발동하는 능동 효과</b>를 줍니다 (일정 주기로 추가 피해, 회복, 물자/경험치/파편 즉시 획득 등). 같은 ◈ 파편으로 소환하며, 중복 소환 시 레벨이 올라 효과가 강해집니다.
     </p>
     <div class="relic-pull-row">
       <div class="frag-count">보유 파편: ◈ <span id="fragDisplay3">0</span></div>
-      <button class="pull-relic" id="summonPetBtn">펫 소환 (<span id="petCostText">-</span> 파편)</button>
+      <button class="pull-relic" id="summonPetBtn">동료 소환 (<span id="petCostText">-</span> 파편)</button>
     </div>
     <div class="relic-grid" id="petGrid"></div>
+  </div>
+
+  <div class="panel relic-panel">
+    <h2>🧬 돌연변이 각성</h2>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+      레벨업(+1)과 보스 처치(+3)로 <b>적응 포인트</b>를 얻습니다. 포인트를 소모해 신체를 영구히 변이시켜 전투 특성을 강화하세요. 각 갈래의 2·3번째 노드는 이전 노드를 5레벨 이상 찍어야 해금됩니다.
+    </p>
+    <div class="frag-count">🧬 적응 포인트: <span id="mutationPointsText">0</span></div>
+    <div class="mutation-tree" id="mutationTree"></div>
   </div>
   </div><!-- /tab-growth -->
 
@@ -195,7 +204,7 @@
     </div>
     <div id="raidUnlockedBox" style="display:none;">
       <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-        무한의 탑 100층을 클리어한 강자를 위한 강력한 1인 보스전입니다. 클리어 시 ◈ 유물 파편을 확정으로 얻고, 낮은 확률로 <span style="color:var(--frag)">레이드 장비</span>를 획득합니다 (연속 미획득 시 천장 시스템으로 확정 지급).
+        무한의 탑 100층을 클리어한 강자를 위한 강력한 1인 보스전입니다. 클리어 시 ◈ 유산 파편을 확정으로 얻고, 낮은 확률로 <span style="color:var(--frag)">레이드 장비</span>를 획득합니다 (연속 미획득 시 천장 시스템으로 확정 지급).
       </p>
       <div class="relic-pull-row">
         <div class="frag-count">🎫 티켓: <span id="raidTicketText">0/3</span> <span id="raidTicketTimer" style="color:var(--text-dim);font-size:11px;"></span></div>
@@ -206,7 +215,7 @@
       <div id="raidBattleBox" style="display:none;margin-top:14px;">
         <div class="floor-badge">RAID BATTLE</div>
         <div class="arch" style="max-width:200px;">
-          <div class="monster-emoji" id="raidBossEmoji">🌌</div>
+          <div class="monster-emoji" id="raidBossEmoji">☣️</div>
         </div>
         <div class="monster-name" id="raidBossName">-</div>
         <div class="hp-bar-outer"><div class="hp-bar-inner" id="raidBossHpBar" style="width:100%"></div></div>
@@ -232,9 +241,9 @@
       </p>
       <div class="floor-badge">WORLD BOSS</div>
       <div class="arch" style="max-width:200px;">
-        <div class="monster-emoji" id="wbBossEmoji">👹</div>
+        <div class="monster-emoji" id="wbBossEmoji">🧟</div>
       </div>
-      <div class="monster-name" id="wbBossName">멸망을 고하는 태초종, 아스모드</div>
+      <div class="monster-name" id="wbBossName">창세의 균주, 제로</div>
       <div class="hp-bar-outer"><div class="hp-bar-inner" id="wbBossHpBar" style="width:100%"></div></div>
       <div class="hp-text" id="wbBossHpText">불러오는 중...</div>
 
@@ -259,21 +268,21 @@
   </div>
 
   <div class="panel relic-panel">
-    <h2>골드 던전</h2>
+    <h2>물자 구역</h2>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-      순서대로 도전하는 10층짜리 골드 전용 던전입니다. 클리어할 때마다 확정 골드를 지급하며, 층이 오를수록 몬스터도 보상도 크게 강해집니다.
+      순서대로 도전하는 10층짜리 물자 전용 구역입니다. 클리어할 때마다 확정 물자를 지급하며, 층이 오를수록 변이체도 보상도 크게 강해집니다.
     </p>
     <div class="relic-pull-row">
       <div class="frag-count">📍 층수: <span id="gdFloorText">1/10</span></div>
       <div class="frag-count">🎫 티켓: <span id="gdTicketText">0/3</span> <span id="gdTicketTimer" style="color:var(--text-dim);font-size:11px;"></span></div>
     </div>
-    <div class="frag-count" style="margin-top:6px;">다음 클리어 보상: <span id="gdNextReward">-</span> 🪙</div>
+    <div class="frag-count" style="margin-top:6px;">다음 클리어 보상: <span id="gdNextReward">-</span> 📦</div>
     <button class="pull-relic" id="gdEnterBtn" style="width:100%;margin-top:10px;">도전</button>
 
     <div id="gdBattleBox" style="display:none;margin-top:14px;">
       <div class="floor-badge">GOLD DUNGEON</div>
       <div class="arch" style="max-width:200px;">
-        <div class="monster-emoji" id="gdMonsterEmoji">💰</div>
+        <div class="monster-emoji" id="gdMonsterEmoji">📦</div>
       </div>
       <div class="monster-name" id="gdMonsterName">-</div>
       <div class="hp-bar-outer"><div class="hp-bar-inner" id="gdMonsterHpBar" style="width:100%"></div></div>
@@ -284,9 +293,9 @@
   </div>
 
   <div class="panel relic-panel">
-    <h2>유물 던전</h2>
+    <h2>유산 구역</h2>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-      골드 던전과 같은 방식의 10층짜리 던전이지만, 보상이 <span style="color:var(--frag)">◈ 유물 파편</span>입니다. 층이 오를수록 몬스터도 파편 보상도 크게 강해집니다.
+      물자 구역과 같은 방식의 10층짜리 구역이지만, 보상이 <span style="color:var(--frag)">◈ 유산 파편</span>입니다. 층이 오를수록 변이체도 파편 보상도 크게 강해집니다.
     </p>
     <div class="relic-pull-row">
       <div class="frag-count">📍 층수: <span id="rdFloorText">1/10</span></div>
@@ -496,6 +505,7 @@
 <script src="js/patch.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/data.js"></script>
+<script src="js/mutation.js"></script>
 <script src="js/state.js"></script>
 <script src="js/combat.js"></script>
 <script src="js/equipment.js"></script>

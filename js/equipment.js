@@ -1,5 +1,5 @@
 // ---------- Equipment (장비 뽑기 시스템) ----------
-// 골드로 뽑는 무기/방어구 2슬롯 장비. 뽑기 등급(초급~전설)이 높을수록 비용이 크게 오르는 대신
+// 물자로 뽑는 무기/방어구 2슬롯 장비. 뽑기 등급(초급~전설)이 높을수록 비용이 크게 오르는 대신
 // 더 높은 희귀도(일반/희귀/영웅/전설)와 좋은 옵션이 나올 확률이 오른다.
 
 let equipPullMultiplier = 1;
@@ -163,7 +163,7 @@ function sellEquipment(id){
   const sellValue = rarity.sellBase;
   state.equipInventory.splice(idx, 1);
   state.gold += sellValue;
-  log(`장비 판매: [${rarity.name}] ${item.slot === 'weapon' ? '무기' : '방어구'} → +${sellValue.toLocaleString()}🪙`);
+  log(`장비 판매: [${rarity.name}] ${item.slot === 'weapon' ? '무기' : '방어구'} → +${sellValue.toLocaleString()}📦`);
   renderAll();
 }
 
@@ -176,7 +176,7 @@ function sellEquipmentByRarity(rarityKey){
   const total = items.length * rarity.sellBase;
   state.equipInventory = state.equipInventory.filter(i => i.rarity !== rarityKey);
   state.gold += total;
-  log(`장비 일괄 판매: [${rarity.name}] ${items.length}개 → +${total.toLocaleString()}🪙`);
+  log(`장비 일괄 판매: [${rarity.name}] ${items.length}개 → +${total.toLocaleString()}📦`);
   renderAll();
 }
 
@@ -248,8 +248,8 @@ function renderEquipment(){
           <div class="desc">${tierOddsText(tier)}</div>
         </div>
         <div style="display:flex;gap:6px;">
-          <button class="buy" type="button" data-slot="weapon">⚔️${multLabel} ${cost.toLocaleString()}🪙</button>
-          <button class="buy" type="button" data-slot="armor">🛡️${multLabel} ${cost.toLocaleString()}🪙</button>
+          <button class="buy" type="button" data-slot="weapon">⚔️${multLabel} ${cost.toLocaleString()}📦</button>
+          <button class="buy" type="button" data-slot="armor">🛡️${multLabel} ${cost.toLocaleString()}📦</button>
         </div>
       `;
       tierList.appendChild(row);
@@ -317,7 +317,7 @@ function renderEquipment(){
             <div class="rdesc">${equipItemLabel(item)}</div>
             <div class="eq-card-btns">
               <button class="eq-equip-btn" type="button">장착</button>
-              <button class="eq-sell-btn" type="button">판매 (${rarity.sellBase.toLocaleString()}🪙)</button>
+              <button class="eq-sell-btn" type="button">판매 (${rarity.sellBase.toLocaleString()}📦)</button>
             </div>
           `;
           grid.appendChild(card);

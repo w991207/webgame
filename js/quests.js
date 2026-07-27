@@ -20,8 +20,8 @@ function applyReward(reward){
 
 function rewardText(reward){
   const parts = [];
-  if(reward.gold) parts.push(`+${reward.gold}🪙`);
-  if(reward.soul) parts.push(`+${reward.soul}✦`);
+  if(reward.gold) parts.push(`+${reward.gold}📦`);
+  if(reward.soul) parts.push(`+${reward.soul}🧪`);
   if(reward.frag) parts.push(`+${reward.frag}◈`);
   return parts.join(' ');
 }
@@ -178,7 +178,7 @@ function updateRebirthAvailability(){
   const gainFrag = Math.floor(state.highestFloor / 3);
   btn.disabled = !canRebirth;
   if(canRebirth){
-    desc.innerHTML = `최고 도달 층: <b>${state.highestFloor}층</b><br>환생 시 <span style="color:var(--soul)">✦ ${gainSoul}</span>개의 영혼석과 <span style="color:var(--frag)">◈ ${gainFrag}</span>개의 유물 파편을 얻습니다. 층수/레벨/골드 강화는 초기화되지만 영구 강화와 보유 영혼석/유물은 유지됩니다.`;
+    desc.innerHTML = `최고 도달 층: <b>${state.highestFloor}층</b><br>환생 시 <span style="color:var(--soul)">🧪 ${gainSoul}</span>개의 혈청과 <span style="color:var(--frag)">◈ ${gainFrag}</span>개의 유산 파편을 얻습니다. 층수/레벨/물자 강화는 초기화되지만 영구 강화와 보유 혈청/유산은 유지됩니다.`;
   } else {
     desc.textContent = `15층 이상 도달 시 환생이 가능합니다. (현재 최고: ${state.highestFloor}층)`;
   }
@@ -188,7 +188,7 @@ document.getElementById('rebirthBtn').addEventListener('click', ()=>{
   if(state.highestFloor < 15) return;
   const gainSoul = Math.floor(state.highestFloor / 2.5);
   const gainFrag = Math.floor(state.highestFloor / 3);
-  if(!confirm(`환생하시겠습니까?\n✦ ${gainSoul}개의 영혼석과 ◈ ${gainFrag}개의 유물 파편을 얻고 층수/레벨/골드가 초기화됩니다.`)) return;
+  if(!confirm(`환생하시겠습니까?\n🧪 ${gainSoul}개의 혈청과 ◈ ${gainFrag}개의 유산 파편을 얻고 층수/레벨/물자가 초기화됩니다.`)) return;
   state.soul += gainSoul;
   state.fragments += gainFrag;
   state.rebirthCount++;
@@ -210,11 +210,11 @@ document.getElementById('rebirthBtn').addEventListener('click', ()=>{
   state.mode = 'normal';
   document.getElementById('modeNormalBtn').classList.toggle('active', true);
   document.getElementById('modeTowerBtn').classList.toggle('active', false);
-  document.getElementById('arenaTitle').textContent = '회랑';
+  document.getElementById('arenaTitle').textContent = '폐허';
   const s = stats();
   state.playerHp = s.maxHp;
   spawnMonster();
-  log(`환생 완료! ✦ ${gainSoul} 영혼석, ◈ ${gainFrag} 유물 파편 획득.`, 'good');
+  log(`환생 완료! 🧪 ${gainSoul} 혈청, ◈ ${gainFrag} 유산 파편 획득.`, 'good');
   renderAll();
 });
 

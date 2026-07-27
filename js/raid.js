@@ -8,7 +8,7 @@ const RAID_TICKET_INTERVAL_MS = 60 * 60 * 1000; // 1시간마다 티켓 1개 충
 const RAID_PITY_CAP = 10; // 이 횟수 안에 장비를 못 얻으면 다음 클리어 때 확정 지급
 const RAID_GEAR_DROP_CHANCE = 0.12; // 클리어당 장비 획득 확률 12%
 
-const RAID_BOSS_META = {name:'심연을 삼킨 파멸체', emoji:'🌌'};
+const RAID_BOSS_META = {name:'완전변이체 디스토션', emoji:'☣️'};
 
 // 무한의 탑 100층을 클리어한 유저도 다소 힘겨울 정도로 맞춘 고정 스탯.
 // 실제 플레이 데이터로 검증 후 이 세 값만 조절하면 난이도를 바꿀 수 있음.
@@ -48,7 +48,7 @@ function enterRaid(){
   }
   if(state.raidActive) return;
   if(state.gdActive || state.rdActive){
-    alert('다른 전투(골드 던전/유물 던전) 진행 중에는 레이드에 입장할 수 없습니다.');
+    alert('다른 전투(물자 구역/유산 구역) 진행 중에는 레이드에 입장할 수 없습니다.');
     return;
   }
   refreshRaidTickets();
@@ -66,7 +66,7 @@ function enterRaid(){
   const s = stats();
   state.raidPlayerHp = s.maxHp;
 
-  // 레이드 동안 회랑/무한의 탑 메인 전투 루프는 일시 정지
+  // 레이드 동안 폐허/무한의 탑 메인 전투 루프는 일시 정지
   clearTimeout(playerTickHandle);
   clearTimeout(monsterTickHandle);
 

@@ -22,7 +22,7 @@
 //    참고: 이 필드를 고쳐도 보스의 공유 체력(hp)은 그대로입니다. 체력까지 같이 리셋하고 싶다면
 //    hp 필드를 maxHp와 같은 값으로 함께 바꿔주세요.
 
-const WORLD_BOSS_META = {name:'멸망을 고하는 태초종, 아스모드', emoji:'👹'};
+const WORLD_BOSS_META = {name:'창세의 균주, 제로', emoji:'🧟'};
 const WB_ATK = 10000;
 const WB_DEF = 5000;
 const WB_TIME_LIMIT_MS = 60 * 1000; // 도전 1회당 제한시간 1분
@@ -94,7 +94,7 @@ async function enterWorldBoss(){
   }
   if(state.wbActive) return;
   if(state.raidActive || state.gdActive || state.rdActive){
-    alert('다른 전투(레이드/골드 던전/유물 던전) 진행 중에는 월드보스에 도전할 수 없습니다.');
+    alert('다른 전투(레이드/물자 구역/유산 구역) 진행 중에는 월드보스에 도전할 수 없습니다.');
     return;
   }
   const user = fbAuth.currentUser;
@@ -257,7 +257,7 @@ async function finalizeWorldBossSession(){
   if(state.wbGotKillingBlow){
     state.gold += WB_KILL_BONUS_GOLD;
     state.fragments += WB_KILL_BONUS_FRAG;
-    log(`⚔️ [월드보스] 처치 보너스! 🪙${WB_KILL_BONUS_GOLD.toLocaleString()} ◈${WB_KILL_BONUS_FRAG} (순위 보상은 자정 이후 확정 지급됩니다)`, 'good');
+    log(`⚔️ [월드보스] 처치 보너스! 📦${WB_KILL_BONUS_GOLD.toLocaleString()} ◈${WB_KILL_BONUS_FRAG} (순위 보상은 자정 이후 확정 지급됩니다)`, 'good');
   }
   if(dmg > 0){
     log(`🎁 [월드보스] 오늘 입힌 피해 ${dmg.toLocaleString()} 기록됨. 오늘의 최종 순위 보상은 내일 접속 시 확정되어 지급됩니다.`, 'good');
@@ -321,7 +321,7 @@ async function settleWorldBossDayReward(day){
     state.gold += reward.gold;
     state.fragments += reward.frag;
     if(reward.soul) state.soul += reward.soul;
-    log(`🏆 [월드보스] ${day}일자 최종 ${rank}위 확정! 보상: 🪙${reward.gold.toLocaleString()} ◈${reward.frag}${reward.soul?` ✦${reward.soul}`:''}`, 'good');
+    log(`🏆 [월드보스] ${day}일자 최종 ${rank}위 확정! 보상: 📦${reward.gold.toLocaleString()} ◈${reward.frag}${reward.soul?` 🧪${reward.soul}`:''}`, 'good');
   }catch(e){
     console.warn(`월드보스 ${day}일자 순위 보상 정산 실패`, e);
   }

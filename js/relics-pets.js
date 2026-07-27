@@ -11,7 +11,7 @@ function pullRelic(){
   const picked = RELICS[Math.floor(Math.random()*RELICS.length)];
   state.relics[picked.key]++;
   const newLvl = state.relics[picked.key];
-  log(`유물 뽑기: ${picked.icon} ${picked.name} (Lv.${newLvl})`, 'good');
+  log(`유산 뽑기: ${picked.icon} ${picked.name} (Lv.${newLvl})`, 'good');
   renderAll();
 }
 document.getElementById('pullRelicBtn').addEventListener('click', pullRelic);
@@ -52,7 +52,7 @@ function summonPet(){
   const picked = PETS[Math.floor(Math.random()*PETS.length)];
   state.pets[picked.key] = (state.pets[picked.key]||0) + 1;
   const newLvl = state.pets[picked.key];
-  log(`펫 소환: ${picked.icon} ${picked.name} (Lv.${newLvl})`, 'good');
+  log(`동료 소환: ${picked.icon} ${picked.name} (Lv.${newLvl})`, 'good');
   renderAll();
 }
 document.getElementById('summonPetBtn').addEventListener('click', summonPet);

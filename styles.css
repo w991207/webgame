@@ -45,27 +45,27 @@
     margin-top: 8px;
   }
   :root{
-    --bg: #120f1c;
-    --bg-deep: #0b0913;
-    --panel: #1c1729;
-    --panel-2: #241d34;
-    --border: #382c4a;
-    --text: #ece6f2;
-    --text-dim: #9184a8;
-    --gold: #e8a33d;
-    --gold-dim: #a97a34;
-    --soul: #5fc9b8;
-    --frag: #b98af0;
-    --soul-dim: #3d8a80;
+    --bg: #14160f;
+    --bg-deep: #0a0b07;
+    --panel: #1d2118;
+    --panel-2: #262b1f;
+    --border: #3a4030;
+    --text: #dfe6d4;
+    --text-dim: #8a9280;
+    --gold: #c97a3d;
+    --gold-dim: #8f5a2c;
+    --soul: #7fbf5f;
+    --frag: #c9c94a;
+    --soul-dim: #4d7a3d;
     --hp: #d9534f;
     --hp-dim: #7a2f2d;
-    --def: #6c8ee0;
+    --def: #6e8073;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
     background:
-      radial-gradient(ellipse at 50% -10%, #241a38 0%, transparent 60%),
+      radial-gradient(ellipse at 50% -10%, #1f2618 0%, transparent 60%),
       var(--bg);
     color:var(--text);
     font-family:'Noto Serif KR', serif;
@@ -567,6 +567,34 @@
   .quest-progress-inner.done{background:linear-gradient(90deg,#c98a2e,var(--gold));}
   .quest-foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
   .quest-foot .ptext{font-size:10px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
+  .mutation-tree{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:4px;
+  }
+  .mutation-branch-title{
+    font-size:12px;letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;
+    font-family:'JetBrains Mono',monospace;border-bottom:1px solid var(--border);
+    padding-bottom:8px;margin-bottom:10px;
+  }
+  .mutation-node{
+    background:var(--bg-deep);border:1px solid var(--border);border-radius:8px;
+    padding:10px 12px;margin-bottom:10px;
+  }
+  .mutation-node.locked{opacity:.5;}
+  .mutation-node.maxed{border-color:var(--soul);}
+  .mutation-node-top{display:flex;align-items:center;gap:6px;}
+  .mutation-node-icon{font-size:16px;}
+  .mutation-node-name{font-size:13px;flex:1;}
+  .mutation-node-lvl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--soul);}
+  .mutation-node-desc{font-size:11px;color:var(--text-dim);margin-top:4px;line-height:1.5;}
+  .mutation-node-lock{font-size:11px;color:var(--text-dim);margin-top:8px;}
+  .mutation-buy-btn{
+    width:100%;margin-top:8px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text);font-size:12px;cursor:pointer;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .mutation-buy-btn:hover:not(:disabled){filter:brightness(1.25);border-color:var(--soul);}
+  .mutation-buy-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .mutation-buy-btn.maxed{border-color:var(--soul);color:var(--soul);opacity:.8;}
   button.claim{
     background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);
     font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;

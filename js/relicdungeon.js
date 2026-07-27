@@ -1,20 +1,20 @@
-// ---------- Relic Dungeon (유물 던전) ----------
-// 골드 던전과 동일한 구조(티켓제, 10층, 고정 스탯 전투)지만 보상이 골드 대신 유물 파편입니다.
+// ---------- Relic Dungeon (유산 구역) ----------
+// 물자 구역과 동일한 구조(티켓제, 10층, 고정 스탯 전투)지만 보상이 물자 대신 유산 파편입니다.
 // 티켓제: 최대 3개, 15분마다 1개 충전
 // 층수: 우선 1~10층까지 (추후 업데이트로 확장 예정)
-// 난이도: 골드 던전과 동일한 곡선 (1층 = 무한의 탑 10층 정도, 10층 = 1인 레이드에 근접)
+// 난이도: 물자 구역과 동일한 곡선 (1층 = 무한의 탑 10층 정도, 10층 = 1인 레이드에 근접)
 
 const RELIC_DUNGEON_TICKET_MAX = 3;
 const RELIC_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
 const RELIC_DUNGEON_MAX_FLOOR = 10;
 
-const RELIC_DUNGEON_META = {name:'유물 수호자', emoji:'🗿'};
+const RELIC_DUNGEON_META = {name:'유산 수호자', emoji:'🗿'};
 
-// 층별 고정 스탯. 골드 던전과 동일한 전투 난이도 곡선을 사용.
+// 층별 고정 스탯. 물자 구역과 동일한 전투 난이도 곡선을 사용.
 function rdHpFor(floor){ return Math.round(1600 * Math.pow(1.33, floor-1)); }
 function rdAtkFor(floor){ return Math.round(27 * Math.pow(1.33, floor-1)); }
 function rdDefFor(floor){ return Math.round(8 * Math.pow(1.33, floor-1)); }
-// 보상은 유물 파편. 1층 5개부터 시작해 층마다 1.4배씩 증가 (10층 클리어 시 약 103개)
+// 보상은 유산 파편. 1층 5개부터 시작해 층마다 1.4배씩 증가 (10층 클리어 시 약 103개)
 function rdFragFor(floor){ return Math.round(5 * Math.pow(1.4, floor-1)); }
 
 function refreshRelicDungeonTickets(){
@@ -40,21 +40,21 @@ let rdMonsterTickHandle = null;
 
 function enterRelicDungeon(){
   if(state.rdCleared){
-    alert('유물 던전을 모두 정복했습니다! 다음 업데이트로 층이 추가될 예정입니다.');
+    alert('유산 구역을 모두 정복했습니다! 다음 업데이트로 층이 추가될 예정입니다.');
     return;
   }
   if(state.rdActive) return;
   if(state.raidActive || state.gdActive){
-    alert('다른 전투(레이드/골드 던전) 진행 중에는 유물 던전에 입장할 수 없습니다.');
+    alert('다른 전투(레이드/물자 구역) 진행 중에는 유산 구역에 입장할 수 없습니다.');
     return;
   }
   refreshRelicDungeonTickets();
   if(state.rdTicket <= 0){
-    alert('유물 던전 티켓이 부족합니다. (15분마다 1개씩 충전됩니다)');
+    alert('유산 구역 티켓이 부족합니다. (15분마다 1개씩 충전됩니다)');
     renderRelicDungeonPanel();
     return;
   }
-  if(!confirm(`유물 던전 ${state.rdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
+  if(!confirm(`유산 구역 ${state.rdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
 
   state.rdTicket--;
   state.rdActive = true;
@@ -66,7 +66,7 @@ function enterRelicDungeon(){
   clearTimeout(playerTickHandle);
   clearTimeout(monsterTickHandle);
 
-  log(`🗿 [유물 던전] ${state.rdFloor}층 ${RELIC_DUNGEON_META.name}에게 도전합니다!`, 'new');
+  log(`🗿 [유산 구역] ${state.rdFloor}층 ${RELIC_DUNGEON_META.name}에게 도전합니다!`, 'new');
   renderAll();
   scheduleRdPlayerTick();
   scheduleRdMonsterTick();
@@ -122,11 +122,11 @@ function rdMonsterAttackTick(){
 function resolveRelicDungeonVictory(){
   const fragGain = rdFragFor(state.rdFloor);
   state.fragments = (state.fragments||0) + fragGain;
-  log(`🏆 [유물 던전] ${state.rdFloor}층 클리어! +${fragGain.toLocaleString()}◈`, 'good');
+  log(`🏆 [유산 구역] ${state.rdFloor}층 클리어! +${fragGain.toLocaleString()}◈`, 'good');
 
   if(state.rdFloor >= RELIC_DUNGEON_MAX_FLOOR){
     state.rdCleared = true;
-    log(`🗿 유물 던전을 모두 정복했습니다! (추가 층 업데이트 예정)`, 'good');
+    log(`🗿 유산 구역을 모두 정복했습니다! (추가 층 업데이트 예정)`, 'good');
   } else {
     state.rdFloor++;
   }
@@ -134,7 +134,7 @@ function resolveRelicDungeonVictory(){
 }
 
 function resolveRelicDungeonDefeat(){
-  log(`💀 [유물 던전] ${state.rdFloor}층에서 패배했습니다. 다음 티켓으로 다시 도전하세요.`, 'warn');
+  log(`💀 [유산 구역] ${state.rdFloor}층에서 패배했습니다. 다음 티켓으로 다시 도전하세요.`, 'warn');
   endRelicDungeon();
 }
 

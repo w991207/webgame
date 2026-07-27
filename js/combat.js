@@ -189,8 +189,9 @@ function playerAttackTick(){
       state.dailyBossKills++;
       state.repBossProgress++;
       state.totalBossKills = (state.totalBossKills||0) + 1;
+      if(typeof gainMutationPoints === 'function') gainMutationPoints(3);
     }
-    log(`${currentMonsterMeta().name}${boss? ' (보스)':''} 처치! +${goldGain}🪙 +${expGain}EXP`, boss?'good':'new');
+    log(`${currentMonsterMeta().name}${boss? ' (보스)':''} 처치! +${goldGain}📦 +${expGain}EXP`, boss?'good':'new');
 
     tryLevelUp();
 
@@ -199,7 +200,7 @@ function playerAttackTick(){
         state.soul += 1;
         state.fragments += 3;
         state.towerRewardsClaimed[state.towerFloor] = true;
-        log(`[무한의 탑] ${state.towerFloor}층 첫 돌파 보상! ✦ 영혼석 1개, ◈ 유물 파편 3개 획득!`, 'good');
+        log(`[무한의 탑] ${state.towerFloor}층 첫 돌파 보상! 🧪 혈청 1개, ◈ 유산 파편 3개 획득!`, 'good');
       }
 
       if(state.towerFloor < 100){
@@ -215,7 +216,7 @@ function playerAttackTick(){
         state.soul += 3;
         state.fragments += 8;
         state.htRewardsClaimed[state.htFloor] = true;
-        log(`[무한의 탑(어려움)] ${state.htFloor}층 첫 돌파 보상! ✦ 영혼석 3개, ◈ 유물 파편 8개 획득!`, 'good');
+        log(`[무한의 탑(어려움)] ${state.htFloor}층 첫 돌파 보상! 🧪 혈청 3개, ◈ 유산 파편 8개 획득!`, 'good');
       }
 
       if(state.htFloor < 100){
@@ -242,7 +243,7 @@ function playerAttackTick(){
       const fragGain = boss ? 3 : 1;
       state.fragments += fragGain;
       state.totalFragmentsEarned += fragGain;
-      log(`◈ 유물 파편 획득! +${fragGain}`, 'good');
+      log(`◈ 유산 파편 획득! +${fragGain}`, 'good');
     }
     if(state.relics.hpRelic > 0){
       const healAmt = Math.round(s.maxHp * (state.relics.hpRelic*0.02));
@@ -351,8 +352,8 @@ function setMode(mode){
   document.getElementById('arenaTitle').textContent =
     mode === 'tower' ? '무한의 탑 (100층)' :
     mode === 'towerHard' ? '무한의 탑(어려움) (100층)' :
-    '회랑';
-  log(`[모드 변경] ${mode==='tower'?'무한의 탑':mode==='towerHard'?'무한의 탑(어려움)':'황혼의 회랑'} 모드로 전환했습니다.`, 'new');
+    '폐허';
+  log(`[모드 변경] ${mode==='tower'?'무한의 탑':mode==='towerHard'?'무한의 탑(어려움)':'라스트 존'} 모드로 전환했습니다.`, 'new');
   
   const s = stats();
   state.playerHp = s.maxHp;

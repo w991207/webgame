@@ -4,7 +4,7 @@ document.getElementById('resetBtn').addEventListener('click', async ()=>{
   state = defaultState();
   document.getElementById('modeNormalBtn').classList.toggle('active', true);
   document.getElementById('modeTowerBtn').classList.toggle('active', false);
-  document.getElementById('arenaTitle').textContent = '회랑';
+  document.getElementById('arenaTitle').textContent = '폐허';
   const s = stats();
   state.playerHp = s.maxHp;
   spawnMonster();
@@ -27,6 +27,7 @@ function processImportedData(jsonStr){
     state.soulUpgrades = Object.assign({atkMult:0,goldMult:0,defMult:0}, loaded.soulUpgrades||{});
     state.relics = Object.assign({hpRelic:0,atkRelic:0,defRelic:0,goldRelic:0,expRelic:0,dropRelic:0,spdRelic:0,critDmgRelic:0}, loaded.relics||{});
     state.pets = Object.assign({dragonPet:0,jellyPet:0,crowPet:0,owlPet:0,fairyPet:0,wolfPet:0}, loaded.pets||{});
+    state.mutation = Object.assign({points:0,totalEarned:0}, loaded.mutation||{}, {nodes: Object.assign({}, (loaded.mutation||{}).nodes||{})});
     state.raidGear = Object.assign({raidWeapon:0,raidArmor:0,raidCrown:0,raidRing:0}, loaded.raidGear||{});
     state.equipment = Object.assign({weapon:null, armor:null}, loaded.equipment||{});
     state.equipInventory = Array.isArray(loaded.equipInventory) ? loaded.equipInventory : [];
@@ -48,7 +49,7 @@ function processImportedData(jsonStr){
 
     document.getElementById('modeNormalBtn').classList.toggle('active', state.mode==='normal');
     document.getElementById('modeTowerBtn').classList.toggle('active', state.mode==='tower');
-    document.getElementById('arenaTitle').textContent = state.mode === 'tower' ? '무한의 탑 (100층)' : '회랑';
+    document.getElementById('arenaTitle').textContent = state.mode === 'tower' ? '무한의 탑 (100층)' : '폐허';
 
     const s = stats();
     if(state.playerHp <= 0) state.playerHp = s.maxHp;
@@ -145,6 +146,7 @@ async function loadState(){
       state.soulUpgrades = Object.assign({atkMult:0,goldMult:0,defMult:0}, loaded.soulUpgrades||{});
       state.relics = Object.assign({hpRelic:0,atkRelic:0,defRelic:0,goldRelic:0,expRelic:0,dropRelic:0,spdRelic:0,critDmgRelic:0}, loaded.relics||{});
       state.pets = Object.assign({dragonPet:0,jellyPet:0,crowPet:0,owlPet:0,fairyPet:0,wolfPet:0}, loaded.pets||{});
+      state.mutation = Object.assign({points:0,totalEarned:0}, loaded.mutation||{}, {nodes: Object.assign({}, (loaded.mutation||{}).nodes||{})});
       state.raidGear = Object.assign({raidWeapon:0,raidArmor:0,raidCrown:0,raidRing:0}, loaded.raidGear||{});
       state.equipment = Object.assign({weapon:null, armor:null}, loaded.equipment||{});
       state.equipInventory = Array.isArray(loaded.equipInventory) ? loaded.equipInventory : [];
@@ -211,8 +213,8 @@ function showOfflineModal(result){
   const modal = document.getElementById('offlineModal');
   const text = document.getElementById('offlineText');
   text.innerHTML = `자리를 비운 <b>${formatDuration(result.elapsedSec)}</b> 동안<br>
-    몬스터 <span class="num">${result.totalKills}</span>마리를 처치했습니다.<br><br>
-    획득: <span class="num">+${result.goldGained.toLocaleString()}🪙</span> · <span class="num">+${result.expGained} EXP</span>
+    변이체 <span class="num">${result.totalKills}</span>마리를 처치했습니다.<br><br>
+    획득: <span class="num">+${result.goldGained.toLocaleString()}📦</span> · <span class="num">+${result.expGained} EXP</span>
     ${result.levelsGained>0? `<br>레벨 업 <span class="num">x${result.levelsGained}</span>!` : ''}`;
   modal.style.display = 'flex';
 }

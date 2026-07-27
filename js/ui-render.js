@@ -72,7 +72,7 @@ function renderAll(){
     cpCompareEl.textContent = '';
   }
   document.getElementById('statHp').textContent = s.maxHp;
-  const spdRelicBonus = state.relics.spdRelic > 0 ? ` <span style="color:var(--frag);font-size:10px;">(유물 +${state.relics.spdRelic*3}%)</span>` : '';
+  const spdRelicBonus = state.relics.spdRelic > 0 ? ` <span style="color:var(--frag);font-size:10px;">(유산 +${state.relics.spdRelic*3}%)</span>` : '';
   document.getElementById('statSpd').innerHTML = (1000/s.tickMs).toFixed(3)+'/s' + spdRelicBonus;
   document.getElementById('statGold').textContent = 'x'+s.goldMult.toFixed(2);
   document.getElementById('statExpMult').textContent = 'x'+s.expMult.toFixed(2);
@@ -118,6 +118,7 @@ function renderAll(){
   renderRaidPanel();
   renderGoldDungeonPanel();
   renderRelicDungeonPanel();
+  if(typeof renderMutationTree === 'function') renderMutationTree();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
 }
 

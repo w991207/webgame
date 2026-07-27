@@ -37,10 +37,10 @@ async function storageSet(key, value){
 
 // 기본 내장 쿠폰 데이터 (JSON 로드 실패 시 또는 단일 파일 로드용)
 const DEFAULT_COUPONS = [
-  { "code": "TWILIGHT01", "reward": 5, "description": "기본 유물 파편 보상" },
-  { "code": "TWILIGHT02", "reward": 5, "description": "기본 유물 파편 보상" },
-  { "code": "EVENT2026A", "reward": 5, "description": "이벤트 유물 파편 보상" },
-  { "code": "REICFRAG05", "reward": 5, "description": "유물 파편 지급 쿠폰" },
+  { "code": "TWILIGHT01", "reward": 5, "description": "기본 유산 파편 보상" },
+  { "code": "TWILIGHT02", "reward": 5, "description": "기본 유산 파편 보상" },
+  { "code": "EVENT2026A", "reward": 5, "description": "이벤트 유산 파편 보상" },
+  { "code": "REICFRAG05", "reward": 5, "description": "유산 파편 지급 쿠폰" },
   { "code": "WELCOME202", "reward": 5, "description": "신규 환영 쿠폰" },
   { "code": "COUPON1538", "reward": 5, "description": "특별 보상 쿠폰 1" },
   { "code": "COUPON1539", "reward": 5, "description": "특별 보상 쿠폰 2" }

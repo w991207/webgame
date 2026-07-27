@@ -68,7 +68,7 @@ function renderShop(){
     const remainToMax = u.maxLevel ? Math.max(0, u.maxLevel - lvl) : Infinity;
     const buyN = Math.min(shopBuyMultiplier, remainToMax);
     const cost = bulkCost(u.baseCost, u.mult, lvl, buyN);
-    const label = maxed ? '최대' : (buyN <= 0 ? '최대' : `${cost.toLocaleString()} 🪙 (x${buyN})`);
+    const label = maxed ? '최대' : (buyN <= 0 ? '최대' : `${cost.toLocaleString()} 📦 (x${buyN})`);
 
     row.querySelector('.uname').textContent = u.name;
     row.querySelector('.lvl-tag').textContent = `Lv.${lvl}`;
@@ -123,7 +123,7 @@ function renderSoulShop(){
     row.querySelector('.lvl-tag').textContent = `Lv.${lvl}`;
 
     const btn = row.querySelector('button');
-    const label = `${cost.toLocaleString()} ✦`;
+    const label = `${cost.toLocaleString()} 🧪`;
     const disabled = state.soul < cost;
     if(btn.disabled !== disabled) btn.disabled = disabled;
     if(btn.textContent !== label) btn.textContent = label;

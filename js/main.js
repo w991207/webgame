@@ -9,7 +9,7 @@ async function init(){
   if(loaded && !state.bugfixCompGranted){
     state.soul += 1;
     state.bugfixCompGranted = true;
-    log('보스 데미지 표시 오류를 수정했습니다. 불편에 대한 보상으로 ✦ 영혼석 1개를 지급합니다.', 'good');
+    log('보스 데미지 표시 오류를 수정했습니다. 불편에 대한 보상으로 🧪 혈청 1개를 지급합니다.', 'good');
   } else if(!loaded){
     state.bugfixCompGranted = true;
   }
@@ -19,21 +19,21 @@ async function init(){
   if(loaded && !state.bonusGrant1Given){
     state.soul += 3;
     state.bonusGrant1Given = true;
-    log('특별 보상으로 ✦ 영혼석 3개를 지급합니다.', 'good');
+    log('특별 보상으로 🧪 혈청 3개를 지급합니다.', 'good');
   } else if(!loaded){
     state.bonusGrant1Given = true;
   }
   if(loaded && !state.bugfixCompGranted2){
     state.soul += 3;
     state.bugfixCompGranted2 = true;
-    log('점검보상으로 ✦ 영혼석 3개를 지급합니다.', 'good');
+    log('점검보상으로 🧪 혈청 3개를 지급합니다.', 'good');
   } else if(!loaded){
     state.bugfixCompGranted2 = true;
   }
 
   document.getElementById('modeNormalBtn').classList.toggle('active', state.mode==='normal');
   document.getElementById('modeTowerBtn').classList.toggle('active', state.mode==='tower');
-  document.getElementById('arenaTitle').textContent = state.mode === 'tower' ? '무한의 탑 (100층)' : '회랑';
+  document.getElementById('arenaTitle').textContent = state.mode === 'tower' ? '무한의 탑 (100층)' : '폐허';
 
   const s = stats();
   if(!loaded){
@@ -51,7 +51,7 @@ async function init(){
   if(offlineResult){
     showOfflineModal(offlineResult);
   }
-  log('회랑에 들어섰습니다. 행운을 빕니다.', 'new');
+  log('폐허에 들어섰습니다. 행운을 빕니다.', 'new');
   
   // 독립된 두 타이머 시작
   schedulePlayerTick();

@@ -33,7 +33,7 @@ function renderCouponList(){
     card.innerHTML = `
       <div class="c-info">
         <div class="c-code">${c.code}</div>
-        <div class="c-desc">${c.description || '유물 파편 보상'} (+${c.reward || 5}◈)</div>
+        <div class="c-desc">${c.description || '유산 파편 보상'} (+${c.reward || 5}◈)</div>
       </div>
       <span class="c-status ${isUsed ? 'done' : 'available'}">${isUsed ? '사용 완료' : '사용 가능'}</span>
     `;
@@ -76,8 +76,8 @@ document.getElementById('couponSubmitBtn').addEventListener('click', ()=>{
   state.usedCoupons[code] = true;
   state.fragments += rewardCount;
   input.value = '';
-  alert(`쿠폰 [${code}] 등록 성공!\n◈ 유물 파편 ${rewardCount}개가 지급되었습니다.`);
-  log(`쿠폰 [${code}] 사용 완료! ◈ 유물 파편 ${rewardCount}개 획득!`, 'good');
+  alert(`쿠폰 [${code}] 등록 성공!\n◈ 유산 파편 ${rewardCount}개가 지급되었습니다.`);
+  log(`쿠폰 [${code}] 사용 완료! ◈ 유산 파편 ${rewardCount}개 획득!`, 'good');
   renderAll();
 });
 
