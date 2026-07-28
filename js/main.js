@@ -61,7 +61,7 @@ async function init(){
   setInterval(petTick, 1000);
 
   setInterval(()=>saveState(false), 5000);
-  window.addEventListener('beforeunload', ()=>{ saveState(false); });
+  window.addEventListener('beforeunload', ()=>{ saveState(true); });
 
   // 60초마다 coupons.json 재확인 (새로고침 없이 신규 쿠폰 감지 + 팝업 알림)
   setInterval(()=>loadCouponsJSON(true), 60000);

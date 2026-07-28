@@ -118,7 +118,7 @@ document.getElementById('importFileInput').addEventListener('change', (e)=>{
 async function saveState(manual){
   state.lastSave = Date.now();
   try{
-    const result = await storageSet('save', JSON.stringify(state));
+    const result = await storageSet('save', JSON.stringify(state), manual);
     if(manual) log(result ? '저장 완료.' : '저장 실패. 다시 시도해주세요.', result?'good':'warn');
   }catch(e){
     console.error('save failed', e);

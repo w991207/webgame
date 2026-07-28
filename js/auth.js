@@ -27,13 +27,21 @@ function escapeHtml(str){
 
 // ---------- 클라우드 세이브 저장/불러오기 ----------
 // saves/{uid} 문서에 세이브 전체를 JSON 문자열 그대로 저장한다 (내보내기/가져오기와 동일한 포맷).
-async function cloudPushSave(jsonStr){
+// 로컬(localStorage)은 5초마다 계속 저장하지만, 클라우드는 Firestore 무료 할당량(일일 쓰기 2만 회)을
+// 아끼기 위해 최소 간격을 두고 저장한다. 수동 저장/창 닫기 등 중요한 시점에는 강제로 즉시 기록한다.
+let lastCloudPushAt = 0;
+const CLOUD_PUSH_MIN_INTERVAL = 30000; // 이 시간(ms) 안에는 강제(force)가 아니면 다시 쓰지 않음
+
+async function cloudPushSave(jsonStr, force){
   const user = fbAuth.currentUser;
   if(!user) return;
+  const now = Date.now();
+  if(!force && now - lastCloudPushAt < CLOUD_PUSH_MIN_INTERVAL) return;
+  lastCloudPushAt = now;
   try{
     await fbDb.collection('saves').doc(user.uid).set({
       data: jsonStr,
-      updatedAt: Date.now(),
+      updatedAt: now,
     });
   }catch(e){
     console.warn('클라우드 저장 실패', e);

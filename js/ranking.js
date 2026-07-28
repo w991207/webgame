@@ -7,7 +7,7 @@ function startRankingSync(){
   if(rankingSyncStarted) return;
   rankingSyncStarted = true;
   pushRanking();
-  setInterval(pushRanking, 20000);
+  setInterval(pushRanking, 60000);
   fetchRanking();
 }
 
@@ -67,7 +67,10 @@ async function fetchRanking(){
     if(listEl){
       listEl.innerHTML = rowsHtml.join('') || '<div style="font-size:12px;color:var(--text-dim);">아직 등록된 랭킹이 없습니다. 닉네임을 설정하면 첫 번째로 랭킹에 오를 수 있어요!</div>';
       listEl.querySelectorAll('.rk-challenge-btn').forEach(btn => {
-        btn.addEventListener('click', () => challengePvp(btn.dataset.uid));
+        btn.addEventListener('click', () => {
+          if(typeof challengePvp === 'function') challengePvp(btn.dataset.uid);
+          else alert('PvP 기능을 불러오지 못했습니다. 페이지를 새로고침해주세요. (js/pvp.js 로드 실패)');
+        });
       });
     }
 
