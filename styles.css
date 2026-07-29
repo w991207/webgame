@@ -674,6 +674,30 @@
   .rk-rank{color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
   .rk-cp,.rk-floor{font-family:'JetBrains Mono',monospace;text-align:right;}
   .ranking-my-row{font-size:11px;color:var(--text-dim);text-align:center;margin-top:8px;}
+
+  /* Plaza panel */
+  .plaza-panel{margin-top:16px;}
+  .plaza-live-dot{
+    display:inline-block;width:8px;height:8px;border-radius:50%;
+    background:#4caf6a;margin-left:6px;box-shadow:0 0 6px #4caf6a;
+    animation:plazaPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes plazaPulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+  .plaza-online-header,.plaza-online-list .ranking-row{
+    grid-template-columns:1fr 90px 60px !important;
+  }
+  .plaza-online-list{max-height:220px;}
+  .plaza-chat-panel{margin-top:16px;}
+  .plaza-chat-log{
+    max-height:260px;overflow-y:auto;background:var(--bg-deep);
+    border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:10px;
+  }
+  .plaza-chat-line{font-size:12px;line-height:1.7;word-break:break-word;}
+  .plaza-chat-name{color:var(--gold);font-weight:700;margin-right:6px;}
+  .plaza-chat-text{color:var(--text);}
+  .plaza-chat-input-row{display:flex;gap:8px;}
+  .plaza-chat-input-row .coupon-input{flex:1;}
+  .plaza-chat-hint{font-size:11px;color:var(--text-dim);margin-top:6px;min-height:14px;}
   .coupon-desc{
     font-size:12px;
     color:var(--text-dim);

@@ -130,6 +130,7 @@
     <button class="tab-nav-btn active" data-tab="tab-growth">⚔️ 성장</button>
     <button class="tab-nav-btn" data-tab="tab-dungeon">🏚️ 구역</button>
     <button class="tab-nav-btn" data-tab="tab-event">🎁 이벤트</button>
+    <button class="tab-nav-btn" data-tab="tab-plaza" id="plazaTabBtn">🌐 광장</button>
     <button class="tab-nav-btn" data-tab="tab-account">👤 계정</button>
   </div>
 
@@ -367,6 +368,31 @@
   </div>
   </div><!-- /tab-event -->
 
+  <div class="tab-content" id="tab-plaza" style="display:none;">
+  <div class="panel plaza-panel">
+    <h2>🌐 광장 <span class="plaza-live-dot" id="plazaLiveDot"></span></h2>
+    <p class="account-desc">같은 시간에 접속 중인 모험가들이 보이는 실시간 공간입니다. 최근 90초 이내에 활동한 인원만 표시돼요.</p>
+    <div class="ranking-header-row plaza-online-header">
+      <span class="rk-name">닉네임</span>
+      <span class="rk-cp">전투력</span>
+      <span class="rk-floor">Lv.</span>
+    </div>
+    <div id="plazaOnlineList" class="ranking-list plaza-online-list">
+      <div style="font-size:12px;color:var(--text-dim);">닉네임을 설정하면 광장에 입장할 수 있어요.</div>
+    </div>
+  </div>
+
+  <div class="panel plaza-panel plaza-chat-panel">
+    <h2>💬 실시간 채팅</h2>
+    <div id="plazaChatLog" class="plaza-chat-log"></div>
+    <div class="plaza-chat-input-row">
+      <input type="text" class="coupon-input" id="plazaChatInput" placeholder="메시지 입력 (최대 100자)" maxlength="100">
+      <button class="coupon-submit" id="plazaChatSendBtn">전송</button>
+    </div>
+    <div class="plaza-chat-hint" id="plazaChatHint"></div>
+  </div>
+  </div><!-- /tab-plaza -->
+
   <div class="tab-content" id="tab-account" style="display:none;">
   <!-- Account / Firebase Login Section -->
   <div class="panel account-panel">
@@ -536,6 +562,7 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/ranking.js"></script>
+<script src="js/plaza.js"></script>
 <script src="js/pvp.js"></script>
 <script src="js/worldboss.js"></script>
 
