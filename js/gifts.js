@@ -66,6 +66,7 @@ async function checkGifts(){
 //   gold:  50000   (선택, 없으면 0)
 //   frag:  0       (선택, 유산 파편)
 //   soul:  0       (선택, 혈청)
+//   raidTicket: 1  (선택, 레이드 티켓 — 최대치 3을 넘겨도 그대로 더해짐)
 //   note:  "사유"  (선택, 관리자 참고용, 게임에는 표시 안 됨)
 // claimed 필드는 필요 없습니다 (유저별 수령 여부는 서버가 아니라 각자의 세이브에 저장되기 때문).
 // 이미 지급한 선물 문서를 지우거나 새로 하나 더 추가하면, 지운 건 더 이상 지급되지 않고
@@ -79,7 +80,7 @@ async function checkGlobalGifts(){
     const snapshot = await fbDb.collection('globalGifts').get();
     if(snapshot.empty) return;
 
-    let totalGold = 0, totalFrag = 0, totalSoul = 0;
+    let totalGold = 0, totalFrag = 0, totalSoul = 0, totalRaidTicket = 0;
     let newlyClaimedCount = 0;
 
     snapshot.forEach(doc=>{
@@ -88,6 +89,7 @@ async function checkGlobalGifts(){
       totalGold += Number(g.gold) || 0;
       totalFrag += Number(g.frag) || 0;
       totalSoul += Number(g.soul) || 0;
+      totalRaidTicket += Number(g.raidTicket) || 0;
       state.claimedGlobalGifts[doc.id] = true;
       newlyClaimedCount++;
     });
@@ -97,11 +99,13 @@ async function checkGlobalGifts(){
     if(totalGold !== 0) state.gold = Math.max(0, state.gold + totalGold);
     if(totalFrag !== 0) state.fragments = Math.max(0, (state.fragments||0) + totalFrag);
     if(totalSoul !== 0) state.soul = Math.max(0, state.soul + totalSoul);
+    if(totalRaidTicket !== 0) state.raidTicket = Math.max(0, (state.raidTicket||0) + totalRaidTicket); // 최대치(3) 넘어도 그대로 지급
 
     const parts = [];
     if(totalGold !== 0) parts.push(`📦 물자 ${totalGold.toLocaleString()}`);
     if(totalFrag !== 0) parts.push(`◈ 유산 파편 ${totalFrag.toLocaleString()}`);
     if(totalSoul !== 0) parts.push(`🧪 혈청 ${totalSoul.toLocaleString()}`);
+    if(totalRaidTicket !== 0) parts.push(`🎟️ 레이드 티켓 ${totalRaidTicket.toLocaleString()}`);
     if(parts.length > 0){
       log(`🎁 전체 유저 대상 선물을 받았습니다! (${parts.join(' ')})`, 'good');
       showGiftModal(parts);

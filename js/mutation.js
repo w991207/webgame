@@ -1,33 +1,39 @@
 // ---------- 돌연변이 각성 (Mutation Awakening) ----------
 // 레벨업(+1) / 보스 처치(+3)로 얻는 "적응 포인트"를 소모해 영구적인 신체 변이 특성을
 // 해금하는 성장 트리. 유산(자동 발동형 지속효과)과 달리 순수 수치형 영구 강화이며,
-// 3개 갈래(전투/생존/자원)로 나뉘고 각 갈래의 2·3번째 노드는 이전 노드를 일정 레벨까지
+// 3개 갈래(전투/생존/자원)로 나뉘고 각 갈래의 2·3·4번째 노드는 이전 노드를 일정 레벨까지
 // 찍어야 해금되는 구조.
 
 const MUTATION_TREE = [
   // ---- 전투 갈래 ----
-  {key:'mutAtk1', branch:'atk', name:'근섬유 강화', icon:'💪', maxLevel:20, baseCost:2, mult:1.16,
+  {key:'mutAtk1', branch:'atk', name:'근섬유 강화', icon:'💪', maxLevel:35, baseCost:2, mult:1.16,
     stat:'atkPct', perLevel:1, unit:'%', label:'공격력', prereq:null},
-  {key:'mutAtk2', branch:'atk', name:'표적 조준 모듈', icon:'🎯', maxLevel:15, baseCost:4, mult:1.2,
+  {key:'mutAtk2', branch:'atk', name:'표적 조준 모듈', icon:'🎯', maxLevel:25, baseCost:4, mult:1.2,
     stat:'critAdd', perLevel:0.5, unit:'%', label:'치명타 확률', prereq:{key:'mutAtk1', lvl:5}},
-  {key:'mutAtk3', branch:'atk', name:'치명 각성', icon:'🩸', maxLevel:15, baseCost:6, mult:1.22,
+  {key:'mutAtk3', branch:'atk', name:'치명 각성', icon:'🩸', maxLevel:25, baseCost:6, mult:1.22,
     stat:'critDmgAdd', perLevel:2, unit:'%', label:'치명타 피해', prereq:{key:'mutAtk2', lvl:5}},
+  {key:'mutAtk4', branch:'atk', name:'가속 신경계', icon:'⚡', maxLevel:20, baseCost:12, mult:1.3,
+    stat:'spdPct', perLevel:0.5, unit:'%', label:'공격 속도', prereq:{key:'mutAtk3', lvl:5}},
 
   // ---- 생존 갈래 ----
-  {key:'mutDef1', branch:'def', name:'피부경화 변이', icon:'🦴', maxLevel:20, baseCost:2, mult:1.16,
+  {key:'mutDef1', branch:'def', name:'피부경화 변이', icon:'🦴', maxLevel:35, baseCost:2, mult:1.16,
     stat:'defPct', perLevel:1, unit:'%', label:'방어력', prereq:null},
-  {key:'mutDef2', branch:'def', name:'재생 인자', icon:'🧫', maxLevel:20, baseCost:3, mult:1.18,
+  {key:'mutDef2', branch:'def', name:'재생 인자', icon:'🧫', maxLevel:35, baseCost:3, mult:1.18,
     stat:'hpPct', perLevel:1, unit:'%', label:'최대 체력', prereq:{key:'mutDef1', lvl:5}},
-  {key:'mutDef3', branch:'def', name:'생존 본능', icon:'🫀', maxLevel:10, baseCost:8, mult:1.25,
+  {key:'mutDef3', branch:'def', name:'생존 본능', icon:'🫀', maxLevel:18, baseCost:8, mult:1.25,
     stat:'atkDefPct', perLevel:1, unit:'%', label:'공격력/방어력', prereq:{key:'mutDef2', lvl:5}},
+  {key:'mutDef4', branch:'def', name:'재해 저항', icon:'❤️‍🔥', maxLevel:20, baseCost:12, mult:1.3,
+    stat:'defPct', perLevel:2, unit:'%', label:'방어력', prereq:{key:'mutDef3', lvl:5}},
 
   // ---- 자원 갈래 ----
-  {key:'mutRes1', branch:'res', name:'탐색 감각', icon:'🔦', maxLevel:20, baseCost:2, mult:1.16,
+  {key:'mutRes1', branch:'res', name:'탐색 감각', icon:'🔦', maxLevel:35, baseCost:2, mult:1.16,
     stat:'goldPct', perLevel:1, unit:'%', label:'물자 획득', prereq:null},
-  {key:'mutRes2', branch:'res', name:'학습 가속', icon:'🧠', maxLevel:20, baseCost:2, mult:1.16,
+  {key:'mutRes2', branch:'res', name:'학습 가속', icon:'🧠', maxLevel:35, baseCost:2, mult:1.16,
     stat:'expPct', perLevel:1, unit:'%', label:'경험치 획득', prereq:{key:'mutRes1', lvl:5}},
-  {key:'mutRes3', branch:'res', name:'생존자의 직감', icon:'🍀', maxLevel:10, baseCost:6, mult:1.22,
+  {key:'mutRes3', branch:'res', name:'생존자의 직감', icon:'🍀', maxLevel:18, baseCost:6, mult:1.22,
     stat:'dropAdd', perLevel:0.3, unit:'%p', label:'파편 드랍 확률', prereq:{key:'mutRes2', lvl:5}},
+  {key:'mutRes4', branch:'res', name:'생존 학습', icon:'📚', maxLevel:20, baseCost:10, mult:1.25,
+    stat:'goldExpPct', perLevel:1, unit:'%', label:'물자/경험치 획득', prereq:{key:'mutRes3', lvl:5}},
 ];
 
 function mutationLevel(key){
@@ -49,7 +55,7 @@ function mutationNodeLocked(node){
 }
 
 function mutationBonus(){
-  const b = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0};
+  const b = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0};
   if(!state.mutation) return b;
   MUTATION_TREE.forEach(node=>{
     const lvl = mutationLevel(node.key);
@@ -57,6 +63,8 @@ function mutationBonus(){
     const val = lvl * node.perLevel;
     if(node.stat === 'atkDefPct'){
       b.atkPct += val; b.defPct += val;
+    } else if(node.stat === 'goldExpPct'){
+      b.goldPct += val; b.expPct += val;
     } else {
       b[node.stat] += val;
     }
