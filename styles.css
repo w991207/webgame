@@ -525,6 +525,7 @@
   .rarity-rare{border-color:#4fa3e3;}
   .rarity-epic{border-color:#b968e0;}
   .rarity-legendary{border-color:var(--gold);}
+  .rarity-mythic{border-color:#ff4fd8;box-shadow:0 0 8px rgba(255,79,216,.35);}
   .equip-info-table{
     background:var(--bg-deep);border:1px solid var(--border);border-radius:8px;
     padding:10px 12px;margin-bottom:12px;

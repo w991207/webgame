@@ -66,10 +66,11 @@ function rollEquipment(slot, tierKey){
   const tier = GACHA_TIERS.find(t => t.key === tierKey);
   const rarityKey = weightedPickRarity(tier.weights);
   const rarity = EQUIP_RARITIES.find(r => r.key === rarityKey);
-  const mainValue = Math.round(rand(rarity.mainMin, rarity.mainMax) * 10) / 10;
+  const mainRange = slot === 'accessory' ? [rarity.accMainMin, rarity.accMainMax] : [rarity.mainMin, rarity.mainMax];
+  const mainValue = Math.round(rand(mainRange[0], mainRange[1]) * 10) / 10;
   let subKey = null, subValue = 0;
   if(rarity.subMax > 0){
-    const pool = slot === 'weapon' ? WEAPON_SUBSTATS : ARMOR_SUBSTATS;
+    const pool = slot === 'weapon' ? WEAPON_SUBSTATS : (slot === 'armor' ? ARMOR_SUBSTATS : ACCESSORY_SUBSTATS);
     const picked = pool[Math.floor(Math.random() * pool.length)];
     subKey = picked.key;
     subValue = Math.round(rand(rarity.subMin, rarity.subMax) * 10) / 10;
@@ -85,7 +86,19 @@ function rollEquipment(slot, tierKey){
   };
 }
 
+function equipSlotName(slot){
+  return slot === 'weapon' ? '무기' : (slot === 'armor' ? '방어구' : '장신구');
+}
+
 function equipItemLabel(item){
+  if(item.slot === 'accessory'){
+    let text = `공격력/방어력/체력 +${item.mainValue}%`;
+    if(item.subKey){
+      const sub = ACCESSORY_SUBSTATS.find(p => p.key === item.subKey);
+      text += ` · ${sub.name} +${item.subValue}${sub.unit}`;
+    }
+    return text;
+  }
   const mainName = item.slot === 'weapon' ? '공격력' : '방어력';
   let text = `${mainName} +${item.mainValue}%`;
   if(item.subKey){
@@ -106,9 +119,8 @@ function pullEquipment(tierKey, slot){
   const item = rollEquipment(slot, tierKey);
   state.equipInventory.push(item);
   const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
-  const slotName = slot === 'weapon' ? '무기' : '방어구';
-  const cls = (item.rarity === 'epic' || item.rarity === 'legendary') ? 'good' : undefined;
-  log(`🎰 장비 뽑기: [${rarity.name}] ${slotName} 획득 — ${equipItemLabel(item)}`, cls);
+  const cls = (item.rarity === 'epic' || item.rarity === 'legendary' || item.rarity === 'mythic') ? 'good' : undefined;
+  log(`🎰 장비 뽑기: [${rarity.name}] ${equipSlotName(slot)} 획득 — ${equipItemLabel(item)}`, cls);
   renderAll();
 }
 
@@ -118,8 +130,8 @@ function pullEquipmentMulti(tierKey, slot, n){
   const totalCost = equipMultiPullCost(tierKey, n);
   if(state.gold < totalCost) return;
   state.gold -= totalCost;
-  const rarityOrder = ['common', 'rare', 'epic', 'legendary'];
-  const counts = {common:0, rare:0, epic:0, legendary:0};
+  const rarityOrder = ['common', 'rare', 'epic', 'legendary', 'mythic'];
+  const counts = {common:0, rare:0, epic:0, legendary:0, mythic:0};
   let bestRarity = 'common';
   for(let i = 0; i < n; i++){
     state.equipPullCounts[tierKey] = (state.equipPullCounts[tierKey] || 0) + 1;
@@ -128,10 +140,9 @@ function pullEquipmentMulti(tierKey, slot, n){
     counts[item.rarity]++;
     if(rarityOrder.indexOf(item.rarity) > rarityOrder.indexOf(bestRarity)) bestRarity = item.rarity;
   }
-  const slotName = slot === 'weapon' ? '무기' : '방어구';
   const summary = EQUIP_RARITIES.filter(r => counts[r.key] > 0).map(r => `${r.name} x${counts[r.key]}`).join(', ');
-  const cls = (bestRarity === 'epic' || bestRarity === 'legendary') ? 'good' : undefined;
-  log(`🎰 ${n}연 장비 뽑기 (${slotName}): ${summary}`, cls);
+  const cls = (bestRarity === 'epic' || bestRarity === 'legendary' || bestRarity === 'mythic') ? 'good' : undefined;
+  log(`🎰 ${n}연 장비 뽑기 (${equipSlotName(slot)}): ${summary}`, cls);
   renderAll();
 }
 
@@ -143,7 +154,7 @@ function equipItem(id){
   state.equipment[item.slot] = item;
   state.equipInventory.splice(idx, 1);
   if(prev) state.equipInventory.push(prev);
-  log(`${item.slot === 'weapon' ? '무기' : '방어구'} 장착: ${equipItemLabel(item)}`, 'good');
+  log(`${equipSlotName(item.slot)} 장착: ${equipItemLabel(item)}`, 'good');
   renderAll();
 }
 
@@ -163,13 +174,13 @@ function sellEquipment(id){
   const sellValue = rarity.sellBase;
   state.equipInventory.splice(idx, 1);
   state.gold += sellValue;
-  log(`장비 판매: [${rarity.name}] ${item.slot === 'weapon' ? '무기' : '방어구'} → +${sellValue.toLocaleString()}📦`);
+  log(`장비 판매: [${rarity.name}] ${equipSlotName(item.slot)} → +${sellValue.toLocaleString()}📦`);
   renderAll();
 }
 
-// 미장착 장비를 등급 단위로 한 번에 정리. 전설 등급은 실수로 한꺼번에 팔리지 않도록 제외(개별 판매만 가능).
+// 미장착 장비를 등급 단위로 한 번에 정리. 전설·신화 등급은 실수로 한꺼번에 팔리지 않도록 제외(개별 판매만 가능).
 function sellEquipmentByRarity(rarityKey){
-  if(rarityKey === 'legendary') return;
+  if(rarityKey === 'legendary' || rarityKey === 'mythic') return;
   const items = state.equipInventory.filter(i => i.rarity === rarityKey);
   if(items.length === 0) return;
   const rarity = EQUIP_RARITIES.find(r => r.key === rarityKey);
@@ -186,18 +197,20 @@ function renderEquipRarityInfo(){
   const rows = EQUIP_RARITIES.map(r => `
     <div class="equip-info-row">
       <span class="equip-info-rarity" style="color:${r.color}">● ${r.name}</span>
-      <span class="equip-info-detail">메인옵션 +${r.mainMin}~${r.mainMax}%${r.subMax > 0 ? ` · 서브옵션 +${r.subMin}~${r.subMax}` : ' · 서브옵션 없음'}</span>
+      <span class="equip-info-detail">무기/방어구 +${r.mainMin}~${r.mainMax}% · 장신구 +${r.accMainMin}~${r.accMainMax}%${r.subMax > 0 ? ` · 서브옵션 +${r.subMin}~${r.subMax}` : ' · 서브옵션 없음'}</span>
     </div>
   `).join('');
-  box.innerHTML = `<div class="equip-info-title">📊 등급별 옵션 범위 (무기=공격력% / 방어구=방어력%)</div>${rows}`;
+  box.innerHTML = `<div class="equip-info-title">📊 등급별 옵션 범위 (무기=공격력% / 방어구=방어력% / 장신구=공격력·방어력·체력% 동시적용)</div>${rows}`;
 }
 
 function renderEquipment(){
-  ['weapon', 'armor'].forEach(slot => {
+  const slotBoxIds = {weapon:'equipWeaponSlot', armor:'equipArmorSlot', accessory:'equipAccessorySlot'};
+  const slotLabels = {weapon:'⚔️ 무기', armor:'🛡️ 방어구', accessory:'💍 장신구'};
+  ['weapon', 'armor', 'accessory'].forEach(slot => {
     const item = state.equipment[slot];
-    const box = document.getElementById(slot === 'weapon' ? 'equipWeaponSlot' : 'equipArmorSlot');
+    const box = document.getElementById(slotBoxIds[slot]);
     if(!box) return;
-    const slotLabel = slot === 'weapon' ? '⚔️ 무기' : '🛡️ 방어구';
+    const slotLabel = slotLabels[slot];
     if(item){
       const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
       box.className = 'equip-slot filled rarity-' + item.rarity;
@@ -247,9 +260,10 @@ function renderEquipment(){
           <div class="name">${tier.name}</div>
           <div class="desc">${tierOddsText(tier)}</div>
         </div>
-        <div style="display:flex;gap:6px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="buy" type="button" data-slot="weapon">⚔️${multLabel} ${cost.toLocaleString()}📦</button>
           <button class="buy" type="button" data-slot="armor">🛡️${multLabel} ${cost.toLocaleString()}📦</button>
+          <button class="buy" type="button" data-slot="accessory">💍${multLabel} ${cost.toLocaleString()}📦</button>
         </div>
       `;
       tierList.appendChild(row);
@@ -278,9 +292,9 @@ function renderEquipment(){
       invActions.style.display = 'none';
       invActions.innerHTML = '';
     } else {
-      const counts = {common:0, rare:0, epic:0, legendary:0};
+      const counts = {common:0, rare:0, epic:0, legendary:0, mythic:0};
       state.equipInventory.forEach(i => counts[i.rarity]++);
-      const sellable = EQUIP_RARITIES.filter(r => r.key !== 'legendary' && counts[r.key] > 0);
+      const sellable = EQUIP_RARITIES.filter(r => r.key !== 'legendary' && r.key !== 'mythic' && counts[r.key] > 0);
       if(sellable.length === 0){
         invActions.style.display = 'none';
         invActions.innerHTML = '';
@@ -301,19 +315,20 @@ function renderEquipment(){
       if(state.equipInventory.length === 0){
         grid.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:6px 2px;">보유한 미장착 장비가 없습니다.</div>';
       } else {
-        const rarityRank = {legendary:3, epic:2, rare:1, common:0};
+        const rarityRank = {mythic:4, legendary:3, epic:2, rare:1, common:0};
         const sorted = [...state.equipInventory].sort((a, b) => {
           const rd = rarityRank[b.rarity] - rarityRank[a.rarity];
           if(rd !== 0) return rd;
           if(b.mainValue !== a.mainValue) return b.mainValue - a.mainValue;
           return b.createdAt - a.createdAt;
         });
+        const slotIcons = {weapon:'⚔️ 무기', armor:'🛡️ 방어구', accessory:'💍 장신구'};
         sorted.forEach(item => {
           const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
           const card = document.createElement('div');
           card.className = 'relic-card equip-card rarity-' + item.rarity;
           card.innerHTML = `
-            <div class="rname"><span style="color:${rarity.color}">[${rarity.name}] ${item.slot === 'weapon' ? '⚔️ 무기' : '🛡️ 방어구'}</span></div>
+            <div class="rname"><span style="color:${rarity.color}">[${rarity.name}] ${slotIcons[item.slot]}</span></div>
             <div class="rdesc">${equipItemLabel(item)}</div>
             <div class="eq-card-btns">
               <button class="eq-equip-btn" type="button">장착</button>

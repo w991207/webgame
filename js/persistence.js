@@ -29,9 +29,9 @@ function processImportedData(jsonStr){
     state.pets = Object.assign({dragonPet:0,jellyPet:0,crowPet:0,owlPet:0,fairyPet:0,wolfPet:0}, loaded.pets||{});
     state.mutation = Object.assign({points:0,totalEarned:0}, loaded.mutation||{}, {nodes: Object.assign({}, (loaded.mutation||{}).nodes||{})});
     state.raidGear = Object.assign({raidWeapon:0,raidArmor:0,raidCrown:0,raidRing:0}, loaded.raidGear||{});
-    state.equipment = Object.assign({weapon:null, armor:null}, loaded.equipment||{});
+    state.equipment = Object.assign({weapon:null, armor:null, accessory:null}, loaded.equipment||{});
     state.equipInventory = Array.isArray(loaded.equipInventory) ? loaded.equipInventory : [];
-    state.equipPullCounts = Object.assign({t1:0,t2:0,t3:0,t4:0}, loaded.equipPullCounts||{});
+    state.equipPullCounts = Object.assign({t1:0,t2:0,t3:0,t4:0,t5:0}, loaded.equipPullCounts||{});
     state.usedCoupons = loaded.usedCoupons || {};
     state.towerRewardsClaimed = loaded.towerRewardsClaimed || {};
     state.htRewardsClaimed = loaded.htRewardsClaimed || {};
@@ -149,9 +149,9 @@ async function loadState(){
       state.pets = Object.assign({dragonPet:0,jellyPet:0,crowPet:0,owlPet:0,fairyPet:0,wolfPet:0}, loaded.pets||{});
       state.mutation = Object.assign({points:0,totalEarned:0}, loaded.mutation||{}, {nodes: Object.assign({}, (loaded.mutation||{}).nodes||{})});
       state.raidGear = Object.assign({raidWeapon:0,raidArmor:0,raidCrown:0,raidRing:0}, loaded.raidGear||{});
-      state.equipment = Object.assign({weapon:null, armor:null}, loaded.equipment||{});
+      state.equipment = Object.assign({weapon:null, armor:null, accessory:null}, loaded.equipment||{});
       state.equipInventory = Array.isArray(loaded.equipInventory) ? loaded.equipInventory : [];
-      state.equipPullCounts = Object.assign({t1:0,t2:0,t3:0,t4:0}, loaded.equipPullCounts||{});
+      state.equipPullCounts = Object.assign({t1:0,t2:0,t3:0,t4:0,t5:0}, loaded.equipPullCounts||{});
       state.usedCoupons = loaded.usedCoupons || {};
       state.towerRewardsClaimed = loaded.towerRewardsClaimed || {};
       state.htRewardsClaimed = loaded.htRewardsClaimed || {};
