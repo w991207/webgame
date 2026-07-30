@@ -32,6 +32,7 @@ async function plazaPushPresence(){
       nickname: state.nickname,
       cp: plazaMyCombatPower(),
       level: state.level || 1,
+      title: state.equippedTitle || null,
       updatedAt: Date.now(),
     });
   }catch(e){
@@ -53,7 +54,7 @@ function plazaRenderOnlineList(docs){
     const isMe = d.id === myUid;
     return `
       <div class="ranking-row${isMe ? ' me' : ''}">
-        <span class="rk-name">${escapeHtml(d.nickname || '익명')}${isMe ? ' (나)' : ''}</span>
+        <span class="rk-name">${titleBadgeHtml(d.title)}${escapeHtml(d.nickname || '익명')}${isMe ? ' (나)' : ''}</span>
         <span class="rk-cp">⚡${(d.cp || 0).toLocaleString()}</span>
         <span class="rk-floor">Lv.${d.level || 1}</span>
       </div>
@@ -92,7 +93,7 @@ function plazaRenderChat(docs){
   const ordered = docs.slice().reverse();
   logEl.innerHTML = ordered.map(d => `
     <div class="plaza-chat-line">
-      <span class="plaza-chat-name">${escapeHtml(d.nickname || '익명')}</span>
+      <span class="plaza-chat-name">${titleBadgeHtml(d.title)}${escapeHtml(d.nickname || '익명')}</span>
       <span class="plaza-chat-text">${escapeHtml(d.text || '')}</span>
     </div>
   `).join('') || '<div style="font-size:12px;color:var(--text-dim);">아직 채팅이 없어요. 첫 메시지를 남겨보세요!</div>';
@@ -148,6 +149,7 @@ async function plazaSendChat(){
       uid: user.uid,
       nickname: state.nickname,
       text: text.slice(0, 100),
+      title: state.equippedTitle || null,
       createdAt: now,
     });
   }catch(e){

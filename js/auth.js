@@ -89,6 +89,12 @@ function renderAccountPanel(user){
   if(nicknameInput && document.activeElement !== nicknameInput){
     nicknameInput.value = state.nickname || '';
   }
+
+  const titleTextEl = document.getElementById('accountTitleText');
+  if(titleTextEl){
+    const t = state.equippedTitle && typeof TITLES !== 'undefined' ? TITLES.find(x=>x.key===state.equippedTitle) : null;
+    titleTextEl.textContent = t ? `현재 칭호: ${t.icon} ${t.name}` : '현재 칭호: 없음';
+  }
 }
 
 // ---------- 로그인 게이트 표시/숨김 ----------
@@ -338,4 +344,7 @@ document.getElementById('logoutBtn')?.addEventListener('click', async () => {
   if(!confirm('로그아웃하시겠습니까? (다음 접속 시 새 게스트로 시작하며, 다시 로그인하면 이 계정 데이터로 이어할 수 있습니다)')) return;
   await fbAuth.signOut();
   location.reload();
+});
+document.getElementById('accountGoToTitlesBtn')?.addEventListener('click', () => {
+  document.querySelector('.tab-nav-btn[data-tab="tab-growth"]')?.click();
 });

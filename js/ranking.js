@@ -19,6 +19,7 @@ async function pushRanking(){
   try{
     await fbDb.collection('rankings').doc(user.uid).set({
       nickname: state.nickname,
+      title: state.equippedTitle || null,
       cp,
       highestFloor: state.highestFloor || state.floor || 1,
       towerHighestFloor: state.towerHighestFloor || 1,
@@ -56,7 +57,7 @@ async function fetchRanking(){
       rowsHtml.push(`
         <div class="ranking-row${isMe ? ' me' : ''}">
           <span class="rk-rank">#${rank}</span>
-          <span class="rk-name">${escapeHtml(d.nickname || '익명')}</span>
+          <span class="rk-name">${titleBadgeHtml(d.title)}${escapeHtml(d.nickname || '익명')}</span>
           <span class="rk-cp">⚡${(d.cp || 0).toLocaleString()}</span>
           <span class="rk-floor">${(d.highestFloor || 1).toLocaleString()}층</span>
           ${isMe ? '<span></span>' : `<button type="button" class="rk-challenge-btn" data-uid="${doc.id}">⚔️ 도전</button>`}
