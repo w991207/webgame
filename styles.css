@@ -659,7 +659,11 @@
     font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;
   }
   .account-title-row button:hover{border-color:var(--gold);color:var(--gold);}
-  .name-title-badge{margin-right:3px;cursor:help;}
+  .name-title-badge{
+    display:inline-block;font-size:10px;color:var(--gold);background:rgba(232,163,61,.12);
+    border:1px solid rgba(232,163,61,.35);border-radius:4px;padding:1px 5px;margin-right:4px;
+    white-space:nowrap;vertical-align:middle;
+  }
   .account-desc{font-size:12px;color:var(--text-dim);line-height:1.6;margin:0 0 10px;}
   .account-form{display:flex;flex-direction:column;gap:8px;margin-bottom:8px;}
   .account-google-btn,.account-logout-btn{
@@ -698,6 +702,7 @@
   .ranking-row.me{background:rgba(224,129,47,.12);border-radius:6px;font-weight:700;color:var(--gold);}
   .rk-rank{color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
   .rk-cp,.rk-floor{font-family:'JetBrains Mono',monospace;text-align:right;}
+  .rk-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ranking-my-row{font-size:11px;color:var(--text-dim);text-align:center;margin-top:8px;}
 
   /* Plaza panel */

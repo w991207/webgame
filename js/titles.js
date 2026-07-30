@@ -1,13 +1,13 @@
 // ---------- Titles (칭호) ----------
 // 조건을 달성하면 영구 해금되며, 해금된 칭호 중 하나만 장착 가능. 장착한 칭호의 효과만 적용됨.
 
-// 닉네임 앞에 붙이는 작은 칭호 아이콘. 광장 접속자 목록/채팅/랭킹에서 공용으로 사용.
+// 닉네임 앞에 붙는 칭호 표시(아이콘 + 이름을 항상 텍스트로). 광장 접속자 목록/채팅/랭킹에서 공용으로 사용.
 // titleKey: presence/chat/rankings 문서에 저장된 state.equippedTitle 값 (없으면 null/undefined).
 function titleBadgeHtml(titleKey){
   if(!titleKey) return '';
   const t = TITLES.find(x=>x.key===titleKey);
   if(!t) return ''; // 옛 채팅 로그 등에 더 이상 존재하지 않는 칭호 키가 남아있어도 조용히 무시
-  return `<span class="name-title-badge" title="${escapeHtml(t.name)}">${t.icon}</span>`;
+  return `<span class="name-title-badge">${t.icon} ${escapeHtml(t.name)}</span>`;
 }
 
 function titleUnlocked(t){
