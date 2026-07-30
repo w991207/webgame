@@ -292,7 +292,7 @@ function playerAttackTick(){
     spawnMonster();
     updateRebirthAvailability();
   }
-  renderAll();
+  renderCombatFrame();
   schedulePlayerTick();
 }
 
@@ -331,7 +331,7 @@ function monsterAttackTick(){
     }
     spawnMonster();
   }
-  renderAll();
+  renderCombatFrame();
   scheduleMonsterTick();
 }
 
