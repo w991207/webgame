@@ -266,6 +266,16 @@
         0 0 30px rgba(0,0,0,.45),
         inset 0 0 25px rgba(255,255,255,.03);
   }
+  /* 메인 폐허 화면 아레나만 플레이어+몬스터를 좌우로 배치하는 역동적 레이아웃을 사용.
+     레이드/월드보스/구역 등 다른 곳의 .arch는 몬스터 1마리만 중앙에 표시하는 기존 방식 유지. */
+  .arch.arch-main{
+    align-items:flex-end;
+    justify-content:space-between;
+    padding:0 8% 12%;
+    background:
+        linear-gradient(180deg, rgba(10,10,6,.35) 0%, rgba(10,10,6,.15) 40%, rgba(8,8,5,.65) 100%),
+        url('image/background/dungeon.png') center 30%/cover no-repeat;
+  }
   .arch::before{
     content:"";
     position:absolute;
@@ -287,9 +297,88 @@
     box-shadow:0 1px 8px rgba(0,0,0,.6);
     z-index:3;
   }
-  .monster-emoji{
-    font-size:110px;
+  /* 실제 배경 아트가 없을 때를 대비한 대체용 던전 복도 느낌의 비네트는 위 radial-gradient가 담당 */
+  .arena-flash{
+    position:absolute; inset:0; z-index:5; pointer-events:none;
+    background:rgba(255,80,60,0);
+    transition:background .08s ease-out;
+  }
+  .arena-flash.on{ background:rgba(255,90,60,.28); }
+
+  .player-sprite{
+    position:relative;
     z-index:2;
+    width:34%;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    transform-origin:bottom center;
+    transition:transform .1s ease-out;
+  }
+  .player-sprite-img{
+    width:100%;
+    height:auto;
+    object-fit:contain;
+    filter:drop-shadow(0 6px 10px rgba(0,0,0,.7)) drop-shadow(0 0 8px rgba(120,180,255,.15));
+  }
+  .player-sprite-emoji{
+    font-size:70px;
+    filter:drop-shadow(0 6px 10px rgba(0,0,0,.7));
+  }
+  .player-sprite.attack{ animation:playerLunge .22s ease-out; }
+  .player-sprite.hurt{ animation:playerHurt .3s ease-out; }
+  @keyframes playerLunge{
+    0%{transform:translateX(0) rotate(0);}
+    40%{transform:translateX(14%) rotate(-6deg);}
+    100%{transform:translateX(0) rotate(0);}
+  }
+  @keyframes playerHurt{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px) rotate(-3deg);}
+    75%{transform:translateX(6px) rotate(3deg);}
+  }
+
+  .slash-fx{
+    position:absolute;
+    z-index:4;
+    width:70%;
+    height:8px;
+    left:15%;
+    top:42%;
+    pointer-events:none;
+    background:linear-gradient(90deg, transparent, #fff 20%, #fff 80%, transparent);
+    border-radius:4px;
+    box-shadow:0 0 14px 3px rgba(255,255,255,.75);
+    transform:rotate(-18deg) scaleX(0);
+    transform-origin:left center;
+    animation:slashSweep .22s ease-out forwards;
+  }
+  @keyframes slashSweep{
+    0%{transform:rotate(-18deg) scaleX(0); opacity:1;}
+    55%{transform:rotate(-18deg) scaleX(1); opacity:1;}
+    100%{transform:rotate(-18deg) scaleX(1); opacity:0;}
+  }
+  .spark-fx{
+    position:absolute;
+    z-index:4;
+    width:120px;
+    height:auto;
+    left:62%;
+    top:34%;
+    margin-left:-60px;
+    pointer-events:none;
+    filter:drop-shadow(0 0 10px rgba(255,220,150,.6));
+    animation:sparkPop .3s ease-out forwards;
+  }
+  @keyframes sparkPop{
+    0%{transform:scale(.4) rotate(-6deg); opacity:0;}
+    35%{transform:scale(1.15) rotate(0deg); opacity:1;}
+    100%{transform:scale(1.35) rotate(4deg); opacity:0;}
+  }
+  .monster-emoji{
+    position:relative;
+    z-index:2;
+    font-size:110px;
 
     filter:
         drop-shadow(0 0 22px rgba(0,0,0,.8))
@@ -302,6 +391,9 @@
 
  .monster-emoji.hit{
     transform:scale(.90) rotate(-4deg);
+    filter:
+        drop-shadow(0 0 22px rgba(255,80,60,.9))
+        brightness(1.6);
  }
  .monster-img{
   width:80%;
@@ -412,15 +504,18 @@
     font-weight:700;font-size:16px;
     color:#ffd479;
     pointer-events:none;
-    animation:floatUp 0.9s ease-out forwards;
+    animation:floatUp 0.85s cubic-bezier(.17,.89,.32,1.1) forwards;
     text-shadow:0 1px 3px rgba(0,0,0,0.6);
+    z-index:6;
+    --dx:0px;
   }
   .float-text.dmgToPlayer{color:#ff7a72;}
   .float-text.heal{color:#6bcf7f;}
-  .float-text.crit{color:#ff3b3b;font-size:20px;font-weight:900;text-shadow:0 0 8px rgba(255,59,59,0.6);}
+  .float-text.crit{color:#ff3b3b;font-size:21px;font-weight:900;text-shadow:0 0 8px rgba(255,59,59,0.6);}
   @keyframes floatUp{
-    0%{opacity:1;transform:translate(-50%,0);}
-    100%{opacity:0;transform:translate(-50%,-46px);}
+    0%{opacity:0;transform:translate(-50%,4px) scale(.5) rotate(0deg);}
+    15%{opacity:1;transform:translate(calc(-50% + var(--dx)*.2),-6px) scale(1.25) rotate(var(--rot,0deg));}
+    100%{opacity:0;transform:translate(calc(-50% + var(--dx)),-58px) scale(1) rotate(var(--rot,0deg));}
   }
 
   /* Log */

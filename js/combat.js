@@ -135,15 +135,50 @@ function log(msg, cls){
   el.scrollTop = el.scrollHeight;
 }
 
+// 동시다발적으로 뜨는 데미지 숫자가 한 자리에 겹쳐 쌓이지 않도록, 최근 등장 순서에 따라
+// 좌우/상하 위치를 어긋나게 배치한다 (라운드로빈 슬롯 + 랜덤 지터).
+let floatSlotCounter = 0;
 function floatText(text, cls){
   const box = document.getElementById('arenaBox');
   const el = document.createElement('div');
   el.className = 'float-text' + (cls?(' '+cls):'');
   el.textContent = text;
-  el.style.left = (40 + Math.random()*20) + '%';
-  el.style.top = '40%';
+
+  const slot = floatSlotCounter++ % 5; // 0~4 슬롯을 순환시켜 위치를 분산
+  const leftBase = 28 + slot * 11;     // 28% ~ 72% 사이에 고르게 분산
+  const left = leftBase + (Math.random()*8 - 4);
+  const top = 34 + (Math.random()*14 - 7);
+  const dx = Math.round(Math.random()*36 - 18);   // -18px ~ +18px 좌우 드리프트
+  const rot = Math.round(Math.random()*16 - 8);   // -8deg ~ +8deg 회전
+
+  el.style.left = left + '%';
+  el.style.top = top + '%';
+  el.style.setProperty('--dx', dx + 'px');
+  el.style.setProperty('--rot', rot + 'deg');
+
   box.appendChild(el);
-  setTimeout(()=>el.remove(), 900);
+  setTimeout(()=>el.remove(), 850);
+}
+
+// 캐릭터가 몬스터를 벨 때 나타나는 슬래시 잔상 이펙트
+function spawnSlash(){
+  const box = document.getElementById('arenaBox');
+  const el = document.createElement('div');
+  el.className = 'slash-fx';
+  box.appendChild(el);
+  setTimeout(()=>el.remove(), 240);
+}
+
+// 타격 지점에서 터지는 스파크 이펙트 (image/effects/hit.png 아트 사용, 없으면 빈 이펙트로 조용히 스킵)
+function spawnSpark(){
+  const box = document.getElementById('arenaBox');
+  const el = document.createElement('img');
+  el.src = 'image/effects/hit.png';
+  el.className = 'spark-fx';
+  el.alt = '';
+  el.onerror = () => el.remove(); // 아트가 없으면 조용히 무시 (레이아웃 깨짐 방지)
+  box.appendChild(el);
+  setTimeout(()=>el.remove(), 320);
 }
 
 // ---------- Combat ticks (분리된 전투 루프) ----------
@@ -164,6 +199,7 @@ function playerAttackTick(){
 
   let dmgToMonster = Math.round(Math.max(1, s.atk - monsterDefFor(currentFloor, state.isBoss)));
   const isCrit = Math.random() * 100 < s.critChance;
+  attackPlayerAnim();
   if(isCrit){
     dmgToMonster = Math.round(dmgToMonster * s.critDamageMult);
     state.monsterHp -= dmgToMonster;
@@ -172,7 +208,7 @@ function playerAttackTick(){
     state.monsterHp -= dmgToMonster;
     floatText('-'+dmgToMonster, null);
   }
-  pulseMonster();
+  pulseMonster(isCrit);
 
   if(state.monsterHp <= 0){
     const boss = state.isBoss;
@@ -277,6 +313,7 @@ function monsterAttackTick(){
   const dmgToPlayer = Math.round(Math.max(1, monAtk - s.def));
   state.playerHp -= dmgToPlayer;
   floatText('-'+dmgToPlayer, 'dmgToPlayer');
+  pulsePlayer();
 
   if(state.playerHp <= 0){
     
@@ -298,10 +335,35 @@ function monsterAttackTick(){
   scheduleMonsterTick();
 }
 
-function pulseMonster(){
+function pulseMonster(isCrit){
   const el = document.getElementById('monsterEmoji');
   el.classList.add('hit');
   setTimeout(()=>el.classList.remove('hit'), 100);
+
+  spawnSlash();
+  spawnSpark();
+
+  if(isCrit){
+    const flash = document.getElementById('arenaFlash');
+    if(flash){
+      flash.classList.add('on');
+      setTimeout(()=>flash.classList.remove('on'), 90);
+    }
+  }
+}
+
+function attackPlayerAnim(){
+  const el = document.getElementById('playerSprite');
+  if(!el) return;
+  el.classList.add('attack');
+  setTimeout(()=>el.classList.remove('attack'), 220);
+}
+
+function pulsePlayer(){
+  const el = document.getElementById('playerSprite');
+  if(!el) return;
+  el.classList.add('hurt');
+  setTimeout(()=>el.classList.remove('hurt'), 300);
 }
 
 function schedulePlayerTick(){

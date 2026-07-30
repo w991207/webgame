@@ -95,8 +95,14 @@
     <div class="panel arena">
       <h2 id="arenaTitle">폐허</h2>
       <div class="floor-badge" id="floorBadge">FLOOR 1</div>
-      <div class="arch" id="arenaBox">
+      <div class="arch arch-main" id="arenaBox">
         <div class="boss-tag" id="bossTag" style="display:none;">BOSS</div>
+        <div class="arena-flash" id="arenaFlash"></div>
+        <div class="player-sprite" id="playerSprite">
+          <img src="image/player/knight.png" class="player-sprite-img" alt="플레이어"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <span class="player-sprite-emoji" style="display:none;">🗡️</span>
+        </div>
         <div class="monster-emoji" id="monsterEmoji">👻</div>
       </div>
       <div class="monster-name" id="monsterName">떠오는 망령</div>
