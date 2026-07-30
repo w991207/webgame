@@ -39,10 +39,6 @@ let rdPlayerTickHandle = null;
 let rdMonsterTickHandle = null;
 
 function enterRelicDungeon(){
-  if(state.rdCleared){
-    alert('유산 구역을 모두 정복했습니다! 다음 업데이트로 층이 추가될 예정입니다.');
-    return;
-  }
   if(state.rdActive) return;
   if(state.raidActive || state.gdActive){
     alert('다른 전투(레이드/물자 구역) 진행 중에는 유산 구역에 입장할 수 없습니다.');
@@ -125,8 +121,10 @@ function resolveRelicDungeonVictory(){
   log(`🏆 [유산 구역] ${state.rdFloor}층 클리어! +${fragGain.toLocaleString()}◈`, 'good');
 
   if(state.rdFloor >= RELIC_DUNGEON_MAX_FLOOR){
-    state.rdCleared = true;
-    log(`🗿 유산 구역을 모두 정복했습니다! (추가 층 업데이트 예정)`, 'good');
+    if(!state.rdCleared){
+      state.rdCleared = true;
+      log(`🗿 유산 구역을 모두 정복했습니다! 이제부터는 ${RELIC_DUNGEON_MAX_FLOOR}층을 반복해서 도전할 수 있습니다.`, 'good');
+    }
   } else {
     state.rdFloor++;
   }
@@ -153,9 +151,9 @@ function renderRelicDungeonPanel(){
   refreshRelicDungeonTickets();
 
   document.getElementById('rdFloorText').textContent = state.rdCleared
-    ? `${RELIC_DUNGEON_MAX_FLOOR}/${RELIC_DUNGEON_MAX_FLOOR} (정복 완료)`
+    ? `${RELIC_DUNGEON_MAX_FLOOR}/${RELIC_DUNGEON_MAX_FLOOR} (정복 완료 · 반복 도전 가능)`
     : `${state.rdFloor}/${RELIC_DUNGEON_MAX_FLOOR}`;
-  document.getElementById('rdNextReward').textContent = state.rdCleared ? '-' : rdFragFor(state.rdFloor).toLocaleString();
+  document.getElementById('rdNextReward').textContent = rdFragFor(state.rdFloor).toLocaleString();
 
   document.getElementById('rdTicketText').textContent = `${state.rdTicket}/${RELIC_DUNGEON_TICKET_MAX}`;
   const timerEl = document.getElementById('rdTicketTimer');
@@ -167,8 +165,8 @@ function renderRelicDungeonPanel(){
   }
 
   const enterBtn = document.getElementById('rdEnterBtn');
-  enterBtn.disabled = state.rdActive || state.rdTicket <= 0 || state.rdCleared;
-  enterBtn.textContent = state.rdCleared ? '정복 완료' : (state.rdActive ? '전투 진행 중...' : `${state.rdFloor}층 도전`);
+  enterBtn.disabled = state.rdActive || state.rdTicket <= 0;
+  enterBtn.textContent = state.rdActive ? '전투 진행 중...' : `${state.rdFloor}층 도전`;
 
   const battleBox = document.getElementById('rdBattleBox');
   if(state.rdActive){

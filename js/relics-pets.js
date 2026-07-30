@@ -81,6 +81,11 @@ function renderPets(){
 let petTimers = {};
 function petTick(){
   if(state.playerHp <= 0) return;
+  // 무한의 탑(일반/어려움)을 100층까지 정복하면 전투가 멈춘 채로 고정되는데,
+  // 이때도 펫 트리거(예: 전투 드론이 더미 몬스터를 계속 때리는 것)가 계속 반응해서
+  // 로그가 스팸처럼 쌓이는 문제가 있었다. 정복 완료 상태에서는 펫도 함께 정지시킨다.
+  if(state.mode === 'tower' && state.towerCleared) return;
+  if(state.mode === 'towerHard' && state.htCleared) return;
   const s = stats();
   let changed = false;
   PETS.forEach(p=>{

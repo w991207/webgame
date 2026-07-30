@@ -11,7 +11,23 @@ function titleBadgeHtml(titleKey){
 }
 
 function titleUnlocked(t){
-  try{ return !!t.check(state); }catch(e){ return false; }
+  return !!(state.unlockedTitles && state.unlockedTitles[t.key]);
+}
+
+// 조건을 만족했지만 아직 영구 기록되지 않은 칭호를 찾아 state.unlockedTitles에 박아넣는다.
+// (renderTitles가 호출될 때마다 함께 실행되므로 renderAll 주기로 자연스럽게 계속 확인됨)
+// 한 번 이 플래그가 서면 환생으로 레벨/최고층 등이 초기화돼도 칭호 해금은 유지된다.
+function checkTitleUnlocks(){
+  if(!state.unlockedTitles) state.unlockedTitles = {};
+  TITLES.forEach(t=>{
+    if(state.unlockedTitles[t.key]) return;
+    let achieved = false;
+    try{ achieved = !!t.check(state); }catch(e){ achieved = false; }
+    if(achieved){
+      state.unlockedTitles[t.key] = true;
+      log(`🎖️ 칭호 해금: ${t.icon} ${t.name}`, 'good');
+    }
+  });
 }
 
 function titleBonus(){
@@ -41,6 +57,7 @@ function equipTitle(key){
 }
 
 function renderTitles(){
+  checkTitleUnlocks();
   const grid = document.getElementById('titleGrid');
   if(!grid) return;
   const unlockedCount = TITLES.filter(titleUnlocked).length;

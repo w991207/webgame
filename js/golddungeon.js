@@ -39,10 +39,6 @@ let gdPlayerTickHandle = null;
 let gdMonsterTickHandle = null;
 
 function enterGoldDungeon(){
-  if(state.gdCleared){
-    alert('물자 구역을 모두 정복했습니다! 다음 업데이트로 층이 추가될 예정입니다.');
-    return;
-  }
   if(state.gdActive) return;
   if(state.raidActive || state.rdActive){
     alert('다른 전투(레이드/유산 구역) 진행 중에는 물자 구역에 입장할 수 없습니다.');
@@ -127,8 +123,10 @@ function resolveGoldDungeonVictory(){
   log(`🏆 [물자 구역] ${state.gdFloor}층 클리어! +${goldGain.toLocaleString()}📦`, 'good');
 
   if(state.gdFloor >= GOLD_DUNGEON_MAX_FLOOR){
-    state.gdCleared = true;
-    log(`📦 물자 구역을 모두 정복했습니다! (추가 층 업데이트 예정)`, 'good');
+    if(!state.gdCleared){
+      state.gdCleared = true;
+      log(`📦 물자 구역을 모두 정복했습니다! 이제부터는 ${GOLD_DUNGEON_MAX_FLOOR}층을 반복해서 도전할 수 있습니다.`, 'good');
+    }
   } else {
     state.gdFloor++;
   }
@@ -156,9 +154,9 @@ function renderGoldDungeonPanel(){
   refreshGoldDungeonTickets();
 
   document.getElementById('gdFloorText').textContent = state.gdCleared
-    ? `${GOLD_DUNGEON_MAX_FLOOR}/${GOLD_DUNGEON_MAX_FLOOR} (정복 완료)`
+    ? `${GOLD_DUNGEON_MAX_FLOOR}/${GOLD_DUNGEON_MAX_FLOOR} (정복 완료 · 반복 도전 가능)`
     : `${state.gdFloor}/${GOLD_DUNGEON_MAX_FLOOR}`;
-  document.getElementById('gdNextReward').textContent = state.gdCleared ? '-' : gdGoldFor(state.gdFloor).toLocaleString();
+  document.getElementById('gdNextReward').textContent = gdGoldFor(state.gdFloor).toLocaleString();
 
   document.getElementById('gdTicketText').textContent = `${state.gdTicket}/${GOLD_DUNGEON_TICKET_MAX}`;
   const timerEl = document.getElementById('gdTicketTimer');
@@ -170,8 +168,8 @@ function renderGoldDungeonPanel(){
   }
 
   const enterBtn = document.getElementById('gdEnterBtn');
-  enterBtn.disabled = state.gdActive || state.gdTicket <= 0 || state.gdCleared;
-  enterBtn.textContent = state.gdCleared ? '정복 완료' : (state.gdActive ? '전투 진행 중...' : `${state.gdFloor}층 도전`);
+  enterBtn.disabled = state.gdActive || state.gdTicket <= 0;
+  enterBtn.textContent = state.gdActive ? '전투 진행 중...' : `${state.gdFloor}층 도전`;
 
   const battleBox = document.getElementById('gdBattleBox');
   if(state.gdActive){
