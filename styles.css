@@ -570,6 +570,19 @@
   .relic-card .rname{font-size:13px;display:flex;justify-content:space-between;align-items:center;}
   .relic-card .rlvl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--frag);}
   .relic-card .rdesc{font-size:11px;color:var(--text-dim);margin-top:4px;line-height:1.5;}
+  .title-card{opacity:.55;}
+  .title-card.owned{opacity:1;}
+  .title-card.equipped{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset;}
+  .title-equipped-tag{font-size:10px;color:var(--bg);background:var(--gold);padding:2px 6px;border-radius:10px;font-family:'JetBrains Mono',monospace;}
+  .title-cond{font-size:11px;color:var(--text-dim);margin-top:6px;font-family:'JetBrains Mono',monospace;}
+  .title-card.owned .title-cond{color:var(--frag);}
+  .title-equip-btn{
+    width:100%;margin-top:8px;padding:6px 10px;border-radius:6px;border:1px solid var(--gold);
+    background:var(--panel-2);color:var(--gold);font-size:12px;cursor:pointer;font-weight:700;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .title-equip-btn:hover{filter:brightness(1.25);}
+  .title-equip-btn.unequip{border-color:var(--border);color:var(--text-dim);}
   .quest-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
   @media (max-width:820px){.quest-grid{grid-template-columns:1fr;}}
   .quest-col h3{

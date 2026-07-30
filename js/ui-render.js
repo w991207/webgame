@@ -119,6 +119,7 @@ function renderAll(){
   renderGoldDungeonPanel();
   renderRelicDungeonPanel();
   if(typeof renderMutationTree === 'function') renderMutationTree();
+  if(typeof renderTitles === 'function') renderTitles();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
 }
 

@@ -193,6 +193,14 @@
     <div class="frag-count">🧬 적응 포인트: <span id="mutationPointsText">0</span></div>
     <div class="mutation-tree" id="mutationTree"></div>
   </div>
+
+  <div class="panel relic-panel">
+    <h2>🎖️ 칭호 <span id="titleUnlockedCount" style="float:right;font-size:12px;color:var(--text-dim);font-weight:400;">0 / 0</span></h2>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+      특정 조건을 달성하면 칭호가 영구히 해금됩니다. 해금한 칭호 중 <b>하나만 장착</b>할 수 있으며, 장착한 칭호의 효과만 적용됩니다. 상황에 맞는 칭호를 골라 장착하세요.
+    </p>
+    <div class="relic-grid" id="titleGrid"></div>
+  </div>
   </div><!-- /tab-growth -->
 
   <div class="tab-content" id="tab-dungeon" style="display:none;">
@@ -541,6 +549,7 @@
 <script src="js/storage.js"></script>
 <script src="js/data.js"></script>
 <script src="js/mutation.js"></script>
+<script src="js/titles.js"></script>
 <script src="js/state.js"></script>
 <script src="js/combat.js"></script>
 <script src="js/equipment.js"></script>
