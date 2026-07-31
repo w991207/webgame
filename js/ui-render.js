@@ -129,6 +129,8 @@ function renderAll(){
   renderGoldDungeonPanel();
   renderRelicDungeonPanel();
   if(typeof renderMutationTree === 'function') renderMutationTree();
+  if(typeof renderSkillsPanel === 'function') renderSkillsPanel();
+  if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
 }

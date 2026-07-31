@@ -59,6 +59,8 @@ async function init(){
   scheduleMonsterTick();
   
   setInterval(petTick, 1000);
+  if(typeof checkActiveSkills === 'function') setInterval(checkActiveSkills, 500);
+  if(typeof updateSkillTrayCooldowns === 'function') setInterval(updateSkillTrayCooldowns, 100);
   // 공격속도(전투 틱)와 분리해서, 뽑기/상점/각성 등 패널의 구매 가능 여부(gold/soul 반영)를
   // 1초마다만 새로고침한다. 전투 틱마다 부르면 버튼이 초당 여러 번 재생성돼 클릭이 씹힌다.
   setInterval(renderAll, 1000);

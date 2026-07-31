@@ -181,34 +181,22 @@ function spawnSpark(){
   setTimeout(()=>el.remove(), 320);
 }
 
-// ---------- Combat ticks (분리된 전투 루프) ----------
-function playerAttackTick(){
+// 몬스터에게 피해를 입히고, 사망 시 보상/층 진행까지 처리하는 공통 로직.
+// 일반 공격(playerAttackTick)뿐 아니라 액티브 스킬(skills.js)의 피해도 이 함수를 거친다.
+// 그래야 골드/경험치/층 진행/유산 드랍 같은 사망 처리 로직이 두 군데서 따로 관리되며
+// 어긋나는 일이 없다.
+function dealDamageToMonster(dmgToMonster, isCrit, opts){
+  opts = opts || {};
   const s = stats();
-  if(state.playerHp <= 0) state.playerHp = s.maxHp;
-  if(state.mode === 'tower' && state.towerCleared){
-    schedulePlayerTick();
-    return;
-  }
-  if(state.mode === 'towerHard' && state.htCleared){
-    schedulePlayerTick();
-    return;
-  }
-  if(state.monsterHp <= 0) return; // 이미 처치된 경우 무시
+  if(state.monsterHp <= 0) return false; // 이미 처치된 경우 무시
 
   const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
 
-  let dmgToMonster = Math.round(Math.max(1, s.atk - monsterDefFor(currentFloor, state.isBoss)));
-  const isCrit = Math.random() * 100 < s.critChance;
-  attackPlayerAnim();
-  if(isCrit){
-    dmgToMonster = Math.round(dmgToMonster * s.critDamageMult);
-    state.monsterHp -= dmgToMonster;
-    floatText('CRIT! -'+dmgToMonster, 'crit');
-  } else {
-    state.monsterHp -= dmgToMonster;
-    floatText('-'+dmgToMonster, null);
+  state.monsterHp -= dmgToMonster;
+  if(!opts.silent){
+    floatText((isCrit?'CRIT! ':'')+'-'+dmgToMonster, isCrit?'crit':(opts.floatClass||null));
   }
-  pulseMonster(isCrit);
+  if(opts.pulse !== false) pulseMonster(isCrit);
 
   if(state.monsterHp <= 0){
     const boss = state.isBoss;
@@ -292,6 +280,33 @@ function playerAttackTick(){
     spawnMonster();
     updateRebirthAvailability();
   }
+  return true;
+}
+
+// ---------- Combat ticks (분리된 전투 루프) ----------
+function playerAttackTick(){
+  const s = stats();
+  if(state.playerHp <= 0) state.playerHp = s.maxHp;
+  if(state.mode === 'tower' && state.towerCleared){
+    schedulePlayerTick();
+    return;
+  }
+  if(state.mode === 'towerHard' && state.htCleared){
+    schedulePlayerTick();
+    return;
+  }
+  if(state.monsterHp <= 0) return; // 이미 처치된 경우 무시
+
+  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+
+  let dmgToMonster = Math.round(Math.max(1, s.atk - monsterDefFor(currentFloor, state.isBoss)));
+  const isCrit = Math.random() * 100 < s.critChance;
+  attackPlayerAnim();
+  if(isCrit){
+    dmgToMonster = Math.round(dmgToMonster * s.critDamageMult);
+  }
+  dealDamageToMonster(dmgToMonster, isCrit);
+
   renderCombatFrame();
   schedulePlayerTick();
 }
