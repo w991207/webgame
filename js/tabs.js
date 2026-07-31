@@ -24,3 +24,16 @@ document.querySelectorAll('.tab-nav-btn').forEach(btn=>{
   const btn = document.querySelector(`.tab-nav-btn[data-tab="${lastTab}"]`);
   if(btn) btn.click();
 })();
+
+// ---------- 로컬 서브탭 (골드강화 / 스킬강화) ----------
+// 상단 상점 패널 안에서만 쓰는 작은 탭 전환. 메인 tab-nav와는 별개로 동작한다.
+document.querySelectorAll('.local-subtab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const targetId = btn.dataset.subtab;
+    const group = btn.closest('.panel');
+    group.querySelectorAll('.local-subtab-btn').forEach(b=>b.classList.toggle('active', b===btn));
+    group.querySelectorAll('.local-subtab-content').forEach(panel=>{
+      panel.style.display = (panel.id === targetId) ? 'block' : 'none';
+    });
+  });
+});

@@ -52,6 +52,7 @@ function defaultState(){
     pets: {dragonPet:0, jellyPet:0, crowPet:0, owlPet:0, fairyPet:0, wolfPet:0},
     totalPetSummons: 0,
     mutation: {points:0, totalEarned:0, nodes:{}},
+    skills: {},
     usedCoupons: {},
     claimedGlobalGifts: {},
     unlockedTitles: {}, // 한 번 조건을 달성한 칭호는 여기 영구 기록되어 환생해도 사라지지 않음

@@ -127,6 +127,24 @@
   .tab-content{animation:tabFadeIn .2s ease;}
   @keyframes tabFadeIn{from{opacity:0;}to{opacity:1;}}
 
+  .local-subtab-nav{
+    display:flex;gap:6px;margin-bottom:14px;
+    border-bottom:1px solid var(--border);padding-bottom:12px;
+  }
+  .local-subtab-btn{
+    flex:1;
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);
+    font-family:'Black Han Sans',sans-serif;font-weight:700;font-size:13px;
+    padding:8px 10px;border-radius:6px;cursor:pointer;transition:all .2s;
+  }
+  .local-subtab-btn:hover{border-color:var(--gold);color:var(--text);}
+  .local-subtab-btn.active{
+    background:linear-gradient(180deg,var(--gold-dim),var(--bg-deep));
+    border-color:var(--gold);color:var(--gold);
+    box-shadow:0 0 8px rgba(224,129,47,0.2);
+  }
+  .local-subtab-content{animation:tabFadeIn .2s ease;}
+
   .mode-btn{
     background:var(--panel);
     border:1px solid var(--border);
@@ -498,6 +516,78 @@
 
   }
 
+  /* 스킬 쿨타임 트레이 */
+  .skill-tray{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:center;
+    margin-top:10px;
+  }
+  .skill-icon-slot{
+    position:relative;
+    width:40px;
+    height:40px;
+    border-radius:8px;
+    background:var(--bg-deep);
+    border:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .skill-icon-slot .skill-icon-emoji{
+    font-size:19px;
+    z-index:1;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.7)) grayscale(1) brightness(.6);
+    transition:filter .15s;
+  }
+  .skill-icon-slot.ready .skill-icon-emoji{
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.7));
+  }
+  .skill-icon-slot .skill-cd-overlay{
+    position:absolute;
+    left:0;right:0;bottom:0;
+    background:rgba(0,0,0,.72);
+    height:0%;
+    z-index:0;
+  }
+  .skill-icon-slot .skill-cd-text{
+    position:absolute;
+    bottom:1px;
+    left:0;right:0;
+    text-align:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    color:#e2e5d6;
+    z-index:2;
+    text-shadow:0 1px 2px rgba(0,0,0,.9);
+    pointer-events:none;
+  }
+  .skill-icon-slot .skill-lvl-badge{
+    position:absolute;
+    top:-5px;right:-5px;
+    background:var(--gold);
+    color:var(--bg-deep);
+    font-size:9px;
+    font-weight:800;
+    border-radius:3px;
+    padding:0 3px;
+    line-height:1.4;
+    z-index:3;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .skill-icon-slot.ready{
+    border-color:var(--soul);
+    box-shadow:0 0 8px rgba(143,207,74,.55);
+    animation:skillReadyPulse 1.1s ease-in-out infinite;
+  }
+  @keyframes skillReadyPulse{
+    0%,100%{box-shadow:0 0 6px rgba(143,207,74,.4);}
+    50%{box-shadow:0 0 12px rgba(143,207,74,.8);}
+  }
+
   .float-text{
     position:absolute;
     font-family:'JetBrains Mono',monospace;
@@ -512,6 +602,7 @@
   .float-text.dmgToPlayer{color:#ff7a72;}
   .float-text.heal{color:#6bcf7f;}
   .float-text.crit{color:#ff3b3b;font-size:21px;font-weight:900;text-shadow:0 0 8px rgba(255,59,59,0.6);}
+  .float-text.skill{color:var(--soul);font-weight:800;text-shadow:0 0 8px rgba(143,207,74,0.5);}
   @keyframes floatUp{
     0%{opacity:0;transform:translate(-50%,4px) scale(.5) rotate(0deg);}
     15%{opacity:1;transform:translate(calc(-50% + var(--dx)*.2),-6px) scale(1.25) rotate(var(--rot,0deg));}
@@ -818,6 +909,7 @@
     border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:10px;
   }
   .plaza-chat-line{font-size:12px;line-height:1.7;word-break:break-word;}
+  .plaza-chat-time{color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:10px;margin-right:6px;}
   .plaza-chat-name{color:var(--gold);font-weight:700;margin-right:6px;}
   .plaza-chat-text{color:var(--text);}
   .plaza-chat-input-row{display:flex;gap:8px;}

@@ -28,7 +28,7 @@ function renderMonster(){
   }
 }
 
-function renderAll(){
+function renderCombatFrame(){
   const s = stats();
   document.getElementById('goldDisplay').textContent = Math.floor(state.gold).toLocaleString();
   document.getElementById('soulDisplay').textContent = Math.floor(state.soul).toLocaleString();
@@ -101,6 +101,16 @@ function renderAll(){
   const phPct = Math.max(0,(state.playerHp/s.maxHp*100));
   document.getElementById('playerHpBar').style.width = phPct+'%';
   document.getElementById('playerHpText').textContent = `${Math.max(0,Math.ceil(state.playerHp))} / ${s.maxHp}`;
+}
+
+// renderAll: 전투 프레임 + 상점/장비뽑기/유산/동료/각성 등 "패널"까지 통째로 다시 그린다.
+// 패널들은 버튼을 innerHTML로 매번 새로 만들기 때문에, 공격속도에 맞춘 전투 틱마다
+// 이 함수를 부르면 그 버튼들이 초당 여러 번 재생성되면서 클릭이 씹히는 문제가 생긴다.
+// 그래서 전투 틱(schedulePlayerTick/scheduleMonsterTick)에서는 renderCombatFrame()만 부르고,
+// renderAll()은 구매/뽑기/모드전환 같은 "사용자가 직접 액션을 취한 시점"과
+// main.js의 1초 주기 인터벌에서만 호출한다.
+function renderAll(){
+  renderCombatFrame();
 
   renderShop();
   renderSoulShop();
@@ -119,7 +129,10 @@ function renderAll(){
   renderGoldDungeonPanel();
   renderRelicDungeonPanel();
   if(typeof renderMutationTree === 'function') renderMutationTree();
+  if(typeof renderSkillsPanel === 'function') renderSkillsPanel();
+  if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
 }
+
 

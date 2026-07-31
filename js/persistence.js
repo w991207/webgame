@@ -28,6 +28,7 @@ function processImportedData(jsonStr){
     state.relics = Object.assign({hpRelic:0,atkRelic:0,defRelic:0,goldRelic:0,expRelic:0,dropRelic:0,spdRelic:0,critDmgRelic:0}, loaded.relics||{});
     state.pets = Object.assign({dragonPet:0,jellyPet:0,crowPet:0,owlPet:0,fairyPet:0,wolfPet:0}, loaded.pets||{});
     state.mutation = Object.assign({points:0,totalEarned:0}, loaded.mutation||{}, {nodes: Object.assign({}, (loaded.mutation||{}).nodes||{})});
+    state.skills = Object.assign({}, loaded.skills||{});
     state.raidGear = Object.assign({raidWeapon:0,raidArmor:0,raidCrown:0,raidRing:0}, loaded.raidGear||{});
     state.equipment = Object.assign({weapon:null, armor:null, accessory:null}, loaded.equipment||{});
     state.equipInventory = Array.isArray(loaded.equipInventory) ? loaded.equipInventory : [];
@@ -148,6 +149,7 @@ async function loadState(){
       state.relics = Object.assign({hpRelic:0,atkRelic:0,defRelic:0,goldRelic:0,expRelic:0,dropRelic:0,spdRelic:0,critDmgRelic:0}, loaded.relics||{});
       state.pets = Object.assign({dragonPet:0,jellyPet:0,crowPet:0,owlPet:0,fairyPet:0,wolfPet:0}, loaded.pets||{});
       state.mutation = Object.assign({points:0,totalEarned:0}, loaded.mutation||{}, {nodes: Object.assign({}, (loaded.mutation||{}).nodes||{})});
+      state.skills = Object.assign({}, loaded.skills||{});
       state.raidGear = Object.assign({raidWeapon:0,raidArmor:0,raidCrown:0,raidRing:0}, loaded.raidGear||{});
       state.equipment = Object.assign({weapon:null, armor:null, accessory:null}, loaded.equipment||{});
       state.equipInventory = Array.isArray(loaded.equipInventory) ? loaded.equipInventory : [];

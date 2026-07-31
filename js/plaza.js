@@ -84,6 +84,12 @@ function plazaStartPresenceListener(){
   }
 }
 
+function plazaFormatTime(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  return d.toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
+}
+
 function plazaRenderChat(docs){
   const logEl = document.getElementById('plazaChatLog');
   if(!logEl) return;
@@ -93,6 +99,7 @@ function plazaRenderChat(docs){
   const ordered = docs.slice().reverse();
   logEl.innerHTML = ordered.map(d => `
     <div class="plaza-chat-line">
+      <span class="plaza-chat-time">${plazaFormatTime(d.createdAt)}</span>
       <span class="plaza-chat-name">${titleBadgeHtml(d.title)}${escapeHtml(d.nickname || '익명')}</span>
       <span class="plaza-chat-text">${escapeHtml(d.text || '')}</span>
     </div>
