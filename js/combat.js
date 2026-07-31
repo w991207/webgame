@@ -1,3 +1,16 @@
+// 일반모드(폐허) 전용 고층 난이도 보정.
+// 1~999층은 기존과 동일(배율 1배), 1000층마다 한 단계씩 아래 배율만큼 몬스터 전체 스탯이
+// 추가로 복리로 강해진다. 플레이어 쪽 성장(장비/유산/돌연변이/환생)이 전부 곱연산 배율이라
+// 층수의 거듭제곱만으로는 못 따라가는 고층 구간에서, 몬스터도 같이 곱연산으로 세지게 만들어
+// "몹이 아예 안 아프다" 현상을 막기 위한 장치.
+// NORMAL_TIER_MULT 값만 조절하면 강해지는 속도를 바로 튜닝할 수 있음 (1.35 = 1000층마다 +35%씩 누적).
+const NORMAL_TIER_SIZE = 1000;
+const NORMAL_TIER_MULT = 1.35;
+function normalTierMult(floor){
+  const tier = Math.floor(floor / NORMAL_TIER_SIZE); // 1~999층=0단계, 1000~1999층=1단계...
+  return Math.pow(NORMAL_TIER_MULT, tier);
+}
+
 // ---------- Monster generation ----------
 function monsterHpFor(floor, boss){
   if(state.mode === 'tower'){
@@ -12,7 +25,7 @@ function monsterHpFor(floor, boss){
   );
   if(boss)
     hp *= 6;
-  return hp;
+  return Math.round(hp * normalTierMult(floor));
 }
 function monsterAtkFor(floor, boss){
 
@@ -28,7 +41,7 @@ function monsterAtkFor(floor, boss){
   8 + Math.pow(floor, 1.15) * 2.5;
   if(boss)
     atk *= 2.2;
-  return Math.round(atk);
+  return Math.round(atk * normalTierMult(floor));
 }
 function monsterDefFor(floor, boss){
   if(state.mode === 'tower'){
@@ -43,7 +56,7 @@ function monsterDefFor(floor, boss){
   Math.pow(floor, 1.35) * 0.7;
   if(boss)
     def *= 1.8;
-  return Math.round(def);
+  return Math.round(def * normalTierMult(floor));
 }function goldDropFor(floor, boss){
   if(state.mode === 'tower'){
     let g = Math.round(200 * Math.pow(1.03, floor - 1));
@@ -450,4 +463,3 @@ document.getElementById('modeNormalBtn').addEventListener('click', ()=>setMode('
 document.getElementById('modeTowerBtn').addEventListener('click', ()=>setMode('tower'));
 const modeTowerHardBtnEl = document.getElementById('modeTowerHardBtn');
 if(modeTowerHardBtnEl) modeTowerHardBtnEl.addEventListener('click', ()=>setMode('towerHard'));
-
