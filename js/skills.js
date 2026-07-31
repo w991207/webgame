@@ -114,6 +114,10 @@ function triggerActiveSkill(sk, lvl){
 
 function checkActiveSkills(){
   if(!state.skills) return;
+  // 무한의 탑을 완전히 클리어하면 combat.js 쪽 전투 루프는 이미 멈춰있지만(더미 몬스터만 유지),
+  // 액티브 스킬은 그 더미를 계속 타격 가능한 대상으로 인식해 무한정 발동할 수 있었다.
+  // 클리어 후에는 스킬도 완전히 멈춰야 하므로(강탈 일격 등으로 골드가 계속 들어오는 문제 방지) 여기서 차단.
+  if((state.mode === 'tower' && state.towerCleared) || (state.mode === 'towerHard' && state.htCleared)) return;
   const now = Date.now();
   let touched = false;
   ACTIVE_SKILLS.forEach(sk=>{
