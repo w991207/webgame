@@ -99,6 +99,11 @@ function defaultState(){
     equipInventory: [],
     equipPullCounts: {t1:0, t2:0, t3:0, t4:0, t5:0},
 
+    // ---------- Enhance (장비 강화) ----------
+    enhanceStone: 0,
+    totalEnhanceStonesEarned: 0,
+    enhanceDestroyedCount: 0,
+
     // ---------- World Boss (월드보스, 1일 1회) ----------
     wbLastEnterAt: 0, // 마지막으로 도전한 시각(ms). 4시간 쿨타임 + 관리자 강제 리셋 판단에 사용.
     wbActive: false,
@@ -131,28 +136,35 @@ function base(){
 }
 
 // 장착된 무기/방어구/장신구의 메인 옵션(공격력%/방어력%, 장신구는 셋 다 동시)과 서브 옵션
-// (치명타/속도/체력/물자/경험치)을 합산.
+// (치명타/속도/체력/물자/경험치)을 합산. 메인 옵션에는 강화(enhance.js) 보너스가 곱연산으로 붙는다
+// (서브 옵션은 강화의 영향을 받지 않음 — enhanceMultOf가 정의돼 있지 않으면 1배로 취급).
+function enhanceMultOf(item){
+  if(!item) return 1;
+  return (typeof enhanceMultiplier === 'function') ? enhanceMultiplier(item) : 1;
+}
+
 function equipTotals(){
   const totals = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, spdPct:0};
   const eq = state.equipment || {};
   const w = eq.weapon, a = eq.armor, acc = eq.accessory;
   if(w){
-    totals.atkPct += w.mainValue;
+    totals.atkPct += w.mainValue * enhanceMultOf(w);
     if(w.subKey === 'crit') totals.critAdd += w.subValue;
     if(w.subKey === 'critDmg') totals.critDmgAdd += w.subValue;
     if(w.subKey === 'spd') totals.spdPct += w.subValue;
   }
   if(a){
-    totals.defPct += a.mainValue;
+    totals.defPct += a.mainValue * enhanceMultOf(a);
     if(a.subKey === 'hp') totals.hpPct += a.subValue;
     if(a.subKey === 'gold') totals.goldPct += a.subValue;
     if(a.subKey === 'exp') totals.expPct += a.subValue;
   }
   if(acc){
     // 장신구 메인 옵션은 공격력/방어력/체력에 동시에 적용된다.
-    totals.atkPct += acc.mainValue;
-    totals.defPct += acc.mainValue;
-    totals.hpPct += acc.mainValue;
+    const accMain = acc.mainValue * enhanceMultOf(acc);
+    totals.atkPct += accMain;
+    totals.defPct += accMain;
+    totals.hpPct += accMain;
     if(acc.subKey === 'crit') totals.critAdd += acc.subValue;
     if(acc.subKey === 'critDmg') totals.critDmgAdd += acc.subValue;
     if(acc.subKey === 'spd') totals.spdPct += acc.subValue;

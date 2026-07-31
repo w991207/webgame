@@ -269,6 +269,14 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
       state.totalFragmentsEarned += fragGain;
       log(`◈ 유산 파편 획득! +${fragGain}`, 'good');
     }
+    // 강화석은 파편과 별개의 고정 확률로 드랍 (강화 시스템 전용 재화 — enhance.js 참고)
+    const stoneChance = boss ? 0.35 : 0.08;
+    if(Math.random() < stoneChance){
+      const stoneGain = boss ? (2 + Math.floor(Math.random()*2)) : 1;
+      state.enhanceStone = (state.enhanceStone||0) + stoneGain;
+      state.totalEnhanceStonesEarned = (state.totalEnhanceStonesEarned||0) + stoneGain;
+      log(`🔩 강화석 획득! +${stoneGain}`, 'good');
+    }
     if(state.relics.hpRelic > 0){
       const healAmt = Math.round(s.maxHp * (state.relics.hpRelic*0.02));
       if(healAmt > 0 && state.playerHp > 0){
