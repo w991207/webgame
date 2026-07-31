@@ -80,6 +80,12 @@ function renderShop(){
   });
 }
 
+// 혈청 영구 강화 비용 (레벨이 오를수록 mult배씩 지수적으로 상승).
+// 예전엔 "레벨+2"라는 선형 비용이라 환생을 거듭할수록 혈청이 소모처 없이 쌓이기만 했던 문제를 고침.
+function soulUpgradeCost(u, lvl){
+  return Math.ceil(u.baseCost * Math.pow(u.mult, lvl));
+}
+
 function renderSoulShop(){
   const container = document.getElementById('soulShopList');
 
@@ -102,7 +108,7 @@ function renderSoulShop(){
 
       const btn = row.querySelector('button');
       btn.addEventListener('click', ()=>{
-        const cost = state.soulUpgrades[u.key] + 2;
+        const cost = soulUpgradeCost(u, state.soulUpgrades[u.key]);
         if(state.soul >= cost){
           state.soul -= cost;
           state.soulUpgrades[u.key]++;
@@ -117,7 +123,7 @@ function renderSoulShop(){
     const row = container.querySelector(`.shop-item[data-key="${u.key}"]`);
     if(!row) return;
     const lvl = state.soulUpgrades[u.key];
-    const cost = lvl+2;
+    const cost = soulUpgradeCost(u, lvl);
 
     row.querySelector('.uname').textContent = u.name;
     row.querySelector('.lvl-tag').textContent = `Lv.${lvl}`;

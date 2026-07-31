@@ -7,25 +7,25 @@
 const ACTIVE_SKILLS = [
   {
     key:'skillDoubleStrike', name:'이중 강타', icon:'🗡️',
-    maxLevel:10, baseCost:3, costMult:1.35,
+    maxLevel:30, baseCost:3, costMult:1.35,
     baseCooldown:10, minCooldown:4, cdStep:0.7,
     descFn: lvl => `공격력만큼 추가 타격 (치명타 적용) · ${skillCooldownSec({baseCooldown:10,minCooldown:4,cdStep:0.7}, Math.max(lvl,1)).toFixed(1)}초마다`,
   },
   {
     key:'skillPiercing', name:'관통 사격', icon:'🎯',
-    maxLevel:10, baseCost:4, costMult:1.35,
+    maxLevel:30, baseCost:4, costMult:1.35,
     baseCooldown:15, minCooldown:8, cdStep:0.8,
     descFn: lvl => `방어 무시 피해(공격력의 ${(80+Math.max(lvl,1)*15)}%) · ${skillCooldownSec({baseCooldown:15,minCooldown:8,cdStep:0.8}, Math.max(lvl,1)).toFixed(1)}초마다`,
   },
   {
     key:'skillPatch', name:'응급 처치', icon:'🩹',
-    maxLevel:10, baseCost:3, costMult:1.3,
+    maxLevel:30, baseCost:3, costMult:1.3,
     baseCooldown:20, minCooldown:12, cdStep:1.0,
     descFn: lvl => `최대 체력의 ${(8+Math.max(lvl,1)*2)}% 즉시 회복 · ${skillCooldownSec({baseCooldown:20,minCooldown:12,cdStep:1.0}, Math.max(lvl,1)).toFixed(1)}초마다`,
   },
   {
     key:'skillPlunder', name:'강탈 일격', icon:'💰',
-    maxLevel:10, baseCost:4, costMult:1.35,
+    maxLevel:30, baseCost:4, costMult:1.35,
     baseCooldown:18, minCooldown:9, cdStep:1.0,
     descFn: lvl => `타격과 동시에 물자 획득(평소 획득량의 ${(30+Math.max(lvl,1)*10)}%) · ${skillCooldownSec({baseCooldown:18,minCooldown:9,cdStep:1.0}, Math.max(lvl,1)).toFixed(1)}초마다`,
   },

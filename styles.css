@@ -183,7 +183,6 @@
   .currency.soul{color:var(--soul);border-color:#204943;}
   .currency.lvl{color:var(--text);}
   .currency.frag{color:var(--frag);border-color:#463c1a;}
-  .currency.stone{color:#ffb454;border-color:#4a3520;}
 
   /* Layout */
   .grid{
@@ -713,32 +712,6 @@
   .rarity-epic{border-color:#b968e0;}
   .rarity-legendary{border-color:var(--gold);}
   .rarity-mythic{border-color:#ff4fd8;box-shadow:0 0 8px rgba(255,79,216,.35);}
-
-  .enhance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-  .enhance-card{
-    border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--panel-2);
-  }
-  .enhance-card-title{font-size:13px;font-weight:700;margin-bottom:6px;}
-  .enhance-desc{font-size:11px;color:var(--text-dim);line-height:1.5;margin-bottom:8px;}
-  .enhance-empty{font-size:11px;color:var(--text-dim);padding:8px 0;text-align:center;}
-  .enhance-next{font-size:12px;margin-bottom:2px;}
-  .enhance-rate{font-size:12px;margin-bottom:4px;}
-  .enhance-rate b{color:var(--gold);}
-  .enhance-risk{display:block;font-size:10px;margin-bottom:8px;font-weight:700;}
-  .enhance-risk.safe{color:#6fce7f;}
-  .enhance-risk.warn{color:#e8a33d;}
-  .enhance-risk.danger{color:#e05656;}
-  .enhance-maxed{font-size:12px;color:var(--gold);text-align:center;padding:8px 0;font-weight:700;}
-  .enhance-btn{
-    width:100%;font-size:11px;padding:7px 6px;border-radius:6px;border:1px solid var(--border);
-    background:transparent;color:var(--text);cursor:pointer;font-weight:700;
-  }
-  .enhance-btn:hover:not(:disabled){border-color:#ffb454;color:#ffb454;}
-  .enhance-btn:disabled{opacity:.35;cursor:not-allowed;}
-
-  @media (max-width:720px){
-    .enhance-grid{grid-template-columns:1fr;}
-  }
   .equip-info-table{
     background:var(--bg-deep);border:1px solid var(--border);border-radius:8px;
     padding:10px 12px;margin-bottom:12px;

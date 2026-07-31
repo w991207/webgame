@@ -28,7 +28,7 @@ function defaultState(){
     isBoss: false,
     playerHp: 0,
     goldUpgrades: {atk:0, def:0, hp:0, goldGain:0, expGain:0, atkSpeed:0, critChance:0, critDamage:0},
-    soulUpgrades: {atkMult:0, goldMult:0, defMult:0},
+    soulUpgrades: {atkMult:0, goldMult:0, defMult:0, expMult:0, dropAdd:0, critDmgAdd:0},
     totalKills: 0,
     totalBossKills: 0,
     rebirthCount: 0,
@@ -99,11 +99,6 @@ function defaultState(){
     equipInventory: [],
     equipPullCounts: {t1:0, t2:0, t3:0, t4:0, t5:0},
 
-    // ---------- Enhance (장비 강화) ----------
-    enhanceStone: 0,
-    totalEnhanceStonesEarned: 0,
-    enhanceDestroyedCount: 0,
-
     // ---------- World Boss (월드보스, 1일 1회) ----------
     wbLastEnterAt: 0, // 마지막으로 도전한 시각(ms). 4시간 쿨타임 + 관리자 강제 리셋 판단에 사용.
     wbActive: false,
@@ -136,35 +131,28 @@ function base(){
 }
 
 // 장착된 무기/방어구/장신구의 메인 옵션(공격력%/방어력%, 장신구는 셋 다 동시)과 서브 옵션
-// (치명타/속도/체력/물자/경험치)을 합산. 메인 옵션에는 강화(enhance.js) 보너스가 곱연산으로 붙는다
-// (서브 옵션은 강화의 영향을 받지 않음 — enhanceMultOf가 정의돼 있지 않으면 1배로 취급).
-function enhanceMultOf(item){
-  if(!item) return 1;
-  return (typeof enhanceMultiplier === 'function') ? enhanceMultiplier(item) : 1;
-}
-
+// (치명타/속도/체력/물자/경험치)을 합산.
 function equipTotals(){
   const totals = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, spdPct:0};
   const eq = state.equipment || {};
   const w = eq.weapon, a = eq.armor, acc = eq.accessory;
   if(w){
-    totals.atkPct += w.mainValue * enhanceMultOf(w);
+    totals.atkPct += w.mainValue;
     if(w.subKey === 'crit') totals.critAdd += w.subValue;
     if(w.subKey === 'critDmg') totals.critDmgAdd += w.subValue;
     if(w.subKey === 'spd') totals.spdPct += w.subValue;
   }
   if(a){
-    totals.defPct += a.mainValue * enhanceMultOf(a);
+    totals.defPct += a.mainValue;
     if(a.subKey === 'hp') totals.hpPct += a.subValue;
     if(a.subKey === 'gold') totals.goldPct += a.subValue;
     if(a.subKey === 'exp') totals.expPct += a.subValue;
   }
   if(acc){
     // 장신구 메인 옵션은 공격력/방어력/체력에 동시에 적용된다.
-    const accMain = acc.mainValue * enhanceMultOf(acc);
-    totals.atkPct += accMain;
-    totals.defPct += accMain;
-    totals.hpPct += accMain;
+    totals.atkPct += acc.mainValue;
+    totals.defPct += acc.mainValue;
+    totals.hpPct += acc.mainValue;
     if(acc.subKey === 'crit') totals.critAdd += acc.subValue;
     if(acc.subKey === 'critDmg') totals.critDmgAdd += acc.subValue;
     if(acc.subKey === 'spd') totals.spdPct += acc.subValue;
@@ -193,12 +181,12 @@ function stats(){
   const GOLD_MULT_CAP = 50;
   const EXP_MULT_CAP = 50;
   const goldMult = Math.min(GOLD_MULT_CAP, (1 + gu.goldGain*0.10) * (1 + su.goldMult*0.20) * (1 + re.goldRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.goldPct/100) * (1 + mut.goldPct/100) * (1 + tb.goldPct/100));
-  const expMult = Math.min(EXP_MULT_CAP, (1 + (gu.expGain||0)*0.10) * (1 + re.expRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.expPct/100) * (1 + mut.expPct/100) * (1 + tb.expPct/100));
+  const expMult = Math.min(EXP_MULT_CAP, (1 + (gu.expGain||0)*0.10) * (1 + (su.expMult||0)*0.20) * (1 + re.expRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.expPct/100) * (1 + mut.expPct/100) * (1 + tb.expPct/100));
   const spdMult = (1 + Math.min(gu.atkSpeed,50)*0.05) * (1 + re.spdRelic*0.03) * (1 + eq.spdPct/100) * (1 + mut.spdPct/100) * (1 + tb.spdPct/100);
   const tickMs = Math.max(150, Math.round(1000 / spdMult));
-  const dropChance = Math.min(0.6, 0.15 + re.dropRelic*0.015 + mut.dropAdd/100 + tb.dropAdd/100);
+  const dropChance = Math.min(0.6, 0.15 + re.dropRelic*0.015 + mut.dropAdd/100 + tb.dropAdd/100 + (su.dropAdd||0)*0.01);
   const critChance = Math.min(100, (gu.critChance||0) * 1 + eq.critAdd + mut.critAdd + tb.critAdd); // 레벨당 1%, 최대 100%
-  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100 + (re.critDmgRelic||0)*0.02 + mut.critDmgAdd/100 + tb.critDmgAdd/100; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배 (+유산+돌연변이+칭호)
+  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100 + (re.critDmgRelic||0)*0.02 + mut.critDmgAdd/100 + tb.critDmgAdd/100 + (su.critDmgAdd||0)*0.05; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배 (+유산+돌연변이+칭호+혈청)
   return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance, critChance, critDamageMult};
 }
 

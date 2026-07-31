@@ -82,7 +82,6 @@ function rollEquipment(slot, tierKey){
     mainValue,
     subKey,
     subValue,
-    enhance: 0,
     createdAt: Date.now(),
   };
 }
@@ -92,12 +91,8 @@ function equipSlotName(slot){
 }
 
 function equipItemLabel(item){
-  const enh = item.enhance || 0;
-  const enhTag = enh > 0 ? ` <span style="color:#ffb454">+${enh}</span>` : '';
-  const effMain = Math.round(item.mainValue * enhanceMultOf(item) * 10) / 10;
-  const mainDisplay = enh > 0 ? `${effMain}% (기본 ${item.mainValue}%)` : `${item.mainValue}%`;
   if(item.slot === 'accessory'){
-    let text = `공격력/방어력/체력 +${mainDisplay}${enhTag}`;
+    let text = `공격력/방어력/체력 +${item.mainValue}%`;
     if(item.subKey){
       const sub = ACCESSORY_SUBSTATS.find(p => p.key === item.subKey);
       text += ` · ${sub.name} +${item.subValue}${sub.unit}`;
@@ -105,7 +100,7 @@ function equipItemLabel(item){
     return text;
   }
   const mainName = item.slot === 'weapon' ? '공격력' : '방어력';
-  let text = `${mainName} +${mainDisplay}${enhTag}`;
+  let text = `${mainName} +${item.mainValue}%`;
   if(item.subKey){
     const pool = item.slot === 'weapon' ? WEAPON_SUBSTATS : ARMOR_SUBSTATS;
     const sub = pool.find(p => p.key === item.subKey);
@@ -218,10 +213,9 @@ function renderEquipment(){
     const slotLabel = slotLabels[slot];
     if(item){
       const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
-      const enh = item.enhance || 0;
       box.className = 'equip-slot filled rarity-' + item.rarity;
       box.innerHTML = `
-        <div class="eq-rarity" style="color:${rarity.color}">${rarity.name}${enh > 0 ? ` <span style="color:#ffb454">+${enh}</span>` : ''}</div>
+        <div class="eq-rarity" style="color:${rarity.color}">${rarity.name}</div>
         <div class="eq-slot-name">${slotLabel}</div>
         <div class="eq-desc">${equipItemLabel(item)}</div>
         <button class="eq-unequip-btn" type="button">해제</button>
@@ -284,7 +278,6 @@ function renderEquipment(){
   }
 
   renderEquipRarityInfo();
-  if(typeof renderEnhancePanel === 'function') renderEnhancePanel();
 
   const grid = document.getElementById('equipInventoryGrid');
   const invCountEl = document.getElementById('equipInvCount');

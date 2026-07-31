@@ -33,8 +33,6 @@ function renderCombatFrame(){
   document.getElementById('goldDisplay').textContent = Math.floor(state.gold).toLocaleString();
   document.getElementById('soulDisplay').textContent = Math.floor(state.soul).toLocaleString();
   document.getElementById('lvlDisplay').textContent = state.level;
-  const stoneEl = document.getElementById('stoneDisplay');
-  if(stoneEl) stoneEl.textContent = Math.floor(state.enhanceStone||0).toLocaleString();
 
   const towerBtn = document.getElementById('modeTowerBtn');
   if(towerBtn){

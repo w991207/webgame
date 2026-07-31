@@ -1,16 +1,3 @@
-// 일반모드(폐허) 전용 고층 난이도 보정.
-// 1~999층은 기존과 동일(배율 1배), 1000층마다 한 단계씩 아래 배율만큼 몬스터 전체 스탯이
-// 추가로 복리로 강해진다. 플레이어 쪽 성장(장비/유산/돌연변이/환생)이 전부 곱연산 배율이라
-// 층수의 거듭제곱만으로는 못 따라가는 고층 구간에서, 몬스터도 같이 곱연산으로 세지게 만들어
-// "몹이 아예 안 아프다" 현상을 막기 위한 장치.
-// NORMAL_TIER_MULT 값만 조절하면 강해지는 속도를 바로 튜닝할 수 있음 (1.35 = 1000층마다 +35%씩 누적).
-const NORMAL_TIER_SIZE = 1000;
-const NORMAL_TIER_MULT = 1.35;
-function normalTierMult(floor){
-  const tier = Math.floor(floor / NORMAL_TIER_SIZE); // 1~999층=0단계, 1000~1999층=1단계...
-  return Math.pow(NORMAL_TIER_MULT, tier);
-}
-
 // ---------- Monster generation ----------
 function monsterHpFor(floor, boss){
   if(state.mode === 'tower'){
@@ -25,7 +12,7 @@ function monsterHpFor(floor, boss){
   );
   if(boss)
     hp *= 6;
-  return Math.round(hp * normalTierMult(floor));
+  return hp;
 }
 function monsterAtkFor(floor, boss){
 
@@ -41,7 +28,7 @@ function monsterAtkFor(floor, boss){
   8 + Math.pow(floor, 1.15) * 2.5;
   if(boss)
     atk *= 2.2;
-  return Math.round(atk * normalTierMult(floor));
+  return Math.round(atk);
 }
 function monsterDefFor(floor, boss){
   if(state.mode === 'tower'){
@@ -56,7 +43,7 @@ function monsterDefFor(floor, boss){
   Math.pow(floor, 1.35) * 0.7;
   if(boss)
     def *= 1.8;
-  return Math.round(def * normalTierMult(floor));
+  return Math.round(def);
 }function goldDropFor(floor, boss){
   if(state.mode === 'tower'){
     let g = Math.round(200 * Math.pow(1.03, floor - 1));
@@ -282,14 +269,6 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
       state.totalFragmentsEarned += fragGain;
       log(`◈ 유산 파편 획득! +${fragGain}`, 'good');
     }
-    // 강화석은 파편과 별개의 고정 확률로 드랍 (강화 시스템 전용 재화 — enhance.js 참고)
-    const stoneChance = boss ? 0.35 : 0.08;
-    if(Math.random() < stoneChance){
-      const stoneGain = boss ? (2 + Math.floor(Math.random()*2)) : 1;
-      state.enhanceStone = (state.enhanceStone||0) + stoneGain;
-      state.totalEnhanceStonesEarned = (state.totalEnhanceStonesEarned||0) + stoneGain;
-      log(`🔩 강화석 획득! +${stoneGain}`, 'good');
-    }
     if(state.relics.hpRelic > 0){
       const healAmt = Math.round(s.maxHp * (state.relics.hpRelic*0.02));
       if(healAmt > 0 && state.playerHp > 0){
@@ -463,3 +442,4 @@ document.getElementById('modeNormalBtn').addEventListener('click', ()=>setMode('
 document.getElementById('modeTowerBtn').addEventListener('click', ()=>setMode('tower'));
 const modeTowerHardBtnEl = document.getElementById('modeTowerHardBtn');
 if(modeTowerHardBtnEl) modeTowerHardBtnEl.addEventListener('click', ()=>setMode('towerHard'));
+
