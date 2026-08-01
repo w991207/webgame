@@ -59,6 +59,7 @@
       <div class="currency gold"><span class="ico">📦</span><span id="goldDisplay">0</span></div>
       <div class="currency soul"><span class="ico">🧪</span><span id="soulDisplay">0</span></div>
       <div class="currency frag"><span class="ico">◈</span><span id="fragDisplay">0</span></div>
+      <div class="currency stone"><span class="ico">🔩</span><span id="stoneDisplay">0</span></div>
       <div class="currency lvl"><span class="ico">Lv</span><span id="lvlDisplay">1</span></div>
     </div>
   </header>
@@ -183,6 +184,16 @@
     </div>
     <div class="equip-inv-actions" id="equipInvActions" style="display:none;"></div>
     <div class="relic-grid equip-inv-scroll" id="equipInventoryGrid" style="display:none;"></div>
+  </div>
+
+  <div class="panel relic-panel">
+    <h2>⚒️ 장비 강화</h2>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+      변이체 처치 시 확률로 <span style="color:#ffb454">🔩 강화석</span>을 드랍합니다. 강화석으로 <b>장착 중인 장비</b>를 강화해 메인 옵션(공격력/방어력/체력)을 끌어올리세요.
+      강화 단계가 높아질수록 성공 확률은 낮아지고, <b>+5강부터는 실패 시 강화 단계가 1 하락</b>하며, <b>+8강부터는 실패 시 일정 확률로 장비가 파괴</b>되어 완전히 사라집니다. 신중하게 도전하세요.
+    </p>
+    <div class="frag-count">보유 강화석: 🔩 <span id="stoneDisplay2">0</span></div>
+    <div class="enhance-grid" id="enhanceGrid"></div>
   </div>
 
   <div class="panel relic-panel">
@@ -582,6 +593,7 @@
 <script src="js/combat.js"></script>
 <script src="js/skills.js"></script>
 <script src="js/equipment.js"></script>
+<script src="js/enhance.js"></script>
 <script src="js/raid.js"></script>
 <script src="js/golddungeon.js"></script>
 <script src="js/relicdungeon.js"></script>
