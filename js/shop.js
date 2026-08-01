@@ -83,7 +83,7 @@ function renderShop(){
 // 혈청 영구 강화 비용 (레벨이 오를수록 mult배씩 지수적으로 상승).
 // 예전엔 "레벨+2"라는 선형 비용이라 환생을 거듭할수록 혈청이 소모처 없이 쌓이기만 했던 문제를 고침.
 function soulUpgradeCost(u, lvl){
-  return Math.ceil(u.baseCost * Math.pow(u.mult, lvl));
+  return lvl+2;
 }
 
 function renderSoulShop(){
