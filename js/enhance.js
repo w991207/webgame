@@ -107,27 +107,6 @@ function flashMessageSafe(text){
   else log(text);
 }
 
-// 강화 성공/실패가 눈에 잘 띄도록 패널 상단에 배너를 띄우고, 해당 부위 카드에 잠깐
-// 테두리 플래시 애니메이션을 준다. lastEnhanceFlash는 renderEnhancePanel이 카드를
-// 새로 그릴 때 한 번만 소비되고 지워지므로, 1초 주기 자동 리렌더에서는 다시 반짝이지 않는다.
-let enhanceResultTimer = null;
-let lastEnhanceFlash = null;
-function showEnhanceResult(slot, type, message){
-  lastEnhanceFlash = {slot, type};
-  const el = document.getElementById('enhanceResultBanner');
-  if(!el) return;
-  el.textContent = message;
-  el.className = 'enhance-result-banner show ' + type;
-  // 같은 결과가 연속으로 떠도 애니메이션이 다시 재생되도록 강제 리플로우.
-  el.style.animation = 'none';
-  void el.offsetWidth;
-  el.style.animation = '';
-  if(enhanceResultTimer) clearTimeout(enhanceResultTimer);
-  enhanceResultTimer = setTimeout(() => {
-    el.classList.remove('show');
-  }, 2800);
-}
-
 function renderEnhancePanel(){
   const grid = document.getElementById('enhanceGrid');
   const stoneEl = document.getElementById('stoneDisplay2');
@@ -136,15 +115,10 @@ function renderEnhancePanel(){
 
   const slots = ['weapon', 'armor', 'accessory'];
   grid.innerHTML = '';
-  const flash = lastEnhanceFlash;
-  lastEnhanceFlash = null; // 한 번만 소비 — 다음 자동 리렌더에서는 다시 반짝이지 않도록.
   slots.forEach(slot => {
     const item = state.equipment && state.equipment[slot];
     const card = document.createElement('div');
     card.className = 'enhance-card';
-    if(flash && flash.slot === slot){
-      card.classList.add(flash.type === 'success' ? 'flash-success' : 'flash-fail');
-    }
 
     if(!item){
       card.innerHTML = `
