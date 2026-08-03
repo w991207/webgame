@@ -66,6 +66,8 @@ function renderPetShelter(){
   if(!grid) return;
   const owned = PETS.filter(p => (state.pets[p.key] || 0) > 0);
 
+  ensurePetShelterRoom(owned);
+
   if(owned.length === 0){
     grid.innerHTML = `<div class="pet-shelter-empty">아직 쉼터에 머무는 동료가 없어요. 동료를 먼저 소환해보세요!</div>`;
     return;
@@ -92,5 +94,61 @@ function renderPetShelter(){
   });
   grid.querySelectorAll('.pet-feed-btn[data-key]').forEach(btn=>{
     btn.addEventListener('click', ()=>feedPet(btn.dataset.key));
+  });
+}
+
+// ---------- 쉼터 마당 (동료들이 자유롭게 돌아다니는 연출) ----------
+// renderPetShelter()는 1초 주기 renderAll()에서도 계속 호출되므로, 매번 innerHTML을
+// 새로 그리면 걷는 도중 위치가 매번 리셋돼버린다. 그래서 "보유 동료 구성"이 실제로
+// 바뀔 때만(새 동료 소환 등) 마당을 다시 그리고, 위치 이동은 별도 인터벌이 담당한다.
+let petRoomSignature = '';
+let petRoomWanderTimer = null;
+
+function ensurePetShelterRoom(owned){
+  const room = document.getElementById('petShelterRoom');
+  if(!room) return;
+
+  if(owned.length === 0){
+    room.style.display = 'none';
+    room.innerHTML = '';
+    petRoomSignature = '';
+    if(petRoomWanderTimer){ clearInterval(petRoomWanderTimer); petRoomWanderTimer = null; }
+    return;
+  }
+  room.style.display = '';
+
+  const sig = owned.map(p => p.key).join(',');
+  if(sig === petRoomSignature) return; // 구성 그대로면 다시 안 그림 — 걷는 애니메이션 유지
+  petRoomSignature = sig;
+
+  room.innerHTML = '';
+  owned.forEach(p => {
+    const el = document.createElement('div');
+    el.className = 'pet-wander';
+    el.dataset.key = p.key;
+    el.title = `${p.name} · 클릭해서 간식 주기`;
+    el.style.left = (10 + Math.random() * 76) + '%';
+    el.style.top = (14 + Math.random() * 62) + '%';
+    el.innerHTML = `<span class="pet-wander-flip"><span class="pet-wander-face">${p.icon}</span></span>`;
+    el.addEventListener('click', () => feedPet(p.key));
+    room.appendChild(el);
+  });
+
+  wanderPetShelter(); // 배치 직후 바로 첫 목적지를 줘서 멈춰있지 않게 함
+  if(petRoomWanderTimer) clearInterval(petRoomWanderTimer);
+  petRoomWanderTimer = setInterval(wanderPetShelter, 2600);
+}
+
+function wanderPetShelter(){
+  const room = document.getElementById('petShelterRoom');
+  if(!room) return;
+  room.querySelectorAll('.pet-wander').forEach(el => {
+    const prevLeft = parseFloat(el.style.left) || 50;
+    const nextLeft = 6 + Math.random() * 80;
+    const nextTop = 10 + Math.random() * 68;
+    const flipWrap = el.querySelector('.pet-wander-flip');
+    if(flipWrap) flipWrap.classList.toggle('flip', nextLeft < prevLeft);
+    el.style.left = nextLeft + '%';
+    el.style.top = nextTop + '%';
   });
 }
