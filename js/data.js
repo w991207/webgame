@@ -41,6 +41,7 @@ const RELICS = [
 const PETS = [
   {
     key:'dragonPet', name:'전투 드론', icon:'🤖', interval:8,
+    companionStat:'atkPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${8}초마다 공격력의 ${Math.round((0.4+lvl*0.026)*100)}%만큼 변이체에게 추가 피해`,
     trigger:(lvl,s)=>{
       const dmg = Math.max(1, Math.round(s.atk * (0.4 + lvl*0.026)));
@@ -52,6 +53,7 @@ const PETS = [
   },
   {
     key:'jellyPet', name:'의료 드론', icon:'💊', interval:10,
+    companionStat:'hpPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${10}초마다 최대 체력의 ${Math.round(lvl*2)}% 회복`,
     trigger:(lvl,s)=>{
       const heal = Math.round(s.maxHp * (0.02*lvl));
@@ -64,6 +66,7 @@ const PETS = [
   },
   {
     key:'crowPet', name:'정찰 까마귀', icon:'🐦', interval:12,
+    companionStat:'goldPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${12}초마다 물자 즉시 획득 (레벨 비례)`,
     trigger:(lvl,s)=>{
       const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : state.floor);
@@ -74,6 +77,7 @@ const PETS = [
   },
   {
     key:'owlPet', name:'정찰 부엉이', icon:'🦉', interval:12,
+    companionStat:'expPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${12}초마다 경험치 즉시 획득 (레벨 비례)`,
     trigger:(lvl,s)=>{
       const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : state.floor);
@@ -85,6 +89,7 @@ const PETS = [
   },
   {
     key:'fairyPet', name:'탐지 쥐', icon:'🐁', interval:15,
+    companionStat:'dropAdd', companionValueFn:lvl=>Math.round(Math.min(15, 1+lvl*0.12)*10)/10,
     descFn:lvl=>`${15}초마다 유산 파편 ${Math.floor(Math.sqrt(lvl)*2)+1}개 획득`,
     trigger:(lvl,s)=>{
       const f = Math.floor(Math.sqrt(lvl)*2)+1;
@@ -94,6 +99,7 @@ const PETS = [
   },
   {
     key:'wolfPet', name:'변이 늑대', icon:'🐺', interval:10,
+    companionStat:'defPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${10}초마다 변이체 최대 체력의 ${Math.round((0.02+lvl*0.0013)*100)}% 피해`,
     trigger:(lvl,s)=>{
       const dmg = Math.max(1, Math.round(state.monsterMaxHp * (0.02+lvl*0.0013)));
@@ -101,6 +107,18 @@ const PETS = [
       if(state.monsterHp < 1) state.monsterHp = 1;
       floatText('❄-'+dmg, null);
       log(`🐺 변이 늑대의 물어뜯기! -${dmg}`, 'good');
+    }
+  },
+  {
+    key:'lizardPet', name:'독니 도마뱀', icon:'🦎', interval:9,
+    companionStat:'spdPct', companionValueFn:lvl=>Math.round(Math.min(30, 2+lvl*0.2)*10)/10,
+    descFn:lvl=>`${9}초마다 변이체 현재 체력의 ${Math.round((0.03+lvl*0.0018)*100)}% 독 피해`,
+    trigger:(lvl,s)=>{
+      const dmg = Math.max(1, Math.round(state.monsterHp * (0.03+lvl*0.0018)));
+      state.monsterHp -= dmg;
+      if(state.monsterHp < 1) state.monsterHp = 1;
+      floatText('🦎-'+dmg, null);
+      log(`🦎 독니 도마뱀의 맹독! -${dmg}`, 'good');
     }
   },
 ];

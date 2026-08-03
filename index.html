@@ -103,6 +103,7 @@
           <img src="image/player/knight.png" class="player-sprite-img" alt="플레이어"
                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
           <span class="player-sprite-emoji" style="display:none;">🗡️</span>
+          <span class="companion-sprite" id="companionSprite" style="display:none;"></span>
         </div>
         <div class="monster-emoji" id="monsterEmoji">👻</div>
       </div>
@@ -193,7 +194,6 @@
       강화 단계가 높아질수록 성공 확률은 낮아지고, <b>+5강부터는 실패 시 강화 단계가 1 하락</b>하며, <b>+8강부터는 실패 시 일정 확률로 장비가 파괴</b>되어 완전히 사라집니다. 신중하게 도전하세요.
     </p>
     <div class="frag-count">보유 강화석: 🔩 <span id="stoneDisplay2">0</span></div>
-    <div class="enhance-result-banner" id="enhanceResultBanner"></div>
     <div class="enhance-grid" id="enhanceGrid"></div>
   </div>
 
@@ -213,12 +213,21 @@
     <h2>동료</h2>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
       유산이 지속 스탯 보너스라면, 동료는 <b>시간마다 자동으로 발동하는 능동 효과</b>를 줍니다 (일정 주기로 추가 피해, 회복, 물자/경험치/파편 즉시 획득 등). 같은 ◈ 파편으로 소환하며, 중복 소환 시 레벨이 올라 효과가 강해집니다.
+      추가로 동료 중 하나를 <b>동행</b>으로 지정하면 종류별로 다른 능력치 보너스를 영구로 받을 수 있어요 (동행 여부와 상관없이 주기 효과는 보유한 동료 전부 계속 발동합니다).
     </p>
     <div class="relic-pull-row">
       <div class="frag-count">보유 파편: ◈ <span id="fragDisplay3">0</span></div>
       <button class="pull-relic" id="summonPetBtn">동료 소환 (<span id="petCostText">-</span> 파편)</button>
     </div>
     <div class="relic-grid" id="petGrid"></div>
+  </div>
+
+  <div class="panel relic-panel">
+    <h2>🏠 동료 쉼터</h2>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+      스탯이랑은 무관한, 순수하게 귀여운 코너입니다. 보유한 동료들에게 하루 한 번씩 간식을 줄 수 있어요. 자주 챙겨줄수록 친밀도가 깊어집니다.
+    </p>
+    <div class="pet-shelter-grid" id="petShelterGrid"></div>
   </div>
 
   <div class="panel relic-panel">
@@ -601,6 +610,7 @@
 <script src="js/ui-render.js"></script>
 <script src="js/shop.js"></script>
 <script src="js/relics-pets.js"></script>
+<script src="js/pet-shelter.js"></script>
 <script src="js/coupons-ui.js"></script>
 <script src="js/quests.js"></script>
 <script src="js/attendance.js"></script>

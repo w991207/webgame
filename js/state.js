@@ -49,7 +49,12 @@ function defaultState(){
     fragments: 0,
     totalRelicPulls: 0,
     relics: {hpRelic:0, atkRelic:0, defRelic:0, goldRelic:0, expRelic:0, dropRelic:0, spdRelic:0, critDmgRelic:0},
-    pets: {dragonPet:0, jellyPet:0, crowPet:0, owlPet:0, fairyPet:0, wolfPet:0},
+    pets: {dragonPet:0, jellyPet:0, crowPet:0, owlPet:0, fairyPet:0, wolfPet:0, lizardPet:0},
+
+    // ---------- Pet Shelter (동료 쉼터 / 간식주기) ----------
+    petAffection: {}, // key -> 누적 간식 준 횟수
+    petLastFed: {},   // key -> 마지막으로 먹이를 준 시각(ms), 하루 1회 제한에 사용
+    companionPet: null, // 동행 중인 동료 키 (하나만 선택, 능력치 보너스 적용)
     totalPetSummons: 0,
     mutation: {points:0, totalEarned:0, nodes:{}},
     skills: {},
@@ -160,7 +165,7 @@ function equipTotals(){
     if(a.subKey === 'exp') totals.expPct += a.subValue;
   }
   if(acc){
-    // 장신구 메인 옵션은 공격력/방어력/체력에 동시에 적용된다.
+    // 장신구 메인 옵션은 공격력/방어력/체력에 동시에 적용된다 (강화 배율도 동일하게 적용).
     const accMain = acc.mainValue * enhanceMultOf(acc);
     totals.atkPct += accMain;
     totals.defPct += accMain;
@@ -173,6 +178,7 @@ function equipTotals(){
     if(acc.subKey === 'exp') totals.expPct += acc.subValue;
   }
   return totals;
+
 }
 
 function stats(){
@@ -184,21 +190,22 @@ function stats(){
   const eq = equipTotals();
   const mut = (typeof mutationBonus === 'function') ? mutationBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0};
   const tb = (typeof titleBonus === 'function') ? titleBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0};
-  const atk = Math.round((b.atk + gu.atk*2) * (1 + su.atkMult*0.15) * (1 + re.atkRelic*0.03) * (1 + rg.raidWeapon*0.06) * (1 + eq.atkPct/100) * (1 + mut.atkPct/100) * (1 + tb.atkPct/100));
-  const def = Math.round((b.def + gu.def*1) * (1 + su.defMult*0.15) * (1 + re.defRelic*0.03) * (1 + rg.raidArmor*0.06) * (1 + eq.defPct/100) * (1 + mut.defPct/100) * (1 + tb.defPct/100));
-  const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05) * (1 + eq.hpPct/100) * (1 + mut.hpPct/100) * (1 + tb.hpPct/100));
+  const cb = (typeof companionBonus === 'function') ? companionBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0};
+  const atk = Math.round((b.atk + gu.atk*2) * (1 + su.atkMult*0.15) * (1 + re.atkRelic*0.03) * (1 + rg.raidWeapon*0.06) * (1 + eq.atkPct/100) * (1 + mut.atkPct/100) * (1 + tb.atkPct/100) * (1 + cb.atkPct/100));
+  const def = Math.round((b.def + gu.def*1) * (1 + su.defMult*0.15) * (1 + re.defRelic*0.03) * (1 + rg.raidArmor*0.06) * (1 + eq.defPct/100) * (1 + mut.defPct/100) * (1 + tb.defPct/100) * (1 + cb.defPct/100));
+  const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05) * (1 + eq.hpPct/100) * (1 + mut.hpPct/100) * (1 + tb.hpPct/100) * (1 + cb.hpPct/100));
   // 물자/경험치 획득 배율은 5개 소스가 전부 곱연산으로 쌓이는 구조라, 상한이 없으면
   // "물자로 물자강화 구매 → 물자 획득 증가 → 더 많은 물자강화 구매"가 서로를 부풀리는
   // 피드백 루프가 걸려 눈덩이처럼 폭증할 수 있다. 최종값에 상한선을 걸어 원천 차단한다.
   const GOLD_MULT_CAP = 50;
   const EXP_MULT_CAP = 50;
-  const goldMult = Math.min(GOLD_MULT_CAP, (1 + gu.goldGain*0.10) * (1 + su.goldMult*0.20) * (1 + re.goldRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.goldPct/100) * (1 + mut.goldPct/100) * (1 + tb.goldPct/100));
-  const expMult = Math.min(EXP_MULT_CAP, (1 + (gu.expGain||0)*0.10) * (1 + (su.expMult||0)*0.20) * (1 + re.expRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.expPct/100) * (1 + mut.expPct/100) * (1 + tb.expPct/100));
-  const spdMult = (1 + Math.min(gu.atkSpeed,50)*0.05) * (1 + re.spdRelic*0.03) * (1 + eq.spdPct/100) * (1 + mut.spdPct/100) * (1 + tb.spdPct/100);
+  const goldMult = Math.min(GOLD_MULT_CAP, (1 + gu.goldGain*0.10) * (1 + su.goldMult*0.20) * (1 + re.goldRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.goldPct/100) * (1 + mut.goldPct/100) * (1 + tb.goldPct/100) * (1 + cb.goldPct/100));
+  const expMult = Math.min(EXP_MULT_CAP, (1 + (gu.expGain||0)*0.10) * (1 + (su.expMult||0)*0.20) * (1 + re.expRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.expPct/100) * (1 + mut.expPct/100) * (1 + tb.expPct/100) * (1 + cb.expPct/100));
+  const spdMult = (1 + Math.min(gu.atkSpeed,50)*0.05) * (1 + re.spdRelic*0.03) * (1 + eq.spdPct/100) * (1 + mut.spdPct/100) * (1 + tb.spdPct/100) * (1 + cb.spdPct/100);
   const tickMs = Math.max(150, Math.round(1000 / spdMult));
-  const dropChance = Math.min(0.6, 0.15 + re.dropRelic*0.015 + mut.dropAdd/100 + tb.dropAdd/100 + (su.dropAdd||0)*0.01);
-  const critChance = Math.min(100, (gu.critChance||0) * 1 + eq.critAdd + mut.critAdd + tb.critAdd); // 레벨당 1%, 최대 100%
-  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100 + (re.critDmgRelic||0)*0.02 + mut.critDmgAdd/100 + tb.critDmgAdd/100 + (su.critDmgAdd||0)*0.05; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배 (+유산+돌연변이+칭호+혈청)
+  const dropChance = Math.min(0.6, 0.15 + re.dropRelic*0.015 + mut.dropAdd/100 + tb.dropAdd/100 + (su.dropAdd||0)*0.01 + cb.dropAdd/100);
+  const critChance = Math.min(100, (gu.critChance||0) * 1 + eq.critAdd + mut.critAdd + tb.critAdd + cb.critAdd); // 레벨당 1%, 최대 100%
+  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100 + (re.critDmgRelic||0)*0.02 + mut.critDmgAdd/100 + tb.critDmgAdd/100 + (su.critDmgAdd||0)*0.05 + cb.critDmgAdd/100; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배 (+유산+돌연변이+칭호+혈청+동행)
   return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance, critChance, critDamageMult};
 }
 

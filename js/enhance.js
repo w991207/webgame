@@ -81,25 +81,20 @@ function attemptEnhance(slot){
   if(success){
     item.enhance = target;
     log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 성공! +${current} → +${target}`, 'good');
-    showEnhanceResult(slot, 'success', `✅ 강화 성공! +${current} → +${target}`);
   } else if(info.risk === 'safe'){
     log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패... (+${current} 유지)`);
-    showEnhanceResult(slot, 'fail', `❌ 강화 실패... (+${current} 유지)`);
   } else if(info.risk === 'downgrade'){
     item.enhance = Math.max(0, current - 1);
     log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 단계가 하락했습니다. +${current} → +${item.enhance}`, 'bad');
-    showEnhanceResult(slot, 'fail', `❌ 강화 실패! 단계 하락 +${current} → +${item.enhance}`);
   } else { // destroy risk
     const destroyed = Math.random() * 100 < info.destroyChance;
     if(destroyed){
       state.equipment[slot] = null;
       state.enhanceDestroyedCount = (state.enhanceDestroyedCount||0) + 1;
       log(`💥 ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 장비가 파괴되어 사라졌습니다...`, 'bad');
-      showEnhanceResult(slot, 'destroy', `💥 장비 파괴! ${ENHANCE_SLOT_LABEL[slot]}가 사라졌습니다`);
     } else {
       item.enhance = Math.max(0, current - 1);
       log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 아슬아슬하게 파괴는 면했지만 단계가 하락했습니다. +${current} → +${item.enhance}`, 'bad');
-      showEnhanceResult(slot, 'fail', `❌ 강화 실패! 단계 하락 +${current} → +${item.enhance} (파괴는 면함)`);
     }
   }
 

@@ -235,6 +235,7 @@ function renderEquipment(){
       `;
     }
   });
+  if(typeof renderEnhancePanel === 'function') renderEnhancePanel();
 
   const tierList = document.getElementById('gachaTierList');
   if(tierList){
@@ -284,7 +285,6 @@ function renderEquipment(){
   }
 
   renderEquipRarityInfo();
-  if(typeof renderEnhancePanel === 'function') renderEnhancePanel();
 
   const grid = document.getElementById('equipInventoryGrid');
   const invCountEl = document.getElementById('equipInvCount');
