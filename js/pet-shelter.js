@@ -4,9 +4,9 @@
 
 // 동료별 간식 반응 대사 (여러 개 중 랜덤 출력). 아직 없는 동료엔 공용 대사를 사용.
 const PET_FEED_LINES = {
-  dragonPet: ['🤖 전투 드론이 기름칠을 받고 반짝거립니다!', '🤖 위잉- 위잉- 신난 소리를 냅니다.'],
-  jellyPet:  ['💊 의료 드론이 삐빅- 감사 신호를 보냅니다.', '💊 조심스럽게 다가와 스캔합니다. 기분이 좋아보여요.'],
-  crowPet:   ['🐦 정찰 까마귀가 고개를 갸웃하며 간식을 쪼아먹습니다.', '🐦 만족스러운 듯 깃털을 다듬습니다.'],
+  dragonPet: ['🌭 전투 소세지가 기름칠을 받고 반짝거립니다!', '🌭 위잉- 위잉- 신난 소리를 냅니다.'],
+  jellyPet:  ['🌭 용맹한 소세지가 삐빅- 감사 신호를 보냅니다.', '🌭 조심스럽게 다가와 스캔합니다. 기분이 좋아보여요.'],
+  crowPet:   ['🌭 분홍소세지가 고개를 갸웃하며 간식을 쪼아먹습니다.', '🌭 만족스러운 듯 몸을 흔듭니다.'],
   owlPet:    ['🦉 정찰 부엉이가 눈을 크게 뜨고 쳐다봅니다.', '🦉 부엉- 하고 작게 웁니다.'],
   fairyPet:  ['🐁 탐지 쥐가 볼주머니에 간식을 쏙 넣습니다.', '🐁 꼬물꼬물 기뻐하며 한 바퀴 돕니다.'],
   wolfPet:   ['🐺 변이 늑대가 꼬리를 살랑입니다.', '🐺 낮게 그르릉거리지만 왠지 기분 좋아보여요.'],
@@ -83,7 +83,7 @@ function renderPetShelter(){
     const card = document.createElement('div');
     card.className = 'pet-shelter-card';
     card.innerHTML = `
-      <div class="pet-shelter-icon">${p.icon}</div>
+      <div class="pet-shelter-icon">${petIconHtml(p, 34)}</div>
       <div class="pet-shelter-name">${p.name} <span class="pet-shelter-lvl">Lv.${lvl}</span></div>
       <div class="pet-shelter-affection">${petAffectionLabel(p.key)} (${affection}${nextMilestone ? ` / 다음 ${nextMilestone}` : ''})</div>
       <button class="pet-feed-btn" type="button" data-key="${p.key}" ${(fed || state.gold < cost) ? 'disabled' : ''}>
@@ -129,7 +129,7 @@ function ensurePetShelterRoom(owned){
     el.title = `${p.name} · 클릭해서 간식 주기`;
     el.style.left = (10 + Math.random() * 76) + '%';
     el.style.top = (14 + Math.random() * 62) + '%';
-    el.innerHTML = `<span class="pet-wander-flip"><span class="pet-wander-face">${p.icon}</span></span>`;
+    el.innerHTML = `<span class="pet-wander-flip"><span class="pet-wander-face">${petIconHtml(p, 30)}</span></span>`;
     el.addEventListener('click', () => feedPet(p.key));
     room.appendChild(el);
   });

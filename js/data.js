@@ -40,7 +40,7 @@ const RELICS = [
 
 const PETS = [
   {
-    key:'dragonPet', name:'전투 드론', icon:'🤖', interval:8,
+    key:'dragonPet', name:'전투 소세지', icon:'🌭', img:'image/pets/sausage.png', interval:8,
     companionStat:'atkPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${8}초마다 공격력의 ${Math.round((0.4+lvl*0.026)*100)}%만큼 변이체에게 추가 피해`,
     trigger:(lvl,s)=>{
@@ -48,11 +48,11 @@ const PETS = [
       state.monsterHp -= dmg;
       if(state.monsterHp < 1) state.monsterHp = 1;
       floatText('🔥-'+dmg, null);
-      log(`🤖 전투 드론의 브레스! -${dmg}`, 'good');
+      log(`🌭 전투 소세지의 브레스! -${dmg}`, 'good');
     }
   },
   {
-    key:'jellyPet', name:'의료 드론', icon:'💊', interval:10,
+    key:'jellyPet', name:'용맹한 소세지', icon:'🌭', img:'image/pets/sausage-brave.png', interval:10,
     companionStat:'hpPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${10}초마다 최대 체력의 ${Math.round(lvl*2)}% 회복`,
     trigger:(lvl,s)=>{
@@ -60,19 +60,19 @@ const PETS = [
       if(heal>0 && state.playerHp>0){
         state.playerHp = Math.min(s.maxHp, state.playerHp+heal);
         floatText('+'+heal, 'heal');
-        log(`💊 의료 드론이 체력을 회복시켜줬습니다! +${heal}`, 'good');
+        log(`🌭 용맹한 소세지가 체력을 회복시켜줬습니다! +${heal}`, 'good');
       }
     }
   },
   {
-    key:'crowPet', name:'정찰 까마귀', icon:'🐦', interval:12,
+    key:'crowPet', name:'분홍소세지', icon:'🌭', img:'image/pets/sausage-pink.png', interval:12,
     companionStat:'goldPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${12}초마다 물자 즉시 획득 (레벨 비례)`,
     trigger:(lvl,s)=>{
       const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : state.floor);
       const g = Math.round(goldDropFor(currentFloor,false) * s.goldMult * (0.4+lvl*0.2));
       state.gold += g;
-      log(`🐦 정찰 까마귀가 물자를 물어왔습니다! +${g}📦`, 'good');
+      log(`🌭 분홍소세지가 물자를 물어왔습니다! +${g}📦`, 'good');
     }
   },
   {
@@ -122,6 +122,13 @@ const PETS = [
     }
   },
 ];
+
+// 펫 아이콘 표시용 헬퍼 — 전용 이미지(p.img)가 있으면 그 이미지를, 없으면 이모지(p.icon)를 사용.
+function petIconHtml(p, sizePx){
+  if(!p) return '';
+  if(p.img) return `<img src="${p.img}" alt="${p.name}" style="height:${sizePx}px;width:auto;vertical-align:middle;image-rendering:pixelated;">`;
+  return p.icon;
+}
 
 const GOLD_UPGRADES = [
   {key:'atk', name:'무기 정비', desc:'공격력 +2', baseCost:10, mult:1.15, effect:'+2 ATK'},

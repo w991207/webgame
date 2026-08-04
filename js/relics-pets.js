@@ -98,7 +98,7 @@ function applyCompanionSprite(){
     return;
   }
   const p = PETS.find(x => x.key === key);
-  el.textContent = p ? p.icon : '';
+  el.innerHTML = p ? petIconHtml(p, 26) : '';
   el.style.display = p ? 'block' : 'none';
 }
 
@@ -117,7 +117,7 @@ function renderPets(){
     const card = document.createElement('div');
     card.className = 'relic-card' + (owned?' owned':'') + (isCompanion?' equipped':'');
     card.innerHTML = `
-      <div class="rname"><span>${p.icon} ${p.name}</span><span class="rlvl">Lv.${lvl}</span></div>
+      <div class="rname"><span>${petIconHtml(p, 16)} ${p.name}</span><span class="rlvl">Lv.${lvl}</span></div>
       <div class="rdesc">${p.descFn(owned ? lvl : 1)}${owned?'':' (미보유)'}</div>
       ${owned && p.companionStat ? `<div class="rdesc" style="color:var(--gold);">${companionEffectText(p)}</div>` : ''}
       ${owned && p.companionStat ? `<button class="title-equip-btn ${isCompanion?'unequip':''}" data-key="${p.key}">${isCompanion?'동행 해제':'동행하기'}</button>` : ''}
@@ -135,7 +135,7 @@ let petTimers = {};
 function petTick(){
   if(state.playerHp <= 0) return;
   // 무한의 탑(일반/어려움)을 100층까지 정복하면 전투가 멈춘 채로 고정되는데,
-  // 이때도 펫 트리거(예: 전투 드론이 더미 몬스터를 계속 때리는 것)가 계속 반응해서
+  // 이때도 펫 트리거(예: 전투 소세지가 더미 몬스터를 계속 때리는 것)가 계속 반응해서
   // 로그가 스팸처럼 쌓이는 문제가 있었다. 정복 완료 상태에서는 펫도 함께 정지시킨다.
   if(state.mode === 'tower' && state.towerCleared) return;
   if(state.mode === 'towerHard' && state.htCleared) return;
