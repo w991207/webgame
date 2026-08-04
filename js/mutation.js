@@ -81,6 +81,7 @@ function gainMutationPoints(amount){
 function buyMutationNode(key){
   const node = mutationNodeByKey(key);
   if(!node || mutationNodeLocked(node)) return;
+  if(isUpgradeStatMaxed(node.stat)) return; // 실제 스탯이 이미 캡 도달 — 구매 차단
   const lvl = mutationLevel(key);
   if(lvl >= node.maxLevel) return;
   const cost = mutationNodeCost(node);
@@ -113,11 +114,14 @@ function renderMutationTree(){
       const cost = mutationNodeCost(node);
       const totalVal = (lvl*node.perLevel).toFixed(node.unit==='%p'?1:0);
       let footer;
+      const statMaxed = isUpgradeStatMaxed(node.stat);
       if(locked){
         const preq = mutationNodeByKey(node.prereq.key);
         footer = `<div class="mutation-node-lock">🔒 ${preq.name} Lv.${node.prereq.lvl} 필요</div>`;
       } else if(maxed){
         footer = `<button class="mutation-buy-btn maxed" disabled>MAX</button>`;
+      } else if(statMaxed){
+        footer = `<button class="mutation-buy-btn maxed" disabled>⚡ 상한 도달 (효과없음)</button>`;
       } else {
         const afford = state.mutation.points >= cost;
         footer = `<button class="mutation-buy-btn" data-key="${node.key}" ${afford?'':'disabled'}>🧬 ${cost} 강화</button>`;

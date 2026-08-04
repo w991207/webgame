@@ -130,6 +130,13 @@ let state = defaultState();
 let playerTickHandle = null;
 let monsterTickHandle = null;
 
+// ---------- 상한(캡)이 걸린 파생 스탯 상수 ----------
+// stats() 안에서만 쓰던 값을 밖으로 빼서, 강화 UI 쪽에서도 "지금 이미 캡인지" 체크할 수 있게 함.
+const GOLD_MULT_CAP = 50;
+const EXP_MULT_CAP = 50;
+const DROP_CHANCE_CAP = 0.6;
+const TICK_MS_MIN = 150; // 공격속도 하한 (더 빨라질 수 없는 지점)
+
 // ---------- Derived stats ----------
 function base(){
   const lvl = state.level;
@@ -197,16 +204,42 @@ function stats(){
   // 물자/경험치 획득 배율은 5개 소스가 전부 곱연산으로 쌓이는 구조라, 상한이 없으면
   // "물자로 물자강화 구매 → 물자 획득 증가 → 더 많은 물자강화 구매"가 서로를 부풀리는
   // 피드백 루프가 걸려 눈덩이처럼 폭증할 수 있다. 최종값에 상한선을 걸어 원천 차단한다.
-  const GOLD_MULT_CAP = 50;
-  const EXP_MULT_CAP = 50;
   const goldMult = Math.min(GOLD_MULT_CAP, (1 + gu.goldGain*0.10) * (1 + su.goldMult*0.20) * (1 + re.goldRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.goldPct/100) * (1 + mut.goldPct/100) * (1 + tb.goldPct/100) * (1 + cb.goldPct/100));
   const expMult = Math.min(EXP_MULT_CAP, (1 + (gu.expGain||0)*0.10) * (1 + (su.expMult||0)*0.20) * (1 + re.expRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.expPct/100) * (1 + mut.expPct/100) * (1 + tb.expPct/100) * (1 + cb.expPct/100));
   const spdMult = (1 + Math.min(gu.atkSpeed,50)*0.05) * (1 + re.spdRelic*0.03) * (1 + eq.spdPct/100) * (1 + mut.spdPct/100) * (1 + tb.spdPct/100) * (1 + cb.spdPct/100);
-  const tickMs = Math.max(150, Math.round(1000 / spdMult));
-  const dropChance = Math.min(0.6, 0.15 + re.dropRelic*0.015 + mut.dropAdd/100 + tb.dropAdd/100 + (su.dropAdd||0)*0.01 + cb.dropAdd/100);
+  const tickMs = Math.max(TICK_MS_MIN, Math.round(1000 / spdMult));
+  const dropChance = Math.min(DROP_CHANCE_CAP, 0.15 + re.dropRelic*0.015 + mut.dropAdd/100 + tb.dropAdd/100 + (su.dropAdd||0)*0.01 + cb.dropAdd/100);
   const critChance = Math.min(100, (gu.critChance||0) * 1 + eq.critAdd + mut.critAdd + tb.critAdd + cb.critAdd); // 레벨당 1%, 최대 100%
   const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100 + (re.critDmgRelic||0)*0.02 + mut.critDmgAdd/100 + tb.critDmgAdd/100 + (su.critDmgAdd||0)*0.05 + cb.critDmgAdd/100; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배 (+유산+돌연변이+칭호+혈청+동행)
   return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance, critChance, critDamageMult};
+}
+
+// 지금 실제 최종 스탯이 이미 캡에 도달했는지 확인 (강화 낭비 방지용).
+function statCapStatus(){
+  const s = stats();
+  return {
+    gold: s.goldMult >= GOLD_MULT_CAP,
+    exp: s.expMult >= EXP_MULT_CAP,
+    crit: s.critChance >= 100,
+    spd: s.tickMs <= TICK_MS_MIN,
+    drop: s.dropChance >= DROP_CHANCE_CAP,
+  };
+}
+
+// 강화 항목(statKey)이 지금 사도 아무 효과가 없는 상태인지 확인.
+// goldExpPct처럼 여러 스탯에 동시에 영향을 주는 항목은, 관련된 캡이 "전부" 찼을 때만
+// 완전히 무의미해진다 (하나라도 안 찼으면 그쪽엔 여전히 효과가 있으므로 계속 살 수 있게 둠).
+function isUpgradeStatMaxed(statKey){
+  const cap = statCapStatus();
+  switch(statKey){
+    case 'goldPct': return cap.gold;
+    case 'expPct': return cap.exp;
+    case 'critAdd': return cap.crit;
+    case 'spdPct': return cap.spd;
+    case 'dropAdd': return cap.drop;
+    case 'goldExpPct': return cap.gold && cap.exp;
+    default: return false; // atkDefPct, critDmgAdd 등 캡 없는 항목
+  }
 }
 
 // ---------- 전투력(Combat Power) 계산 ----------
