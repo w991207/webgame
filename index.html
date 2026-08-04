@@ -153,6 +153,7 @@
 
   <div class="tab-nav" id="tabNav">
     <button class="tab-nav-btn active" data-tab="tab-growth">⚔️ 성장</button>
+    <button class="tab-nav-btn" data-tab="tab-pet">🐾 펫</button>
     <button class="tab-nav-btn" data-tab="tab-dungeon">🏚️ 구역</button>
     <button class="tab-nav-btn" data-tab="tab-event">🎁 이벤트</button>
     <button class="tab-nav-btn" data-tab="tab-plaza" id="plazaTabBtn">🌐 광장</button>
@@ -211,6 +212,25 @@
   </div>
 
   <div class="panel relic-panel">
+    <h2>🧬 돌연변이 각성</h2>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+      레벨업(+1)과 보스 처치(+3)로 <b>적응 포인트</b>를 얻습니다. 포인트를 소모해 신체를 영구히 변이시켜 전투 특성을 강화하세요. 각 갈래의 2·3번째 노드는 이전 노드를 5레벨 이상 찍어야 해금됩니다.
+    </p>
+    <div class="frag-count">🧬 적응 포인트: <span id="mutationPointsText">0</span></div>
+    <div class="mutation-tree" id="mutationTree"></div>
+  </div>
+
+  <div class="panel relic-panel">
+    <h2>🎖️ 칭호 <span id="titleUnlockedCount" style="float:right;font-size:12px;color:var(--text-dim);font-weight:400;">0 / 0</span></h2>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+      특정 조건을 달성하면 칭호가 영구히 해금됩니다. 해금한 칭호 중 <b>하나만 장착</b>할 수 있으며, 장착한 칭호의 효과만 적용됩니다. 상황에 맞는 칭호를 골라 장착하세요.
+    </p>
+    <div class="relic-grid" id="titleGrid"></div>
+  </div>
+  </div><!-- /tab-growth -->
+
+  <div class="tab-content" id="tab-pet" style="display:none;">
+  <div class="panel relic-panel">
     <h2>동료</h2>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
       유산이 지속 스탯 보너스라면, 동료는 <b>시간마다 자동으로 발동하는 능동 효과</b>를 줍니다 (일정 주기로 추가 피해, 회복, 물자/경험치/파편 즉시 획득 등). 같은 ◈ 파편으로 소환하며, 중복 소환 시 레벨이 올라 효과가 강해집니다.
@@ -231,24 +251,7 @@
     <div class="pet-shelter-room" id="petShelterRoom"></div>
     <div class="pet-shelter-grid" id="petShelterGrid"></div>
   </div>
-
-  <div class="panel relic-panel">
-    <h2>🧬 돌연변이 각성</h2>
-    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-      레벨업(+1)과 보스 처치(+3)로 <b>적응 포인트</b>를 얻습니다. 포인트를 소모해 신체를 영구히 변이시켜 전투 특성을 강화하세요. 각 갈래의 2·3번째 노드는 이전 노드를 5레벨 이상 찍어야 해금됩니다.
-    </p>
-    <div class="frag-count">🧬 적응 포인트: <span id="mutationPointsText">0</span></div>
-    <div class="mutation-tree" id="mutationTree"></div>
-  </div>
-
-  <div class="panel relic-panel">
-    <h2>🎖️ 칭호 <span id="titleUnlockedCount" style="float:right;font-size:12px;color:var(--text-dim);font-weight:400;">0 / 0</span></h2>
-    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-      특정 조건을 달성하면 칭호가 영구히 해금됩니다. 해금한 칭호 중 <b>하나만 장착</b>할 수 있으며, 장착한 칭호의 효과만 적용됩니다. 상황에 맞는 칭호를 골라 장착하세요.
-    </p>
-    <div class="relic-grid" id="titleGrid"></div>
-  </div>
-  </div><!-- /tab-growth -->
+  </div><!-- /tab-pet -->
 
   <div class="tab-content" id="tab-dungeon" style="display:none;">
   <div class="panel relic-panel">
