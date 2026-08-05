@@ -412,6 +412,15 @@ function monsterAttackTick(){
   floatText('-'+dmgToPlayer, 'dmgToPlayer');
   pulsePlayer();
 
+  // 불굴의 의지(생존 전문가 전용 스킬)로 쌓아둔 "치명적인 일격 방지" 충전이 있으면,
+  // 이번 공격으로 죽었어도 충전 1개를 소모해 체력 1로 대신 생존시킨다.
+  if(state.playerHp <= 0 && (state.ironWillCharges||0) > 0){
+    state.ironWillCharges--;
+    state.playerHp = 1;
+    floatText('생존!', 'good');
+    log(`💪 불굴의 의지가 발동해 치명적인 일격을 버텨냈습니다! (체력 1로 생존, 남은 충전 ${state.ironWillCharges})`, 'good');
+  }
+
   if(state.playerHp <= 0){
     
     if(state.mode === 'tower'){

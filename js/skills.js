@@ -3,7 +3,10 @@
 // 자동으로 발동한다(수동 조작 없음). 레벨이 오를수록 쿨타임이 짧아지고 효과가 강해진다.
 // 패시브 성격의 영구 강화는 이미 "돌연변이 각성"이 담당하므로, 여기서는 전투 중
 // 눈에 보이는 "발동형" 효과만 다룬다.
-
+//
+// 아래 4개(이중 강타/관통 사격/응급 처치/강탈 일격)는 직업(job) 상관없이 누구나 배울 수 있는
+// 기본 스킬. 그 아래 JOB_EXCLUSIVE_SKILLS 4개는 전직(job.js, 레벨 1000)해서 해당 직업을
+// 선택해야만 새로 습득/강화할 수 있는 직업 전용 스킬이다.
 const ACTIVE_SKILLS = [
   {
     key:'skillDoubleStrike', name:'이중 강타', icon:'🗡️',
@@ -29,6 +32,31 @@ const ACTIVE_SKILLS = [
     baseCooldown:18, minCooldown:9, cdStep:1.0,
     descFn: lvl => `타격과 동시에 물자 획득(평소 획득량의 ${(30+Math.max(lvl,1)*10)}%) · ${skillCooldownSec({baseCooldown:18,minCooldown:9,cdStep:1.0}, Math.max(lvl,1)).toFixed(1)}초마다`,
   },
+  // ---------- 직업 전용 스킬 (전직 필요) ----------
+  {
+    key:'skillWarCry', name:'전장의 포효', icon:'🛡️', job:'warrior',
+    maxLevel:30, baseCost:5, costMult:1.35,
+    baseCooldown:16, minCooldown:8, cdStep:0.9,
+    descFn: lvl => `공격력+방어력을 합산한 강타(공격력 + 방어력×${(1.5+Math.max(lvl,1)*0.15).toFixed(1)}), 방어 무시 · ${skillCooldownSec({baseCooldown:16,minCooldown:8,cdStep:0.9}, Math.max(lvl,1)).toFixed(1)}초마다`,
+  },
+  {
+    key:'skillDeadeye', name:'확정 필살', icon:'💥', job:'sniper',
+    maxLevel:30, baseCost:6, costMult:1.4,
+    baseCooldown:22, minCooldown:12, cdStep:1.1,
+    descFn: lvl => `회피 무시(무조건 명중)로 치명타 확정 강타(피해 ${(150+Math.max(lvl,1)*15)}%) · ${skillCooldownSec({baseCooldown:22,minCooldown:12,cdStep:1.1}, Math.max(lvl,1)).toFixed(1)}초마다`,
+  },
+  {
+    key:'skillJackpot', name:'대박 사냥', icon:'🎰', job:'scavenger',
+    maxLevel:30, baseCost:6, costMult:1.4,
+    baseCooldown:25, minCooldown:14, cdStep:1.2,
+    descFn: lvl => `타격 없이 즉시 물자(평소 처치 보상의 ${(200+Math.max(lvl,1)*30)}%) + ◈ 유산 파편 1개 획득 · ${skillCooldownSec({baseCooldown:25,minCooldown:14,cdStep:1.2}, Math.max(lvl,1)).toFixed(1)}초마다`,
+  },
+  {
+    key:'skillIronWill', name:'불굴의 의지', icon:'💪', job:'survivalist',
+    maxLevel:30, baseCost:5, costMult:1.3,
+    baseCooldown:26, minCooldown:16, cdStep:1.0,
+    descFn: lvl => `최대 체력의 ${(15+Math.max(lvl,1)*2)}% 즉시 회복 + 다음 치명적인 일격을 1회 버텨냄(체력 1로 생존) · ${skillCooldownSec({baseCooldown:26,minCooldown:16,cdStep:1.0}, Math.max(lvl,1)).toFixed(1)}초마다`,
+  },
 ];
 
 // 쿨타임(밀리초 타임스탬프)은 세션 동안만 유지하면 충분해서 state에 넣지 않고
@@ -52,6 +80,11 @@ function buySkill(key){
   if(!sk) return;
   const lvl = skillLevel(key);
   if(lvl >= sk.maxLevel) return;
+  if(sk.job && state.job !== sk.job){
+    const jobMeta = (typeof JOB_CLASSES !== 'undefined') ? JOB_CLASSES.find(j=>j.key===sk.job) : null;
+    log(`${sk.icon} [${sk.name}]은(는) ${jobMeta ? jobMeta.icon+' '+jobMeta.name : sk.job} 전용 스킬입니다. 전직 후 습득/강화할 수 있습니다.`, 'warn');
+    return;
+  }
   const cost = skillCost(sk, lvl);
   if(state.soul < cost) return;
   state.soul -= cost;
@@ -106,6 +139,47 @@ function triggerActiveSkill(sk, lvl){
     state.lifetimeGoldEarned += bonusGold;
     floatText('+'+bonusGold+'📦', 'good');
     log(`💰 강탈 일격 발동! (+${bonusGold}📦)`, 'good');
+    return true;
+  }
+
+  // ---------- 직업 전용 스킬 ----------
+  if(sk.key === 'skillWarCry'){
+    if(state.monsterHp <= 0) return false;
+    const dmg = Math.round(s.atk + s.def * (1.5 + lvl*0.15));
+    dealDamageToMonster(dmg, false, {floatClass:'skill'});
+    log(`🛡️ 전장의 포효 발동! (방어 무시 -${dmg})`, 'new');
+    return true;
+  }
+
+  if(sk.key === 'skillDeadeye'){
+    if(state.monsterHp <= 0) return false;
+    let dmg = Math.round(Math.max(1, s.atk - monsterDefFor(currentFloor, state.isBoss)) * (1.5 + lvl*0.15));
+    dmg = Math.round(dmg * s.critDamageMult); // 확정 치명타
+    dealDamageToMonster(dmg, true, {floatClass:'skill'}); // 회피 판정 없이(hitChanceFor 미적용) 확정 명중
+    log(`💥 확정 필살 발동! (확정 명중, CRIT -${dmg})`, 'new');
+    return true;
+  }
+
+  if(sk.key === 'skillJackpot'){
+    if(state.monsterHp <= 0) return false;
+    const bonusGold = Math.round(goldDropFor(currentFloor, state.isBoss) * s.goldMult * (2.0 + lvl*0.3));
+    state.gold += bonusGold;
+    state.lifetimeGoldEarned += bonusGold;
+    state.fragments = (state.fragments||0) + 1;
+    floatText('+'+bonusGold+'📦', 'good');
+    log(`🎰 대박 사냥 발동! (+${bonusGold}📦, ◈ 유산 파편 +1)`, 'good');
+    return true;
+  }
+
+  if(sk.key === 'skillIronWill'){
+    if(state.playerHp <= 0) return false;
+    const healAmt = Math.round(s.maxHp * (0.15 + lvl*0.02));
+    if(state.playerHp > 0 && state.playerHp < s.maxHp){
+      state.playerHp = Math.min(s.maxHp, state.playerHp + healAmt);
+      floatText('+'+healAmt, 'heal');
+    }
+    state.ironWillCharges = (state.ironWillCharges||0) + 1;
+    log(`💪 불굴의 의지 발동! (+${healAmt} 체력, 치명적인 일격 1회 방지 준비)`, 'good');
     return true;
   }
 
@@ -197,17 +271,30 @@ function renderSkillsPanel(){
     const maxed = lvl >= sk.maxLevel;
     const cost = skillCost(sk, lvl);
     const afford = state.soul >= cost;
+    const jobMeta = (typeof JOB_CLASSES !== 'undefined') ? JOB_CLASSES.find(j=>j.key===sk.job) : null;
+    // 이미 습득한 스킬(lvl>0)은 재전직해서 다른 직업이어도 계속 강화 가능하게 둔다.
+    // 신규 습득(lvl===0)만 "지금 그 직업이어야" 가능하도록 막는다.
+    const jobLocked = sk.job && state.job !== sk.job && lvl === 0;
+    const jobTagHtml = jobMeta ? `<span class="skill-job-tag">${jobMeta.icon} ${jobMeta.name} 전용</span> · ` : '';
+
+    let btnHtml;
+    if(maxed){
+      btnHtml = `<button class="mutation-buy-btn maxed" disabled>MAX</button>`;
+    } else if(jobLocked){
+      btnHtml = `<button class="mutation-buy-btn" disabled>${jobMeta ? jobMeta.icon+' '+jobMeta.name+' 전직 필요' : '전직 필요'}</button>`;
+    } else {
+      btnHtml = `<button class="mutation-buy-btn" data-key="${sk.key}" ${afford?'':'disabled'}>🧪 ${cost} ${lvl===0?'습득':'강화'}</button>`;
+    }
+
     html += `
-      <div class="mutation-node ${maxed?'maxed':''}">
+      <div class="mutation-node ${maxed?'maxed':''} ${jobLocked?'locked':''}">
         <div class="mutation-node-top">
           <span class="mutation-node-icon">${sk.icon}</span>
           <span class="mutation-node-name">${sk.name}</span>
           <span class="mutation-node-lvl">Lv.${lvl}/${sk.maxLevel}</span>
         </div>
-        <div class="mutation-node-desc">${sk.descFn(lvl)}</div>
-        ${maxed
-          ? `<button class="mutation-buy-btn maxed" disabled>MAX</button>`
-          : `<button class="mutation-buy-btn" data-key="${sk.key}" ${afford?'':'disabled'}>🧪 ${cost} ${lvl===0?'습득':'강화'}</button>`}
+        <div class="mutation-node-desc">${jobTagHtml}${sk.descFn(lvl)}</div>
+        ${btnHtml}
       </div>`;
   });
   el.innerHTML = html;

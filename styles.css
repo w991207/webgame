@@ -927,6 +927,7 @@
   .mutation-node-lvl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--soul);}
   .mutation-node-desc{font-size:11px;color:var(--text-dim);margin-top:4px;line-height:1.5;}
   .mutation-node-lock{font-size:11px;color:var(--text-dim);margin-top:8px;}
+  .skill-job-tag{color:var(--soul);font-weight:600;}
   .mutation-buy-btn{
     width:100%;margin-top:8px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);
     background:var(--panel-2);color:var(--text);font-size:12px;cursor:pointer;

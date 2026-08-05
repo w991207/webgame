@@ -207,6 +207,17 @@
   </div>
 
   <div class="panel relic-panel">
+    <h2>🎖️ 전직 <span id="jobLevelReq" style="float:right;font-size:12px;color:var(--text-dim);font-weight:400;">Lv.1000 해금</span></h2>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+      레벨 1000을 달성하면 4개 직업 중 하나를 선택해 전직할 수 있습니다. 직업마다 특화된 영구 보너스가 붙고, <b>최초 전직은 무료</b>이며 이후 재전직은 🧪 혈청이 듭니다.
+    </p>
+    <div id="jobLockNotice" style="font-size:13px;color:var(--text-dim);padding:12px;text-align:center;border:1px dashed var(--border);border-radius:8px;">
+      🔒 레벨 1000에 도달하면 해금됩니다. (현재 <span id="jobCurrentLevelText">1</span>레벨)
+    </div>
+    <div class="mutation-tree" id="jobList" style="display:none;"></div>
+  </div>
+
+  <div class="panel relic-panel">
     <h2>유산 뽑기</h2>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
       변이체 처치 시 15% 확률로 <span style="color:var(--frag)">◈ 유산 파편</span>을 얻습니다. 파편을 모아 유산을 뽑으면 무작위 유산의 레벨이 오르며 효과가 영구적으로 강해집니다.
@@ -584,6 +595,7 @@
 <script src="js/storage.js"></script>
 <script src="js/data.js"></script>
 <script src="js/mutation.js"></script>
+<script src="js/job.js"></script>
 <script src="js/titles.js"></script>
 <script src="js/state.js"></script>
 <script src="js/combat.js"></script>
