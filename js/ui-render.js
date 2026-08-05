@@ -10,7 +10,23 @@ function renderMonster(){
   
   document.getElementById('monsterName').textContent = meta.name;
   document.getElementById('bossTag').style.display = state.isBoss ? 'block' : 'none';
-  
+
+  // 현재 층에서 명중률 95%를 안정적으로 유지하려면 필요한 권장 명중 수치 표시.
+  // (몬스터 기준 / 보스 기준을 함께 보여줘서, 보스전 대비 여유치까지 가늠할 수 있게 함)
+  const accEl = document.getElementById('accuracyLine');
+  if(accEl){
+    const cf = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+    if((state.mode === 'tower' && state.towerCleared) || (state.mode === 'towerHard' && state.htCleared)){
+      accEl.textContent = '';
+    } else {
+      const recMob = recommendedAccuracyFor(cf, false);
+      const recBoss = recommendedAccuracyFor(cf, true);
+      const myAcc = stats().accuracy;
+      const okClass = myAcc >= recBoss ? 'ok' : (myAcc >= recMob ? '' : 'bad');
+      accEl.innerHTML = `권장 명중: 몬스터 ${recMob} / 보스 ${recBoss} <span class="${okClass}">(내 명중 ${myAcc})</span>`;
+    }
+  }
+
   const progressEl = document.getElementById('killProgressText');
   if(state.mode === 'tower'){
     document.getElementById('floorBadge').textContent = state.towerCleared ? '🏆 TOWER CLEAR! (100/100)' : ('TOWER ' + state.towerFloor + ' / 100F');
@@ -88,6 +104,16 @@ function renderCombatFrame(){
   } else {
     critChanceEl.textContent = s.critChance.toFixed(0) + '%';
     critDamageEl.textContent = 'x' + s.critDamageMult.toFixed(2);
+  }
+
+  const accEl = document.getElementById('statAccuracy');
+  if(accEl) accEl.textContent = s.accuracy;
+  const hitChanceEl = document.getElementById('statHitChance');
+  if(hitChanceEl){
+    const cf = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+    const hc = hitChanceFor(cf, state.isBoss, s.accuracy);
+    hitChanceEl.textContent = hc.toFixed(0) + '%';
+    hitChanceEl.style.color = hc >= 90 ? '' : (hc >= 50 ? '#e8a33d' : 'var(--hp)');
   }
 
   const needed = expNeeded(state.level);

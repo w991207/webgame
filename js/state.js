@@ -27,8 +27,8 @@ function defaultState(){
     monsterIndex: 0,
     isBoss: false,
     playerHp: 0,
-    goldUpgrades: {atk:0, def:0, hp:0, goldGain:0, expGain:0, atkSpeed:0, critChance:0, critDamage:0},
-    soulUpgrades: {atkMult:0, goldMult:0, defMult:0, expMult:0, dropAdd:0, critDmgAdd:0},
+    goldUpgrades: {atk:0, def:0, hp:0, goldGain:0, expGain:0, atkSpeed:0, critChance:0, critDamage:0, accuracy:0},
+    soulUpgrades: {atkMult:0, goldMult:0, defMult:0, expMult:0, dropAdd:0, critDmgAdd:0, accuracyAdd:0},
     totalKills: 0,
     totalBossKills: 0,
     rebirthCount: 0,
@@ -136,6 +136,8 @@ const GOLD_MULT_CAP = 50;
 const EXP_MULT_CAP = 50;
 const DROP_CHANCE_CAP = 0.6;
 const TICK_MS_MIN = 150; // 공격속도 하한 (더 빨라질 수 없는 지점)
+const ACCURACY_PER_LEVEL = 3; // '조준 훈련'(골드강화) 1레벨당 명중 +3 (이 스탯은 캡이 없음 — combat.js의 몬스터 회피 참고)
+const SOUL_ACCURACY_PER_LEVEL = 5; // '심안의 룬'(혈청강화) 1레벨당 명중 +5 (골드강화보다 상승폭이 큼, 역시 캡 없음)
 
 // ---------- Derived stats ----------
 function base(){
@@ -211,7 +213,11 @@ function stats(){
   const dropChance = Math.min(DROP_CHANCE_CAP, 0.15 + re.dropRelic*0.015 + mut.dropAdd/100 + tb.dropAdd/100 + (su.dropAdd||0)*0.01 + cb.dropAdd/100);
   const critChance = Math.min(100, (gu.critChance||0) * 1 + eq.critAdd + mut.critAdd + tb.critAdd + cb.critAdd); // 레벨당 1%, 최대 100%
   const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100 + (re.critDmgRelic||0)*0.02 + mut.critDmgAdd/100 + tb.critDmgAdd/100 + (su.critDmgAdd||0)*0.05 + cb.critDmgAdd/100; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배 (+유산+돌연변이+칭호+혈청+동행)
-  return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance, critChance, critDamageMult};
+  // 명중(accuracy): '조준 훈련'(골드강화) + '심안의 룬'(혈청강화) 1레벨당 각각 +3 / +5.
+  // 다른 강화들과 달리 상한 레벨이 없다 — 몬스터/보스의 회피(combat.js의 monsterEvasionFor)를
+  // 상쇄하는 용도로만 쓰인다.
+  const accuracy = (gu.accuracy||0) * ACCURACY_PER_LEVEL + (su.accuracyAdd||0) * SOUL_ACCURACY_PER_LEVEL;
+  return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance, critChance, critDamageMult, accuracy};
 }
 
 // 지금 실제 최종 스탯이 이미 캡에 도달했는지 확인 (강화 낭비 방지용).

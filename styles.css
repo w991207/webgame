@@ -459,6 +459,16 @@
     margin-bottom:6px;
   }
 
+  .accuracy-line{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--text-dim);
+    margin-bottom:8px;
+    letter-spacing:.2px;
+  }
+  .accuracy-line .ok{color:#6bcf7f;font-weight:700;}
+  .accuracy-line .bad{color:var(--hp);font-weight:700;}
+
   .hp-bar-outer{
       height:22px;
       background:#0d0b13;
@@ -619,6 +629,7 @@
   .float-text.heal{color:#6bcf7f;}
   .float-text.crit{color:#ff3b3b;font-size:21px;font-weight:900;text-shadow:0 0 8px rgba(255,59,59,0.6);}
   .float-text.skill{color:var(--soul);font-weight:800;text-shadow:0 0 8px rgba(143,207,74,0.5);}
+  .float-text.miss{color:#9aa0ac;font-style:italic;font-size:14px;text-shadow:none;}
   @keyframes floatUp{
     0%{opacity:0;transform:translate(-50%,4px) scale(.5) rotate(0deg);}
     15%{opacity:1;transform:translate(calc(-50% + var(--dx)*.2),-6px) scale(1.25) rotate(var(--rot,0deg));}

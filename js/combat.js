@@ -57,7 +57,45 @@ function monsterDefFor(floor, boss){
   if(boss)
     def *= 1.8;
   return Math.round(def * normalTierMult(floor));
-}// 보상(물자/경험치)에도 같은 1000층 단위로 배율을 얹되, 난이도 배율(1.35)보다 살짝 더 후하게(1.4)
+}
+
+// ---------- 회피/명중 (Evasion / Accuracy) ----------
+// 몬스터와 보스는 층이 오를수록 회피율(%)이 상승한다. 플레이어는 상점의 "조준 훈련"
+// (goldUpgrades.accuracy, state.js의 stats().accuracy)으로 명중 수치를 올려 이를 상쇄해야 하며,
+// 다른 골드강화와 달리 이 스탯은 레벨 상한이 없다 — 몬스터 회피가 끝없이 오르는 만큼
+// 플레이어도 끝없이 명중을 투자해서 맞춰갈 수 있게 설계.
+// 최종 명중률(%) = 기본 명중(95) - 몬스터 회피 + 플레이어 명중, 5%~100% 사이로 보정한다.
+const HIT_CHANCE_BASE = 95;
+const HIT_CHANCE_MIN = 5;
+const HIT_CHANCE_MAX = 100;
+
+function monsterEvasionFor(floor, boss){
+  let ev;
+  if(state.mode === 'tower'){
+    ev = floor * 0.4;
+  } else if(state.mode === 'towerHard'){
+    ev = floor * 0.7;
+  } else {
+    ev = Math.pow(floor, 1.05) * 0.55 * normalTierMult(floor);
+  }
+  if(boss) ev *= 1.3;
+  return ev;
+}
+
+// 명중률(%) 계산. 5%~100% 사이로 보정되어 아무리 회피가 높아도 완전 무적은 아니고,
+// 아무리 명중을 올려도 100%를 넘겨 낭비되지 않는다.
+function hitChanceFor(floor, boss, accuracy){
+  const raw = HIT_CHANCE_BASE - monsterEvasionFor(floor, boss) + (accuracy||0);
+  return Math.min(HIT_CHANCE_MAX, Math.max(HIT_CHANCE_MIN, raw));
+}
+
+// 표시용: 해당 층 몬스터(또는 보스)를 명중률 95%(기본 명중률)로 안정적으로 맞히기 위해
+// 필요한 권장 명중 수치. accuracy === evasion일 때 정확히 95%가 나오므로 evasion을 올림해 반환.
+function recommendedAccuracyFor(floor, boss){
+  return Math.max(0, Math.ceil(monsterEvasionFor(floor, boss)));
+}
+
+// 보상(물자/경험치)에도 같은 1000층 단위로 배율을 얹되, 난이도 배율(1.35)보다 살짝 더 후하게(1.4)
 // 잡아서 몹이 세지는 것보다 보상이 조금 더 앞서가게 한다 (체감 성장 속도 자체를 끌어올리기 위함).
 const NORMAL_REWARD_TIER_MULT = 1.4;
 function normalRewardTierMult(floor){
@@ -328,9 +366,18 @@ function playerAttackTick(){
 
   const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
 
+  attackPlayerAnim();
+
+  const hitChance = hitChanceFor(currentFloor, state.isBoss, s.accuracy);
+  if(Math.random() * 100 >= hitChance){
+    floatText('MISS', 'miss');
+    renderCombatFrame();
+    schedulePlayerTick();
+    return;
+  }
+
   let dmgToMonster = Math.round(Math.max(1, s.atk - monsterDefFor(currentFloor, state.isBoss)));
   const isCrit = Math.random() * 100 < s.critChance;
-  attackPlayerAnim();
   if(isCrit){
     dmgToMonster = Math.round(dmgToMonster * s.critDamageMult);
   }

@@ -23,8 +23,8 @@ function processImportedData(jsonStr){
       return false;
     }
     state = Object.assign(defaultState(), loaded);
-    state.goldUpgrades = Object.assign({atk:0,def:0,hp:0,goldGain:0,atkSpeed:0,expGain:0,critChance:0,critDamage:0}, loaded.goldUpgrades||{});
-    state.soulUpgrades = Object.assign({atkMult:0,goldMult:0,defMult:0,expMult:0,dropAdd:0,critDmgAdd:0}, loaded.soulUpgrades||{});
+    state.goldUpgrades = Object.assign({atk:0,def:0,hp:0,goldGain:0,atkSpeed:0,expGain:0,critChance:0,critDamage:0,accuracy:0}, loaded.goldUpgrades||{});
+    state.soulUpgrades = Object.assign({atkMult:0,goldMult:0,defMult:0,expMult:0,dropAdd:0,critDmgAdd:0,accuracyAdd:0}, loaded.soulUpgrades||{});
     state.relics = Object.assign({hpRelic:0,atkRelic:0,defRelic:0,goldRelic:0,expRelic:0,dropRelic:0,spdRelic:0,critDmgRelic:0}, loaded.relics||{});
     state.pets = Object.assign({dragonPet:0,jellyPet:0,crowPet:0,owlPet:0,fairyPet:0,wolfPet:0,lizardPet:0}, loaded.pets||{});
     state.mutation = Object.assign({points:0,totalEarned:0}, loaded.mutation||{}, {nodes: Object.assign({}, (loaded.mutation||{}).nodes||{})});
@@ -144,8 +144,8 @@ async function loadState(){
       }
 
       state = Object.assign(defaultState(), loaded);
-      state.goldUpgrades = Object.assign({atk:0,def:0,hp:0,goldGain:0,atkSpeed:0,expGain:0,critChance:0,critDamage:0}, loaded.goldUpgrades||{});
-      state.soulUpgrades = Object.assign({atkMult:0,goldMult:0,defMult:0,expMult:0,dropAdd:0,critDmgAdd:0}, loaded.soulUpgrades||{});
+      state.goldUpgrades = Object.assign({atk:0,def:0,hp:0,goldGain:0,atkSpeed:0,expGain:0,critChance:0,critDamage:0,accuracy:0}, loaded.goldUpgrades||{});
+      state.soulUpgrades = Object.assign({atkMult:0,goldMult:0,defMult:0,expMult:0,dropAdd:0,critDmgAdd:0,accuracyAdd:0}, loaded.soulUpgrades||{});
       state.relics = Object.assign({hpRelic:0,atkRelic:0,defRelic:0,goldRelic:0,expRelic:0,dropRelic:0,spdRelic:0,critDmgRelic:0}, loaded.relics||{});
       state.pets = Object.assign({dragonPet:0,jellyPet:0,crowPet:0,owlPet:0,fairyPet:0,wolfPet:0,lizardPet:0}, loaded.pets||{});
       state.mutation = Object.assign({points:0,totalEarned:0}, loaded.mutation||{}, {nodes: Object.assign({}, (loaded.mutation||{}).nodes||{})});
