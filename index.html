@@ -416,21 +416,6 @@
     </div>
 
   </div>
-
-  <!-- Coupon Section -->
-  <div class="panel coupon-panel">
-    <h2>쿠폰 입력</h2>
-    <div class="coupon-row">
-      <input type="text" class="coupon-input" id="couponInput" placeholder="10자리 쿠폰 코드를 입력하세요" maxlength="10">
-      <button class="coupon-submit" id="couponSubmitBtn">쿠폰 사용</button>
-    </div>
-
-    <!-- 📜 사용자가 보유 쿠폰 목록을 시각적으로 볼 수 있는 영역 -->
-    <div class="coupon-list-title">📜 발행되어 있는 쿠폰 목록 (클릭하여 자동 입력)</div>
-    <div class="coupon-grid" id="couponGrid">
-      <div style="font-size:12px; color:var(--text-dim);">쿠폰 목록을 가져오는 중...</div>
-    </div>
-  </div>
   </div><!-- /tab-event -->
 
   <div class="tab-content" id="tab-plaza" style="display:none;">
@@ -577,18 +562,6 @@
   </div>
 </div>
 
-<!-- 🎟️ 신규 쿠폰 등록 알림 팝업 UI -->
-<div id="newCouponModal" class="patch-modal-overlay">
-  <div class="patch-modal-card">
-    <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">🎟️ 새로운 쿠폰이 등록되었습니다!</div>
-    <div class="patch-modal-scroll">
-      <div id="newCouponListText" style="font-size: 14px; color: #666; margin-top: 8px;">
-      </div>
-    </div>
-    <button class="patch-btn" id="newCouponCloseBtn">확인</button>
-  </div>
-</div>
-
 <div id="patchHistoryModal" class="patch-modal-overlay" style="display:none;">
     <div class="patch-modal-card">
 
@@ -624,7 +597,6 @@
 <script src="js/shop.js"></script>
 <script src="js/relics-pets.js"></script>
 <script src="js/pet-shelter.js"></script>
-<script src="js/coupons-ui.js"></script>
 <script src="js/quests.js"></script>
 <script src="js/attendance.js"></script>
 <script src="js/persistence.js"></script>

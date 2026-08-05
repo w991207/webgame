@@ -78,5 +78,8 @@ document.getElementById("patchHistoryBtn").onclick=openPatchHistory;
 // 최초 확인
 checkPatch();
 
-// 이후 10초마다 확인
-setInterval(checkPatch, 10000);
+// 이후 3분마다 확인
+// (예전엔 10초마다 + 캐시 무력화로 확인했는데, 방치형 게임 특성상 탭을 오래 켜두는
+//  유저가 많아서 Vercel 엣지 요청량을 순식간에 잡아먹는 원인이 됐음. 패치 알림은
+//  몇 분 늦게 떠도 큰 문제가 없으니 주기를 크게 늘려서 요청 횟수를 18배 줄인다.)
+setInterval(checkPatch, 180000);

@@ -1,7 +1,5 @@
 // ---------- Init ----------
 async function init(){
-  await loadCouponsJSON();
-
   const loaded = await loadState();
   if(wasVersionReset){
     log('⚠️ 밸런스 개편으로 인해 진행 상황이 초기화되었습니다. 새로운 밸런스로 다시 시작해주세요!', 'warn');
@@ -68,14 +66,6 @@ async function init(){
   setInterval(()=>saveState(false), 5000);
   window.addEventListener('beforeunload', ()=>{ saveState(true); });
 
-  // 60초마다 coupons.json 재확인 (새로고침 없이 신규 쿠폰 감지 + 팝업 알림)
-  setInterval(()=>loadCouponsJSON(true), 60000);
-  const newCouponCloseBtn = document.getElementById('newCouponCloseBtn');
-  if(newCouponCloseBtn){
-    newCouponCloseBtn.addEventListener('click', ()=>{
-      document.getElementById('newCouponModal').style.display = 'none';
-    });
-  }
   renderAttendance();
 }
 

@@ -33,7 +33,6 @@ function processImportedData(jsonStr){
     state.equipment = Object.assign({weapon:null, armor:null, accessory:null}, loaded.equipment||{});
     state.equipInventory = Array.isArray(loaded.equipInventory) ? loaded.equipInventory : [];
     state.equipPullCounts = Object.assign({t1:0,t2:0,t3:0,t4:0,t5:0}, loaded.equipPullCounts||{});
-    state.usedCoupons = loaded.usedCoupons || {};
     state.towerRewardsClaimed = loaded.towerRewardsClaimed || {};
     state.htRewardsClaimed = loaded.htRewardsClaimed || {};
     state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
@@ -154,7 +153,6 @@ async function loadState(){
       state.equipment = Object.assign({weapon:null, armor:null, accessory:null}, loaded.equipment||{});
       state.equipInventory = Array.isArray(loaded.equipInventory) ? loaded.equipInventory : [];
       state.equipPullCounts = Object.assign({t1:0,t2:0,t3:0,t4:0,t5:0}, loaded.equipPullCounts||{});
-      state.usedCoupons = loaded.usedCoupons || {};
       state.towerRewardsClaimed = loaded.towerRewardsClaimed || {};
       state.htRewardsClaimed = loaded.htRewardsClaimed || {};
       state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};

@@ -150,9 +150,7 @@ function renderAll(){
   renderDailyQuests();
   renderRepeatableQuests();
   state.relicsOwnedCount = RELICS.filter(r=>state.relics[r.key]>0).length;
-  state.usedCouponsCount = Object.keys(state.usedCoupons||{}).length;
   renderAchievements();
-  renderCouponList();
   renderRaidPanel();
   renderGoldDungeonPanel();
   renderRelicDungeonPanel();

@@ -944,9 +944,6 @@
   button.claim.done{opacity:.35;cursor:not-allowed;}
   .qname .stack{color:var(--soul);font-size:10px;margin-left:6px;font-family:'JetBrains Mono',monospace;}
 
-  /* Coupon Panel UI Styles */
-  .coupon-panel{margin-top:16px;}
-
   /* Account panel */
   .account-panel{margin-top:16px;}
   .account-status{
@@ -1040,7 +1037,6 @@
     margin:0 0 10px;
     line-height:1.5;
   }
-  .coupon-row{display:flex;gap:8px;margin-bottom:14px;}
   .coupon-input{
     flex:1;
     background:var(--bg-deep);
@@ -1076,49 +1072,6 @@
     border-top:1px dashed var(--border);
     padding-top:12px;
   }
-  .coupon-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 8px;
-  }
-  .coupon-card {
-    background: var(--bg-deep);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 12px;
-    cursor: pointer;
-    transition: all .15s ease;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .coupon-card:hover {
-    border-color: var(--frag);
-  }
-  .coupon-card.used {
-    opacity: 0.45;
-    cursor: default;
-  }
-  .coupon-card.used:hover {
-    border-color: var(--border);
-  }
-  .coupon-card .c-info { font-size: 11px; }
-  .coupon-card .c-code {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700;
-    font-size: 13px;
-    color: var(--frag);
-  }
-  .coupon-card .c-desc { color: var(--text-dim); margin-top: 2px; }
-  .coupon-card .c-status {
-    font-size: 10px;
-    font-family: 'JetBrains Mono', monospace;
-    padding: 3px 6px;
-    border-radius: 4px;
-    white-space: nowrap;
-  }
-  .coupon-card .c-status.available { background: var(--panel-2); color: var(--gold); border: 1px solid var(--gold-dim); }
-  .coupon-card .c-status.done { background: #222; color: #777; border: 1px solid #444; }
 
   .footer-controls{
     display:flex;justify-content:center;gap:10px;margin-top:20px;flex-wrap:wrap;
