@@ -22,14 +22,14 @@ const JOB_CLASSES = [
   {
     key:'scavenger', name:'약탈자', icon:'💰',
     desc:'폐허 구석구석까지 뒤져 남들보다 더 많이 챙긴다.',
-    bonus:{goldPct:40, dropAdd:8},
-    bonusText:'물자 획득 +40% · 파편 드랍 확률 +8%p',
+    bonus:{dropAdd:20, atkPct:12},
+    bonusText:'파편 드랍 확률 +20%p · 공격력 +12%',
   },
   {
     key:'survivalist', name:'생존 전문가', icon:'🩹',
     desc:'혹독한 환경에서 오래 버티고 빠르게 적응한다.',
-    bonus:{hpPct:35, expPct:25},
-    bonusText:'최대 체력 +35% · 경험치 획득 +25%',
+    bonus:{hpPct:50, defPct:10},
+    bonusText:'최대 체력 +50% · 방어력 +10%',
   },
 ];
 
