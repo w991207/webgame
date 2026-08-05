@@ -72,13 +72,19 @@ const HIT_CHANCE_MAX = 100;
 function monsterEvasionFor(floor, boss){
   let ev;
   if(state.mode === 'tower'){
-    ev = floor * 0.4;
+    ev = floor * 0.3;
   } else if(state.mode === 'towerHard'){
-    ev = floor * 0.7;
+    ev = floor * 0.55;
   } else {
-    ev = Math.pow(floor, 1.05) * 0.55 * normalTierMult(floor);
+    // 명중(accuracy)은 골드강화/혈청강화 레벨당 고정 수치를 더하는 "가산형" 스탯이라,
+    // HP/공격력/방어력처럼 1000층마다 복리로(normalTierMult, ×1.35씩) 불어나는 배율을
+    // 그대로 곱하면 회피가 사실상 기하급수적으로 치솟아 명중을 아무리 투자해도
+    // 따라잡을 수 없게 된다 (그 스탯들은 플레이어 쪽도 장비%/유산/돌연변이처럼 곱연산으로
+    // 같이 폭증하기 때문에 성립하는 밸런스였음). 그래서 회피는 티어 배율을 적용하지 않고
+    // 층수의 완만한 거듭제곱(0.85제곱, 선형보다도 느림)만 사용한다.
+    ev = Math.pow(floor, 0.85) * 0.6;
   }
-  if(boss) ev *= 1.3;
+  if(boss) ev *= 1.25;
   return ev;
 }
 
