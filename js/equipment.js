@@ -21,6 +21,20 @@ document.getElementById('equipInvHeader')?.addEventListener('click', () => {
 
 function rand(min, max){ return min + Math.random() * (max - min); }
 
+// 서브 옵션 키 -> statCapStatus() 필드명 매핑. 상한(캡) 개념이 없는 항목(치명타 피해/최대 체력)은
+// 여기 없음 — 그런 항목은 항상 뽑힐 수 있다.
+const SUBSTAT_CAP_FIELD = {crit:'crit', spd:'spd', gold:'gold', exp:'exp'};
+
+// 이미 상한에 도달해서 이 서브 옵션이 붙어봤자 효과가 없는 상태인지 확인.
+// (물자획득을 골드강화로 이미 다 찍은 상태에서 장신구에 또 물자획득이 뜨는 것처럼,
+//  뽑기 결과가 "죽은 스탯"이 되는 걸 막기 위해 뽑기 풀 자체에서 제외하는 데 사용)
+function isSubstatCapped(key){
+  const field = SUBSTAT_CAP_FIELD[key];
+  if(!field) return false;
+  const cap = statCapStatus();
+  return !!cap[field];
+}
+
 function weightedPickRarity(weights){
   const entries = Object.entries(weights).filter(([, w]) => w > 0);
   const total = entries.reduce((sum, [, w]) => sum + w, 0);
@@ -70,7 +84,11 @@ function rollEquipment(slot, tierKey){
   const mainValue = Math.round(rand(mainRange[0], mainRange[1]) * 10) / 10;
   let subKey = null, subValue = 0;
   if(rarity.subMax > 0){
-    const pool = slot === 'weapon' ? WEAPON_SUBSTATS : (slot === 'armor' ? ARMOR_SUBSTATS : ACCESSORY_SUBSTATS);
+    const basePool = slot === 'weapon' ? WEAPON_SUBSTATS : (slot === 'armor' ? ARMOR_SUBSTATS : ACCESSORY_SUBSTATS);
+    // 이미 상한(캡)에 도달해 효과가 없는 서브 옵션은 뽑기 풀에서 제외 — 대신 다른 옵션만 뜬다.
+    // (혹시라도 전부 걸러지는 극단적 경우를 대비해 그럴 땐 원래 풀을 그대로 사용)
+    const filteredPool = basePool.filter(p => !isSubstatCapped(p.key));
+    const pool = filteredPool.length > 0 ? filteredPool : basePool;
     const picked = pool[Math.floor(Math.random() * pool.length)];
     subKey = picked.key;
     subValue = Math.round(rand(rarity.subMin, rarity.subMax) * 10) / 10;
