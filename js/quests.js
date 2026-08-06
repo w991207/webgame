@@ -174,11 +174,13 @@ function updateRebirthAvailability(){
   const btn = document.getElementById('rebirthBtn');
   const desc = document.getElementById('rebirthDesc');
   const canRebirth = state.highestFloor >= 15;
-  const gainSoul = Math.floor(state.highestFloor / 2.5);
+  const soulMult = (typeof rebirthSoulMultiplier === 'function') ? rebirthSoulMultiplier() : 1;
+  const gainSoul = Math.floor(state.highestFloor / 2.5 * soulMult);
   const gainFrag = Math.floor(state.highestFloor / 3);
+  const bonusText = soulMult > 1 ? ` <span style="color:var(--text-dim);font-size:11px;">(혈청 정제 +${Math.round((soulMult-1)*100)}%)</span>` : '';
   btn.disabled = !canRebirth;
   if(canRebirth){
-    desc.innerHTML = `최고 도달 층: <b>${state.highestFloor}층</b><br>환생 시 <span style="color:var(--soul)">🧪 ${gainSoul}</span>개의 혈청과 <span style="color:var(--frag)">◈ ${gainFrag}</span>개의 유산 파편을 얻습니다. 층수/레벨/물자 강화는 초기화되지만 영구 강화와 보유 혈청/유산은 유지됩니다.`;
+    desc.innerHTML = `최고 도달 층: <b>${state.highestFloor}층</b><br>환생 시 <span style="color:var(--soul)">🧪 ${gainSoul}</span>개의 혈청${bonusText}과 <span style="color:var(--frag)">◈ ${gainFrag}</span>개의 유산 파편을 얻습니다. 층수/레벨/물자 강화는 초기화되지만 영구 강화와 보유 혈청/유산은 유지됩니다.`;
   } else {
     desc.textContent = `15층 이상 도달 시 환생이 가능합니다. (현재 최고: ${state.highestFloor}층)`;
   }
@@ -186,7 +188,8 @@ function updateRebirthAvailability(){
 
 document.getElementById('rebirthBtn').addEventListener('click', ()=>{
   if(state.highestFloor < 15) return;
-  const gainSoul = Math.floor(state.highestFloor / 2.5);
+  const soulMult = (typeof rebirthSoulMultiplier === 'function') ? rebirthSoulMultiplier() : 1;
+  const gainSoul = Math.floor(state.highestFloor / 2.5 * soulMult);
   const gainFrag = Math.floor(state.highestFloor / 3);
   if(!confirm(`환생하시겠습니까?\n🧪 ${gainSoul}개의 혈청과 ◈ ${gainFrag}개의 유산 파편을 얻고 층수/레벨/물자가 초기화됩니다.`)) return;
   state.soul += gainSoul;

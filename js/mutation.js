@@ -34,6 +34,8 @@ const MUTATION_TREE = [
     stat:'dropAdd', perLevel:0.3, unit:'%p', label:'파편 드랍 확률', prereq:{key:'mutRes2', lvl:5}},
   {key:'mutRes4', branch:'res', name:'생존 학습', icon:'📚', maxLevel:20, baseCost:10, mult:1.25,
     stat:'goldExpPct', perLevel:1, unit:'%', label:'물자/경험치 획득', prereq:{key:'mutRes3', lvl:5}},
+  {key:'mutRes5', branch:'res', name:'혈청 정제', icon:'🧪', maxLevel:30, baseCost:9, mult:1.24,
+    stat:'rebirthSoulPct', perLevel:1.5, unit:'%', label:'환생 시 혈청 획득량', prereq:{key:'mutRes4', lvl:5}},
 ];
 
 // ---------- 차원 초월 (무한 성장 노드) ----------
@@ -79,7 +81,7 @@ function mutationNodeLocked(node){
 }
 
 function mutationBonus(){
-  const b = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0};
+  const b = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, rebirthSoulPct:0};
   if(!state.mutation) return b;
   MUTATION_TREE.forEach(node=>{
     const lvl = mutationLevel(node.key);
@@ -99,6 +101,14 @@ function mutationBonus(){
     b.atkPct += tVal; b.defPct += tVal; b.hpPct += tVal;
   }
   return b;
+}
+
+// 환생 시 얻는 혈청량에 곱해지는 배율. "혈청 정제" 노드(mutRes5)가 1레벨당 +1.5%,
+// 최대 30레벨로 +45%까지 붙는다. 환생 보상은 순간적으로 한 번 지급되는 값이라 다른 스탯들과
+// 달리 캡을 둘 필요가 없다 (매 환생마다 한 번씩만 적용되므로 눈덩이 피드백 루프가 생기지 않음).
+function rebirthSoulMultiplier(){
+  const mb = mutationBonus();
+  return 1 + (mb.rebirthSoulPct||0) / 100;
 }
 
 function gainMutationPoints(amount){
@@ -141,7 +151,7 @@ function renderMutationTree(){
       const locked = mutationNodeLocked(node);
       const maxed = lvl >= node.maxLevel;
       const cost = mutationNodeCost(node);
-      const totalVal = (lvl*node.perLevel).toFixed(node.unit==='%p'?1:0);
+      const totalVal = (lvl*node.perLevel).toFixed((node.unit==='%p' || node.perLevel % 1 !== 0) ? 1 : 0);
       let footer;
       const statMaxed = isUpgradeStatMaxed(node.stat);
       if(locked){
