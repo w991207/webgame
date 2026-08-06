@@ -134,6 +134,7 @@
       <div class="local-subtab-nav">
         <button class="local-subtab-btn active" data-subtab="subtabGold">💰 골드강화</button>
         <button class="local-subtab-btn" data-subtab="subtabSkill">🗡️ 스킬강화</button>
+        <button class="local-subtab-btn" data-subtab="subtabPotion">🧪 물약상점</button>
       </div>
 
       <div class="local-subtab-content" id="subtabGold" style="display:block;">
@@ -155,6 +156,16 @@
           🧪 혈청으로 스킬을 습득/강화하세요. 습득한 스킬은 <b>조작 없이 각자의 쿨타임마다 자동으로 발동</b>합니다. 레벨이 오를수록 쿨타임이 짧아지고 효과가 강해집니다.
         </p>
         <div class="mutation-tree" id="skillsList"></div>
+      </div>
+
+      <div class="local-subtab-content" id="subtabPotion" style="display:none;">
+        <h2>🧪 물약 상점</h2>
+        <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+          <b>15분</b>간 지속되는 일시 버프입니다. 상한 있는 스탯(물자/경험치 획득 등)은 강화를 다 채우면 의미가 없어져서, 상한 없는 스탯(공격력·방어력·체력·치명타 피해·명중)만 팝니다. 같은 물약을 또 사면 값이 중첩되지 않고 지속시간만 갱신됩니다.
+        </p>
+        <div id="soulPackShop"></div>
+        <h2 style="margin-top:16px;">🧪 버프 물약</h2>
+        <div id="potionShopList"></div>
       </div>
     </div>
   </div>

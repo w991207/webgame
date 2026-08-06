@@ -24,6 +24,7 @@ BUNDLE1_FILES=(
   js/combat.js
   js/skills.js
   js/equipment.js
+  js/potions.js
   js/enhance.js
   js/raid.js
   js/golden.js

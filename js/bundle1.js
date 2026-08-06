@@ -1027,6 +1027,7 @@ function defaultState(){
     dailyUpgradesBought: 0,
     dailyBossKills: 0,
     dailyClaims: {},
+    dailySoulPacksBought: 0, // 아래 물약 상점 "혈청 팩" 일일 구매 횟수 제한용
     achClaims: {},
     repKillProgress: 0,
     repFloorProgress: 0,
@@ -1126,6 +1127,10 @@ function defaultState(){
     // ---------- 몬스터 도감 (Bestiary) ----------
     // 몬스터 이름(고유값)을 key로, 처치 횟수를 value로 기록. 처음 잡는 몬스터는 발견 보너스 지급.
     bestiary: {},
+
+    // ---------- 물약 (일시적 버프) ----------
+    // { [potionKey]: {stat, value, expiresAt} } — 만료 시각이 지나면 buffBonus()에서 자동으로 무시됨.
+    activeBuffs: {},
   };
 }
 
@@ -1204,9 +1209,10 @@ function stats(){
   const tb = (typeof titleBonus === 'function') ? titleBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
   const cb = (typeof companionBonus === 'function') ? companionBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0};
   const jb = (typeof jobBonus === 'function') ? jobBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
-  const atk = Math.round((b.atk + gu.atk*2) * (1 + su.atkMult*0.15) * (1 + re.atkRelic*0.03) * (1 + rg.raidWeapon*0.06) * (1 + eq.atkPct/100) * (1 + mut.atkPct/100) * (1 + tb.atkPct/100) * (1 + cb.atkPct/100) * (1 + jb.atkPct/100));
-  const def = Math.round((b.def + gu.def*1) * (1 + su.defMult*0.15) * (1 + re.defRelic*0.03) * (1 + rg.raidArmor*0.06) * (1 + eq.defPct/100) * (1 + mut.defPct/100) * (1 + tb.defPct/100) * (1 + cb.defPct/100) * (1 + jb.defPct/100));
-  const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05) * (1 + eq.hpPct/100) * (1 + mut.hpPct/100) * (1 + tb.hpPct/100) * (1 + cb.hpPct/100) * (1 + jb.hpPct/100));
+  const bf = (typeof buffBonus === 'function') ? buffBonus() : {atkPct:0, defPct:0, hpPct:0, critDmgAdd:0, accuracyAdd:0};
+  const atk = Math.round((b.atk + gu.atk*2) * (1 + su.atkMult*0.15) * (1 + re.atkRelic*0.03) * (1 + rg.raidWeapon*0.06) * (1 + eq.atkPct/100) * (1 + mut.atkPct/100) * (1 + tb.atkPct/100) * (1 + cb.atkPct/100) * (1 + jb.atkPct/100) * (1 + bf.atkPct/100));
+  const def = Math.round((b.def + gu.def*1) * (1 + su.defMult*0.15) * (1 + re.defRelic*0.03) * (1 + rg.raidArmor*0.06) * (1 + eq.defPct/100) * (1 + mut.defPct/100) * (1 + tb.defPct/100) * (1 + cb.defPct/100) * (1 + jb.defPct/100) * (1 + bf.defPct/100));
+  const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05) * (1 + eq.hpPct/100) * (1 + mut.hpPct/100) * (1 + tb.hpPct/100) * (1 + cb.hpPct/100) * (1 + jb.hpPct/100) * (1 + bf.hpPct/100));
   // 물자/경험치 획득 배율은 5개 소스가 전부 곱연산으로 쌓이는 구조라, 상한이 없으면
   // "물자로 물자강화 구매 → 물자 획득 증가 → 더 많은 물자강화 구매"가 서로를 부풀리는
   // 피드백 루프가 걸려 눈덩이처럼 폭증할 수 있다. 최종값에 상한선을 걸어 원천 차단한다.
@@ -1216,12 +1222,12 @@ function stats(){
   const tickMs = Math.max(TICK_MS_MIN, Math.round(1000 / spdMult));
   const dropChance = Math.min(DROP_CHANCE_CAP, 0.15 + re.dropRelic*0.015 + mut.dropAdd/100 + tb.dropAdd/100 + (su.dropAdd||0)*0.01 + cb.dropAdd/100 + jb.dropAdd/100);
   const critChance = Math.min(100, (gu.critChance||0) * 1 + eq.critAdd + mut.critAdd + tb.critAdd + cb.critAdd + jb.critAdd); // 레벨당 1%, 최대 100%
-  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100 + (re.critDmgRelic||0)*0.02 + mut.critDmgAdd/100 + tb.critDmgAdd/100 + (su.critDmgAdd||0)*0.05 + cb.critDmgAdd/100 + jb.critDmgAdd/100; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배 (+유산+돌연변이+칭호+혈청+동행+전직)
+  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100 + (re.critDmgRelic||0)*0.02 + mut.critDmgAdd/100 + tb.critDmgAdd/100 + (su.critDmgAdd||0)*0.05 + cb.critDmgAdd/100 + jb.critDmgAdd/100 + bf.critDmgAdd/100; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배 (+유산+돌연변이+칭호+혈청+동행+전직+물약)
   // 명중(accuracy): '조준 훈련'(골드강화) + '심안의 룬'(혈청강화) 1레벨당 각각 +3 / +5 + 전직(저격수) 보너스
   // + 칭호(PvP 승수 마일스톤 등) 보너스.
   // 다른 강화들과 달리 상한 레벨이 없다 — 몬스터/보스의 회피(combat.js의 monsterEvasionFor)를
   // 상쇄하는 용도로만 쓰인다.
-  const accuracy = (gu.accuracy||0) * ACCURACY_PER_LEVEL + (su.accuracyAdd||0) * SOUL_ACCURACY_PER_LEVEL + jb.accuracyAdd + tb.accuracyAdd;
+  const accuracy = (gu.accuracy||0) * ACCURACY_PER_LEVEL + (su.accuracyAdd||0) * SOUL_ACCURACY_PER_LEVEL + jb.accuracyAdd + tb.accuracyAdd + bf.accuracyAdd;
   return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance, critChance, critDamageMult, accuracy};
 }
 
@@ -2492,6 +2498,137 @@ function renderEquipment(){
   }
 }
 
+// ===== js/potions.js =====
+// ---------- 물약 상점 (일시적 버프) ----------
+// 물자획득/경험치획득처럼 전역 상한(GOLD_MULT_CAP 등)이 걸린 스탯은 강화를 다 채운 유저에겐
+// 애초에 사도 효과가 없으니 물약 대상에서 제외한다. 대신 상한이 없는 스탯(공격력/방어력/체력/
+// 치명타 피해/명중)만 판다 — 뭘 사도 항상 확실하게 체감되는 일시 버프가 되도록.
+const POTION_DURATION_MIN = 15;
+const POTION_DURATION_MS = POTION_DURATION_MIN * 60 * 1000;
+const POTION_COST = 50000000; // 개당 5천만 물자
+
+// ---------- 혈청 팩 (물자 → 혈청 환전, 일일 구매 제한) ----------
+// 혈청은 영구 강화(su.*)/전직/스킬 습득에 쓰이는 핵심 재화라, 물자로 무제한 구매 가능하게 두면
+// 밸런스가 깨진다. 그래서 값을 비싸게(10억) 잡고 하루 10개(=혈청 1000개)로 상한을 둔다.
+const SOUL_PACK_COST = 100000000; // 개당 10억 물자
+const SOUL_PACK_AMOUNT = 50;      // 개당 지급 혈청 수
+const SOUL_PACK_DAILY_LIMIT = 10;  // 하루 최대 구매 개수
+
+function buySoulPack(){
+  if((state.dailySoulPacksBought||0) >= SOUL_PACK_DAILY_LIMIT){
+    log(`🧪 혈청 팩은 하루 ${SOUL_PACK_DAILY_LIMIT}개까지만 구매할 수 있습니다. 내일 다시 시도해주세요.`, 'warn');
+    return;
+  }
+  if(state.gold < SOUL_PACK_COST) return;
+
+  state.gold -= SOUL_PACK_COST;
+  state.soul += SOUL_PACK_AMOUNT;
+  state.dailySoulPacksBought = (state.dailySoulPacksBought||0) + 1;
+  log(`🧪 혈청 팩 구매! +${SOUL_PACK_AMOUNT}🧪 (오늘 ${state.dailySoulPacksBought}/${SOUL_PACK_DAILY_LIMIT}회 구매)`, 'good');
+  renderAll();
+}
+
+function renderSoulPackShop(){
+  const el = document.getElementById('soulPackShop');
+  if(!el) return;
+
+  const bought = state.dailySoulPacksBought || 0;
+  const remaining = Math.max(0, SOUL_PACK_DAILY_LIMIT - bought);
+  const soldOut = remaining <= 0;
+  const afford = state.gold >= SOUL_PACK_COST;
+
+  el.innerHTML = `
+    <div class="shop-item">
+      <div class="info">
+        <div class="name">🧪 혈청 팩 <span class="potion-active-tag">오늘 ${bought}/${SOUL_PACK_DAILY_LIMIT}</span></div>
+        <div class="desc">즉시 🧪 혈청 ${SOUL_PACK_AMOUNT}개 획득 (하루 ${SOUL_PACK_DAILY_LIMIT}개 한정)</div>
+      </div>
+      <button class="buy" id="buySoulPackBtn" ${(soldOut || !afford) ? 'disabled' : ''}>${soldOut ? '오늘 매진' : SOUL_PACK_COST.toLocaleString() + ' 📦 구매'}</button>
+    </div>`;
+  document.getElementById('buySoulPackBtn')?.addEventListener('click', buySoulPack);
+}
+
+const POTIONS = [
+  {key:'atk', name:'맹공의 물약', icon:'⚔️', stat:'atkPct', value:50, unit:'%', desc:`${POTION_DURATION_MIN}분간 공격력 +50%`},
+  {key:'def', name:'철벽의 물약', icon:'🛡️', stat:'defPct', value:50, unit:'%', desc:`${POTION_DURATION_MIN}분간 방어력 +50%`},
+  {key:'hp', name:'활력의 물약', icon:'❤️', stat:'hpPct', value:50, unit:'%', desc:`${POTION_DURATION_MIN}분간 최대 체력 +50%`},
+  {key:'critDmg', name:'파괴의 물약', icon:'💥', stat:'critDmgAdd', value:40, unit:'%p', desc:`${POTION_DURATION_MIN}분간 치명타 피해 +40%p`},
+  {key:'accuracy', name:'집중의 물약', icon:'🎯', stat:'accuracyAdd', value:30, unit:'', desc:`${POTION_DURATION_MIN}분간 명중 +30`},
+];
+
+// stats()에서 호출 — 만료 안 된 버프만 합산해서 돌려준다.
+function buffBonus(){
+  const b = {atkPct:0, defPct:0, hpPct:0, critDmgAdd:0, accuracyAdd:0};
+  const buffs = state.activeBuffs;
+  if(!buffs) return b;
+  const now = Date.now();
+  for(const key in buffs){
+    const buff = buffs[key];
+    if(buff && buff.expiresAt > now && Object.prototype.hasOwnProperty.call(b, buff.stat)){
+      b[buff.stat] += buff.value;
+    }
+  }
+  return b;
+}
+
+// 만료된 버프를 state에서 정리 (렌더할 때마다 가볍게 청소).
+function cleanupExpiredBuffs(){
+  const buffs = state.activeBuffs;
+  if(!buffs) return;
+  const now = Date.now();
+  Object.keys(buffs).forEach(key=>{
+    if(!buffs[key] || buffs[key].expiresAt <= now) delete buffs[key];
+  });
+}
+
+function buyPotion(key){
+  const p = POTIONS.find(x=>x.key===key);
+  if(!p) return;
+  if(state.gold < POTION_COST) return;
+
+  state.gold -= POTION_COST;
+  if(!state.activeBuffs) state.activeBuffs = {};
+  // 다시 사면 값이 중첩되는 게 아니라 지속시간만 갱신(리필)된다 — 중첩 구매로 무한정 강해지는 것 방지.
+  state.activeBuffs[p.key] = {stat: p.stat, value: p.value, expiresAt: Date.now() + POTION_DURATION_MS};
+
+  log(`🧪 ${p.name}을(를) 마셨습니다! ${p.desc}`, 'good');
+  renderAll();
+}
+
+function formatBuffRemaining(ms){
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return `${min}:${sec.toString().padStart(2,'0')}`;
+}
+
+function renderPotionShop(){
+  const el = document.getElementById('potionShopList');
+  if(!el) return;
+  cleanupExpiredBuffs();
+
+  const now = Date.now();
+  let html = '';
+  POTIONS.forEach(p=>{
+    const active = state.activeBuffs && state.activeBuffs[p.key];
+    const remainMs = active ? (active.expiresAt - now) : 0;
+    const afford = state.gold >= POTION_COST;
+
+    html += `
+      <div class="shop-item">
+        <div class="info">
+          <div class="name">${p.icon} ${p.name}${active ? ` <span class="potion-active-tag">활성 · ${formatBuffRemaining(remainMs)}</span>` : ''}</div>
+          <div class="desc">${p.desc}</div>
+        </div>
+        <button class="buy" data-key="${p.key}" ${afford ? '' : 'disabled'}>${POTION_COST.toLocaleString()} 📦 ${active ? '갱신' : '구매'}</button>
+      </div>`;
+  });
+  el.innerHTML = html;
+  el.querySelectorAll('button[data-key]').forEach(btn=>{
+    btn.addEventListener('click', ()=>buyPotion(btn.dataset.key));
+  });
+}
+
 // ===== js/enhance.js =====
 // ---------- 장비 강화 (Enhance) ----------
 // 라스트존판 리니지식 강화. 몬스터 처치 시 드랍되는 🔩 강화석을 소모해 "장착 중인" 무기/방어구/
@@ -3574,6 +3711,8 @@ function renderAll(){
   if(typeof renderSkillsPanel === 'function') renderSkillsPanel();
   if(typeof renderPvpRecord === 'function') renderPvpRecord();
   if(typeof renderBestiary === 'function') renderBestiary();
+  if(typeof renderPotionShop === 'function') renderPotionShop();
+  if(typeof renderSoulPackShop === 'function') renderSoulPackShop();
   if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
@@ -4050,6 +4189,7 @@ function checkDailyReset(){
     state.dailyUpgradesBought = 0;
     state.dailyBossKills = 0;
     state.dailyClaims = {};
+    state.dailySoulPacksBought = 0;
     log('일일 퀘스트가 초기화되었습니다.', 'new');
   }
 }

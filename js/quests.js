@@ -8,6 +8,7 @@ function checkDailyReset(){
     state.dailyUpgradesBought = 0;
     state.dailyBossKills = 0;
     state.dailyClaims = {};
+    state.dailySoulPacksBought = 0;
     log('일일 퀘스트가 초기화되었습니다.', 'new');
   }
 }

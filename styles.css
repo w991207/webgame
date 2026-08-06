@@ -737,6 +737,16 @@
   .shop-item .name{font-size:13px;}
   .shop-item .desc{font-size:11px;color:var(--text-dim);margin-top:2px;}
   .shop-item .lvl-tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--soul);}
+  .potion-active-tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:#9be89b;
+    background:rgba(120,224,120,.12);
+    border:1px solid rgba(76,175,80,.4);
+    border-radius:8px;
+    padding:1px 6px;
+    margin-left:4px;
+  }
   .buy-mult-btn{
     background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);
     font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;

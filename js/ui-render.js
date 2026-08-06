@@ -159,6 +159,8 @@ function renderAll(){
   if(typeof renderSkillsPanel === 'function') renderSkillsPanel();
   if(typeof renderPvpRecord === 'function') renderPvpRecord();
   if(typeof renderBestiary === 'function') renderBestiary();
+  if(typeof renderPotionShop === 'function') renderPotionShop();
+  if(typeof renderSoulPackShop === 'function') renderSoulPackShop();
   if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
