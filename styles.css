@@ -324,6 +324,44 @@
   }
   .arena-flash.on{ background:rgba(255,90,60,.28); }
 
+  .bestiary-group-label{
+    font-size:12px;
+    color:var(--gold);
+    font-weight:700;
+    margin:14px 0 6px;
+    letter-spacing:.3px;
+  }
+  .bestiary-group-label:first-child{ margin-top:0; }
+  .bestiary-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(84px, 1fr));
+    gap:8px;
+  }
+  .bestiary-card{
+    background:rgba(0,0,0,.25);
+    border:1px solid rgba(224,129,47,.18);
+    border-radius:8px;
+    padding:8px 4px;
+    text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  .bestiary-card.found{ border-color:rgba(224,129,47,.4); }
+  .bestiary-card.unknown{ opacity:.55; }
+  .bestiary-card-emoji{ font-size:26px; line-height:1; }
+  .bestiary-card-img{ width:32px; height:32px; object-fit:contain; }
+  .bestiary-card-name{
+    font-size:10px;
+    color:#f5e8c8;
+    line-height:1.3;
+    max-width:100%;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .bestiary-card-kills{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    color:var(--text-dim);
+  }
+
   .golden-monster{
     position:absolute;
     z-index:25;

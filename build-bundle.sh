@@ -16,6 +16,7 @@ BUNDLE1_FILES=(
   js/patch.js
   js/storage.js
   js/data.js
+  js/bestiary.js
   js/mutation.js
   js/job.js
   js/titles.js

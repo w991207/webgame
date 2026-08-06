@@ -282,6 +282,10 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
     }
     log(`${currentMonsterMeta().name}${boss? ' (보스)':''} 처치! +${goldGain}📦 +${expGain}EXP`, boss?'good':'new');
 
+    if(typeof recordBestiaryKill === 'function'){
+      recordBestiaryKill(currentMonsterMeta(), goldGain);
+    }
+
     tryLevelUp();
 
     if(state.mode === 'tower'){

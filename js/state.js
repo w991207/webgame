@@ -133,6 +133,10 @@ function defaultState(){
     pvpWins: 0,
     pvpLosses: 0,
     pvpHonor: 0,
+
+    // ---------- 몬스터 도감 (Bestiary) ----------
+    // 몬스터 이름(고유값)을 key로, 처치 횟수를 value로 기록. 처음 잡는 몬스터는 발견 보너스 지급.
+    bestiary: {},
   };
 }
 
