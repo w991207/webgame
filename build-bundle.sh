@@ -25,6 +25,7 @@ BUNDLE1_FILES=(
   js/equipment.js
   js/enhance.js
   js/raid.js
+  js/golden.js
   js/golddungeon.js
   js/relicdungeon.js
   js/ui-render.js
