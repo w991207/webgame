@@ -157,6 +157,7 @@ function renderAll(){
   if(typeof renderMutationTree === 'function') renderMutationTree();
   if(typeof renderJobPanel === 'function') renderJobPanel();
   if(typeof renderSkillsPanel === 'function') renderSkillsPanel();
+  if(typeof renderPvpRecord === 'function') renderPvpRecord();
   if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();

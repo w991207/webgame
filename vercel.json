@@ -1,18 +1,6 @@
 {
   "headers": [
     {
-      "source": "/js/patch.js",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
-    },
-    {
-      "source": "/worldboss.js",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
-    },
-    {
       "source": "/(.*).js",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=120, must-revalidate" }

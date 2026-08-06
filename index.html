@@ -511,6 +511,7 @@
       <span class="rk-floor">최고층</span>
       <span></span>
     </div>
+    <div id="pvpRecordLine" style="font-size:11px;color:var(--text-dim);margin-bottom:6px;"></div>
     <div id="rankingList" class="ranking-list">
       <div style="font-size:12px;color:var(--text-dim);">불러오는 중...</div>
     </div>
@@ -590,43 +591,17 @@
     </div>
 </div>
 
-<script src="js/electron-bridge.js"></script>
-<script src="js/patch.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/data.js"></script>
-<script src="js/mutation.js"></script>
-<script src="js/job.js"></script>
-<script src="js/titles.js"></script>
-<script src="js/state.js"></script>
-<script src="js/combat.js"></script>
-<script src="js/skills.js"></script>
-<script src="js/equipment.js"></script>
-<script src="js/enhance.js"></script>
-<script src="js/raid.js"></script>
-<script src="js/golddungeon.js"></script>
-<script src="js/relicdungeon.js"></script>
-<script src="js/ui-render.js"></script>
-<script src="js/shop.js"></script>
-<script src="js/relics-pets.js"></script>
-<script src="js/pet-shelter.js"></script>
-<script src="js/quests.js"></script>
-<script src="js/attendance.js"></script>
-<script src="js/persistence.js"></script>
+<!-- 개별 js 파일 30개를 여기서 각각 <script>로 부르면 접속 1번마다 Vercel Edge Request가
+     그만큼 소모된다. build-bundle.sh로 js/bundle1.js(파이어베이스 이전) / js/bundle2.js(이후)
+     2개로 미리 합쳐두고 그것만 부른다. 원본 js/*.js는 그대로 남아있고(다음 수정도 그 파일들에서
+     진행), 수정 후에는 반드시 ./build-bundle.sh를 다시 실행해서 번들을 재생성해야 반영된다. -->
+<script src="js/bundle1.js"></script>
 
 <!-- Firebase (로그인 + 랭킹) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/ranking.js"></script>
-<script src="js/plaza.js"></script>
-<script src="js/pvp.js"></script>
-<script src="js/worldboss.js"></script>
-
-<script src="js/tabs.js"></script>
-<script src="js/gifts.js"></script>
-<script src="js/main.js"></script>
+<script src="js/bundle2.js"></script>
 <script>
   if('serviceWorker' in navigator){
     window.addEventListener('load', () => {

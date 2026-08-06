@@ -204,6 +204,11 @@ const TITLES = [
   {key:'title_dailyGrinder', name:'성실한 하루하루', icon:'📅', condText:'출석 20일 달성', check:s=>((s.attendance&&s.attendance.day)||0)>=20, stat:'expPct', value:5},
   {key:'title_richMan', name:'대부호', icon:'💰', condText:'물자 200,000 보유', check:s=>s.gold>=200000, stat:'goldPct', value:4},
   {key:'title_relicMaster', name:'유산 마스터', icon:'✨', condText:'유산 뽑기 150회', check:s=>(s.totalRelicPulls||0)>=150, stat:'expPct', value:4},
+  // PvP 승수 마일스톤 — 캡 있는 스탯(물자/경험치) 말고 상한 없는 스탯으로만 구성해서
+  // 스탯 다 찍은 유저도 계속 의미 있게 노릴 수 있는 목표로 뒀다.
+  {key:'title_pvpNovice', name:'첫 승부', icon:'⚔️', condText:'PvP 1승 달성', check:s=>(s.pvpWins||0)>=1, stat:'accuracyAdd', value:3},
+  {key:'title_pvpDuelist', name:'결투가', icon:'🤺', condText:'PvP 30승 달성', check:s=>(s.pvpWins||0)>=30, stat:'critDmgAdd', value:8},
+  {key:'title_pvpChampion', name:'투기장의 지배자', icon:'🏆', condText:'PvP 150승 달성', check:s=>(s.pvpWins||0)>=150, stat:'accuracyAdd', value:15},
 ];
 
 const SOUL_UPGRADES = [
