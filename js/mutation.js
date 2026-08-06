@@ -62,9 +62,14 @@ function mutationNodeCost(node){
   return Math.ceil(node.baseCost * Math.pow(node.mult, lvl));
 }
 
-// 모든 기본 노드(전투/생존/자원 12개)가 각자의 만렙에 도달했는지 — 차원 초월 해금 조건
+// 모든 기본 노드(전투/생존/자원 12개)가 "완료" 상태인지 — 차원 초월 해금 조건.
+// 완료 = 노드 자체가 maxLevel에 도달했거나, 혹은 그 노드가 주는 스탯이 이미 전역 캡(치명타확률/
+// 공속/드랍률/물자·경험치 배율 등)에 도달해서 더 찍는 게 애초에 불가능한 경우.
+// 이 구분이 없으면, 장비/칭호/전직/동행 등 다른 소스만으로 이미 그 스탯의 전역 캡을 채운 유저는
+// 해당 노드가 자기 maxLevel에 영원히 도달할 수 없어(구매 자체가 막히므로) 차원 초월이 절대
+// 해금되지 않는 문제가 생긴다.
 function allMutationNodesMaxed(){
-  return MUTATION_TREE.every(n => mutationLevel(n.key) >= n.maxLevel);
+  return MUTATION_TREE.every(n => mutationLevel(n.key) >= n.maxLevel || isUpgradeStatMaxed(n.stat));
 }
 
 function mutationNodeLocked(node){
@@ -173,7 +178,7 @@ function renderMutationTree(){
     const totalVal = (lvl*node.perLevel).toFixed(1);
     let footer;
     if(locked){
-      footer = `<div class="mutation-node-lock">🔒 위 12개 노드를 전부 만렙 찍어야 해금됩니다</div>`;
+      footer = `<div class="mutation-node-lock">🔒 위 12개 노드를 전부 만렙(또는 스탯 상한 도달)까지 찍어야 해금됩니다</div>`;
     } else {
       const afford = state.mutation.points >= cost;
       footer = `<button class="mutation-buy-btn" data-key="${node.key}" ${afford?'':'disabled'}>🧬 ${cost.toLocaleString()} 강화</button>`;
