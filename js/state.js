@@ -142,6 +142,20 @@ function defaultState(){
     // ---------- 물약 (일시적 버프) ----------
     // { [potionKey]: {stat, value, expiresAt} } — 만료 시각이 지나면 buffBonus()에서 자동으로 무시됨.
     activeBuffs: {},
+
+    // ---------- 영지 (Territory / 방치형 건물 생산) ----------
+    // 건물을 지어 시간당 골드/파편/혈청을 자동 생산. 접속 안 해도 계속 쌓이지만
+    // 저장 상한(TERRITORY_CAP_HOURS)이 있어 무한 방치 이득은 없고, 직접 "수확" 버튼을 눌러야 지급됨.
+    territory: {
+      // 시작 슬롯 3칸에 3종 건물이 하나씩 기본 배치되어 있음 (해금 조건 없음)
+      buildings: [
+        {type:'gold', level:1, tier:1},
+        {type:'fragment', level:1, tier:1},
+        {type:'soul', level:1, tier:1},
+      ],
+      slotCount: 3,
+      lastCollect: {gold: Date.now(), fragment: Date.now(), soul: Date.now()},
+    },
   };
 }
 

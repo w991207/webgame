@@ -30,6 +30,7 @@ BUNDLE1_FILES=(
   js/golden.js
   js/golddungeon.js
   js/relicdungeon.js
+  js/territory.js
   js/ui-render.js
   js/shop.js
   js/relics-pets.js

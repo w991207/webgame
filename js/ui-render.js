@@ -164,6 +164,7 @@ function renderAll(){
   if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
+  if(typeof renderTerritoryPanel === 'function') renderTerritoryPanel();
 }
 
 

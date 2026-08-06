@@ -173,6 +173,7 @@
   <div class="tab-nav" id="tabNav">
     <button class="tab-nav-btn active" data-tab="tab-growth">⚔️ 성장</button>
     <button class="tab-nav-btn" data-tab="tab-pet">🐾 펫</button>
+    <button class="tab-nav-btn" data-tab="tab-territory">🏰 영지</button>
     <button class="tab-nav-btn" data-tab="tab-dungeon">🏚️ 구역</button>
     <button class="tab-nav-btn" data-tab="tab-event">🎁 이벤트</button>
     <button class="tab-nav-btn" data-tab="tab-plaza" id="plazaTabBtn">🌐 광장</button>
@@ -282,6 +283,36 @@
     <div class="pet-shelter-grid" id="petShelterGrid"></div>
   </div>
   </div><!-- /tab-pet -->
+
+  <div class="tab-content" id="tab-territory" style="display:none;">
+  <div class="panel relic-panel">
+    <h2>🏰 영지</h2>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+      건물을 지어 시간당 물자/유산 파편/혈청을 자동으로 생산합니다. 최대 <b>10시간치</b>까지 쌓이니 가끔 들어와서 수확해가세요.
+      건물은 레벨을 올려 강화할 수 있고, 레벨 상한에 도달하면 <b>증축</b>해서 다음 단계 건물로 키울 수 있습니다.
+    </p>
+    <div class="relic-grid" id="territoryCollectGrid"></div>
+  </div>
+
+  <div class="panel relic-panel">
+    <h2>건물</h2>
+    <div class="relic-grid" id="territoryBuildingGrid"></div>
+  </div>
+
+  <div class="panel relic-panel">
+    <h2>🏗️ 부지 확장</h2>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 10px;line-height:1.6;">
+      부지를 넓혀서 슬롯을 늘리면, 원하는 종류의 건물을 원하는 만큼 추가로 지을 수 있습니다 (같은 종류 중복 건설 가능).
+    </p>
+    <div class="frag-count" style="margin-bottom:6px;">보유 슬롯: <span id="territorySlotCountText">3</span>칸</div>
+    <div class="frag-count" id="territorySlotCostText" style="margin-bottom:10px;"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="pull-relic" id="territoryBuildGoldBtn">📦 물자 창고 짓기</button>
+      <button class="pull-relic" id="territoryBuildFragBtn">🗿 유산 채굴장 짓기</button>
+      <button class="pull-relic" id="territoryBuildSoulBtn">🧪 혈청 배양소 짓기</button>
+    </div>
+  </div>
+  </div><!-- /tab-territory -->
 
   <div class="tab-content" id="tab-dungeon" style="display:none;">
   <div class="panel relic-panel">
