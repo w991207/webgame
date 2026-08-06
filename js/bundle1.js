@@ -540,11 +540,24 @@ const MUTATION_TREE = [
     stat:'goldExpPct', perLevel:1, unit:'%', label:'물자/경험치 획득', prereq:{key:'mutRes3', lvl:5}},
 ];
 
+// ---------- 차원 초월 (무한 성장 노드) ----------
+// 위 12개 노드를 전부 만렙 찍으면 적응 포인트를 쓸 곳이 완전히 사라지는 문제(특히 치명타/공속/
+// 드랍률/물자·경험치처럼 전역 캡이 걸린 스탯 노드는 캡에 먼저 걸려 더 일찍 막힘)를 해결하기 위한
+// 안전판. 상한 레벨이 없어 포인트가 쌓일 때마다 끝없이 투자할 수 있고, 캡이 없는 3대 스탯
+// (공격력/방어력/최대 체력)에 동시에 아주 조금씩 붙는다. 레벨이 오를수록 비용이 계속 복리로
+// 올라가므로 실질적으로는 "다 만렙 찍은 유저를 위한 완만한 무한 성장" 역할만 한다.
+const MUTATION_TRANSCEND = {
+  key:'mutTranscend', name:'차원 초월', icon:'🌌', maxLevel:Infinity, baseCost:80, mult:1.045,
+  stat:'transcendTriple', perLevel:0.15, unit:'%', label:'공격력/방어력/최대 체력 (각각)',
+  prereq:{allMaxed:true},
+};
+
 function mutationLevel(key){
   return (state.mutation && state.mutation.nodes && state.mutation.nodes[key]) || 0;
 }
 
 function mutationNodeByKey(key){
+  if(key === MUTATION_TRANSCEND.key) return MUTATION_TRANSCEND;
   return MUTATION_TREE.find(n=>n.key===key);
 }
 
@@ -553,8 +566,14 @@ function mutationNodeCost(node){
   return Math.ceil(node.baseCost * Math.pow(node.mult, lvl));
 }
 
+// 모든 기본 노드(전투/생존/자원 12개)가 각자의 만렙에 도달했는지 — 차원 초월 해금 조건
+function allMutationNodesMaxed(){
+  return MUTATION_TREE.every(n => mutationLevel(n.key) >= n.maxLevel);
+}
+
 function mutationNodeLocked(node){
   if(!node.prereq) return false;
+  if(node.prereq.allMaxed) return !allMutationNodesMaxed();
   return mutationLevel(node.prereq.key) < node.prereq.lvl;
 }
 
@@ -573,6 +592,11 @@ function mutationBonus(){
       b[node.stat] += val;
     }
   });
+  const tLvl = mutationLevel(MUTATION_TRANSCEND.key);
+  if(tLvl > 0){
+    const tVal = tLvl * MUTATION_TRANSCEND.perLevel;
+    b.atkPct += tVal; b.defPct += tVal; b.hpPct += tVal;
+  }
   return b;
 }
 
@@ -643,6 +667,34 @@ function renderMutationTree(){
     });
     html += `</div>`;
   });
+
+  // ---- 차원 초월 (무한 성장 노드) ----
+  {
+    const node = MUTATION_TRANSCEND;
+    const lvl = mutationLevel(node.key);
+    const locked = mutationNodeLocked(node);
+    const cost = mutationNodeCost(node);
+    const totalVal = (lvl*node.perLevel).toFixed(1);
+    let footer;
+    if(locked){
+      footer = `<div class="mutation-node-lock">🔒 위 12개 노드를 전부 만렙 찍어야 해금됩니다</div>`;
+    } else {
+      const afford = state.mutation.points >= cost;
+      footer = `<button class="mutation-buy-btn" data-key="${node.key}" ${afford?'':'disabled'}>🧬 ${cost.toLocaleString()} 강화</button>`;
+    }
+    html += `<div class="mutation-branch"><div class="mutation-branch-title">🌌 초월 (무한 성장 · 남는 포인트 전용)</div>
+      <div class="mutation-node ${locked?'locked':''}">
+        <div class="mutation-node-top">
+          <span class="mutation-node-icon">${node.icon}</span>
+          <span class="mutation-node-name">${node.name}</span>
+          <span class="mutation-node-lvl">Lv.${lvl}</span>
+        </div>
+        <div class="mutation-node-desc">${node.label} 각각 +${totalVal}${node.unit} (상한 없음, 레벨이 오를수록 비용 증가)</div>
+        ${footer}
+      </div>
+    </div>`;
+  }
+
   el.innerHTML = html;
   el.querySelectorAll('.mutation-buy-btn[data-key]').forEach(btn=>{
     btn.addEventListener('click', ()=>buyMutationNode(btn.dataset.key));
