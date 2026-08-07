@@ -377,6 +377,77 @@ document.getElementById('accountGoToTitlesBtn')?.addEventListener('click', () =>
   document.querySelector('.tab-nav-btn[data-tab="tab-growth"]')?.click();
 });
 
+// ---------- 회원 탈퇴 ----------
+// 게스트(익명)든 이메일/Google 계정이든 상관없이 탈퇴 가능. 순서가 중요함:
+// 1) Firestore의 saves/rankings/presence 문서를 먼저 지운다 (보안 규칙상 로그인된 본인만 지울 수 있으므로,
+//    Auth 계정을 먼저 지워버리면 그 뒤엔 권한이 없어져서 데이터가 못 지워지고 고아로 남는다)
+// 2) 로컬(localStorage) 세이브도 지운다
+// 3) 마지막으로 Firebase Auth 계정 자체를 삭제한다
+// 이메일/비밀번호 계정은 보안상 "최근 로그인" 상태가 아니면 user.delete()가 auth/requires-recent-login
+// 에러를 낸다 — 이 경우 비밀번호를 다시 물어봐서 재인증한 뒤 다시 시도한다.
+document.getElementById('deleteAccountBtn')?.addEventListener('click', async () => {
+  const user = fbAuth.currentUser;
+  if(!user) return;
+
+  const warn = user.isAnonymous
+    ? '정말 탈퇴하시겠습니까?\n\n지금까지의 진행 상황(캐릭터, 재화, 랭킹)이 이 기기에서 영구적으로 삭제되며 되돌릴 수 없습니다.'
+    : '정말 탈퇴하시겠습니까?\n\n계정에 저장된 모든 진행 상황(캐릭터, 재화, 랭킹)이 영구적으로 삭제되며 되돌릴 수 없습니다.';
+  if(!confirm(warn)) return;
+
+  const typed = prompt('되돌릴 수 없습니다. 계속하려면 아래 칸에 "탈퇴"를 입력해주세요.');
+  if(typed !== '탈퇴'){ alert('입력이 일치하지 않아 탈퇴가 취소되었습니다.'); return; }
+
+  await performAccountDeletion(user);
+});
+
+async function performAccountDeletion(user){
+  const uid = user.uid;
+  try{
+    await Promise.all([
+      fbDb.collection('saves').doc(uid).delete().catch(()=>{}),
+      fbDb.collection('rankings').doc(uid).delete().catch(()=>{}),
+      fbDb.collection('presence').doc(uid).delete().catch(()=>{}),
+    ]);
+
+    try{
+      window.localStorage.removeItem(LOCAL_PREFIX + 'save');
+      window.localStorage.removeItem(LAST_UID_KEY);
+    }catch(e){}
+
+    await user.delete();
+
+    alert('탈퇴가 완료되었습니다. 그동안 플레이해주셔서 감사합니다.');
+    location.reload();
+  }catch(e){
+    if(e.code === 'auth/requires-recent-login'){
+      await handleReauthAndRetryDelete(user);
+    } else {
+      alert('탈퇴 처리 중 오류가 발생했습니다: ' + e.message);
+    }
+  }
+}
+
+async function handleReauthAndRetryDelete(user){
+  const providerId = user.providerData[0] && user.providerData[0].providerId;
+  try{
+    if(providerId === 'google.com'){
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await user.reauthenticateWithPopup(provider);
+    } else if(providerId === 'password'){
+      const pw = prompt('보안을 위해 비밀번호를 다시 입력해주세요.');
+      if(!pw) return;
+      const cred = firebase.auth.EmailAuthProvider.credential(user.email, pw);
+      await user.reauthenticateWithCredential(cred);
+    } else {
+      alert('재인증이 필요합니다. 로그아웃 후 다시 로그인해서 탈퇴를 시도해주세요.');
+      return;
+    }
+    await performAccountDeletion(fbAuth.currentUser);
+  }catch(e){
+    alert('재인증에 실패했습니다: ' + authErrorMessage(e));
+  }
+}
+
 // ===== js/ranking.js =====
 // ---------- Ranking (랭킹 시스템) ----------
 // rankings/{uid} 문서에 닉네임/전투력/최고층을 올리고, 전투력 내림차순 상위 50명을 보여준다.
