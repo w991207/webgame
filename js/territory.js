@@ -14,21 +14,25 @@ const TERRITORY_RESOURCE_FIELD = {gold:'gold', fragment:'fragments', soul:'soul'
 
 const TERRITORY_BUILDING_TYPES = [
   {
-    type:'gold', icon:'📦', resourceLabel:'물자',
-    baseRatePerHour: 400, upgradeBaseCost: 200,
+    type:'gold', icon:'📦', resourceLabel:'물자', baseRatePerHour: 400,
     tierNames: ['물자 창고', '물자 저장고', '물자 요새', '물자 성채', '물자 왕국'],
   },
   {
-    type:'fragment', icon:'🗿', resourceLabel:'유산 파편',
-    baseRatePerHour: 1.4, upgradeBaseCost: 2,
+    type:'fragment', icon:'🗿', resourceLabel:'유산 파편', baseRatePerHour: 1.4,
     tierNames: ['유산 채굴장', '유산 갱도', '유산 광산', '대유산 광맥', '태고의 유산층'],
   },
   {
-    type:'soul', icon:'🧪', resourceLabel:'혈청',
-    baseRatePerHour: 0.5, upgradeBaseCost: 1,
+    type:'soul', icon:'🧪', resourceLabel:'혈청', baseRatePerHour: 0.5,
     tierNames: ['혈청 배양소', '혈청 정제소', '혈청 연구소', '혈청 생성로', '혈청 특이점'],
   },
 ];
+
+// ---------- 밸런스 ----------
+// (층수 비례 스케일링은 제거하고 고정 기본 생산량으로 되돌림)
+function territoryBaseRate(type){
+  const def = territoryDef(type);
+  return def ? def.baseRatePerHour : 0;
+}
 
 const TERRITORY_TIER_MULT = 2.6;       // 티어당 생산량 배율
 const TERRITORY_LEVEL_GROWTH = 0.12;   // 레벨당 생산량 증가폭(+12%)
@@ -38,7 +42,11 @@ const TERRITORY_TIER_COST_MULT = 3.4;     // 티어가 오를수록 강화/증�
 const TERRITORY_TIERUP_COST_FACTOR = 6;   // 증축 비용 = 그 티어 최대레벨 강화비용 * 이 배율
 const TERRITORY_CAP_HOURS = 10;           // 저장 상한: 최대 10시간치까지만 쌓임
 
-const TERRITORY_SLOT_BASE_COST = {gold: 2000, fragment: 15, soul: 6};
+// 강화 1레벨 비용 = "그 시점 기준 생산량의 N시간치" (자원별로 다름 — 물자는 저렴하게 자주,
+// 혈청/파편은 귀한 만큼 크게)
+const TERRITORY_UPGRADE_COST_COEF = {gold: 6, fragment: 8, soul: 10};
+// 부지 확장 비용 = "그 시점 기준 생산량의 40시간치" (건물 하나 새로 짓는 수준의 큰 투자)
+const TERRITORY_SLOT_COST_HOURS = 40;
 const TERRITORY_SLOT_COST_MULT = 1.55; // 슬롯을 늘릴수록 다음 슬롯 비용도 이 배율만큼 증가
 
 function territoryDef(type){
@@ -53,8 +61,7 @@ function territoryBuildingName(b){
 }
 
 function territoryBuildingRate(b){
-  const def = territoryDef(b.type);
-  return def.baseRatePerHour * Math.pow(TERRITORY_TIER_MULT, b.tier - 1) * (1 + (b.level - 1) * TERRITORY_LEVEL_GROWTH);
+  return territoryBaseRate(b.type) * Math.pow(TERRITORY_TIER_MULT, b.tier - 1) * (1 + (b.level - 1) * TERRITORY_LEVEL_GROWTH);
 }
 
 function territoryTotalRate(type){
@@ -86,12 +93,12 @@ function collectTerritory(type){
 }
 
 function territoryUpgradeCost(b){
-  const def = territoryDef(b.type);
-  return Math.round(
-    def.upgradeBaseCost
+  const base = territoryBaseRate(b.type) * TERRITORY_UPGRADE_COST_COEF[b.type];
+  return Math.max(1, Math.round(
+    base
     * Math.pow(TERRITORY_UPGRADE_COST_MULT, b.level - 1)
     * Math.pow(TERRITORY_TIER_COST_MULT, b.tier - 1)
-  );
+  ));
 }
 
 function territoryTierUpCost(b){
@@ -127,9 +134,9 @@ function territorySlotExpandCost(){
   const bought = Math.max(0, state.territory.slotCount - 3); // 시작 3칸 이후로 늘린 횟수
   const mult = Math.pow(TERRITORY_SLOT_COST_MULT, bought);
   return {
-    gold: Math.round(TERRITORY_SLOT_BASE_COST.gold * mult),
-    fragments: Math.round(TERRITORY_SLOT_BASE_COST.fragment * mult),
-    soul: Math.round(TERRITORY_SLOT_BASE_COST.soul * mult),
+    gold: Math.round(territoryBaseRate('gold') * TERRITORY_SLOT_COST_HOURS * mult),
+    fragments: Math.round(territoryBaseRate('fragment') * TERRITORY_SLOT_COST_HOURS * mult),
+    soul: Math.round(territoryBaseRate('soul') * TERRITORY_SLOT_COST_HOURS * mult),
   };
 }
 

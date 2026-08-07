@@ -1,7 +1,8 @@
 // ---------- Quests & Achievements ----------
+// 예전엔 "마지막 리셋 후 24시간 경과"로 판정해서 유저마다 리셋 시각이 최초 접속 시간에 따라
+// 제각각 밀리는 문제가 있었다. 자정(로컬 자정) 기준으로 날짜가 바뀌었는지로 판정하도록 변경.
 function checkDailyReset(){
-  const DAY_MS = 24*3600*1000;
-  if(Date.now() - state.dailyResetAt >= DAY_MS){
+  if(!isSameDay(state.dailyResetAt, Date.now())){
     state.dailyResetAt = Date.now();
     state.dailyKills = 0;
     state.dailyGoldEarned = 0;
@@ -49,7 +50,9 @@ function claimAch(key){
 
 function renderDailyQuests(){
   const el = document.getElementById('dailyResetText');
-  const remainMs = Math.max(0, 24*3600*1000 - (Date.now()-state.dailyResetAt));
+  const now = new Date();
+  const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()+1, 0,0,0,0);
+  const remainMs = Math.max(0, nextMidnight.getTime() - now.getTime());
   const h = Math.floor(remainMs/3600000), m = Math.floor((remainMs%3600000)/60000);
   el.textContent = `(초기화까지 ${h}시간 ${m}분)`;
 
