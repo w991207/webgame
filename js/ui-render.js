@@ -156,6 +156,7 @@ function renderAll(){
   renderRelicDungeonPanel();
   if(typeof renderMutationTree === 'function') renderMutationTree();
   if(typeof renderJobPanel === 'function') renderJobPanel();
+  if(typeof renderJobMasteryPanel === 'function') renderJobMasteryPanel();
   if(typeof renderSkillsPanel === 'function') renderSkillsPanel();
   if(typeof renderPvpRecord === 'function') renderPvpRecord();
   if(typeof renderBestiary === 'function') renderBestiary();

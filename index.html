@@ -228,6 +228,19 @@
       🔒 레벨 1000에 도달하면 해금됩니다. (현재 <span id="jobCurrentLevelText">1</span>레벨)
     </div>
     <div class="mutation-tree" id="jobList" style="display:none;"></div>
+
+    <div id="jobMasteryWrap" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+      <h2 style="font-size:15px;">🎖️ 직업 숙련도</h2>
+      <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+        전직한 상태에서 레벨업(+1)이나 보스 처치(+2)를 하면 숙련도 포인트를 얻습니다. 현재 직업 전용 트리를 강화해 보너스를 더 쌓으세요.
+        <b>직업별로 진행도가 따로 저장</b>되므로 재전직해도 예전에 투자한 숙련도는 사라지지 않고, 그 직업으로 돌아오면 그대로 남아있습니다.
+      </p>
+      <div id="jobMasteryLockNotice" style="font-size:13px;color:var(--text-dim);padding:12px;text-align:center;border:1px dashed var(--border);border-radius:8px;">
+        🔒 전직 후 이용할 수 있습니다.
+      </div>
+      <div class="frag-count" style="display:none;">🎖️ 숙련도 포인트: <span id="jobMasteryPointsText">0</span></div>
+      <div class="mutation-tree" id="jobMasteryTree" style="display:none;"></div>
+    </div>
   </div>
 
   <div class="panel relic-panel">

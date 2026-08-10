@@ -831,11 +831,16 @@ function currentJob(){
 }
 
 // stats() 계산에 합산되는 직업 보너스. 돌연변이/스킬과 같은 필드 이름을 쓴다.
+// 전직 고정 보너스 + 직업 숙련도 트리 보너스(jobMasteryBonus)를 합쳐서 반환한다.
 function jobBonus(){
   const b = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, accuracyAdd:0};
   const job = currentJob();
   if(!job) return b;
   Object.keys(job.bonus).forEach(k => { b[k] = (b[k]||0) + job.bonus[k]; });
+  if(typeof jobMasteryBonus === 'function'){
+    const mb = jobMasteryBonus();
+    Object.keys(mb).forEach(k => { b[k] = (b[k]||0) + mb[k]; });
+  }
   return b;
 }
 
@@ -897,6 +902,169 @@ function renderJobPanel(){
 
   list.querySelectorAll('.mutation-buy-btn[data-key]').forEach(btn => {
     btn.addEventListener('click', () => selectJob(btn.dataset.key));
+  });
+}
+
+// ---------- 직업 숙련도 (Job Mastery) ----------
+// 전직 후 레벨업(+1)/보스 처치(+2)로 얻는 "숙련도 포인트"를 소모해 현재 직업 전용 트리를
+// 강화하는 시스템. 돌연변이 각성과 같은 구조(트리+선행조건)를 쓰지만 포인트/진행도는
+// 직업별로 완전히 분리 저장된다 — 재전직해도 예전 직업에 투자한 숙련도는 사라지지 않고,
+// 나중에 그 직업으로 돌아오면 그대로 남아있다 (재전직 페널티를 완화해주는 장치).
+const JOB_MASTERY_TREES = {
+  warrior: [
+    {key:'wmDef1', name:'전선 유지', icon:'🛡️', maxLevel:40, baseCost:3, mult:1.15,
+      stat:'defPct', perLevel:0.8, unit:'%', label:'방어력', prereq:null},
+    {key:'wmAtk1', name:'결전 태세', icon:'⚔️', maxLevel:40, baseCost:5, mult:1.18,
+      stat:'atkPct', perLevel:0.8, unit:'%', label:'공격력', prereq:{key:'wmDef1', lvl:5}},
+    {key:'wmCrit1', name:'불굴의 반격', icon:'🔥', maxLevel:30, baseCost:9, mult:1.24,
+      stat:'critDmgAdd', perLevel:1.5, unit:'%', label:'치명타 피해', prereq:{key:'wmAtk1', lvl:10}},
+  ],
+  sniper: [
+    {key:'smAcc1', name:'정밀 조준', icon:'🔭', maxLevel:40, baseCost:3, mult:1.15,
+      stat:'accuracyAdd', perLevel:0.6, unit:'', label:'명중률', prereq:null},
+    {key:'smCrit1', name:'급소 타격', icon:'🎯', maxLevel:30, baseCost:5, mult:1.2,
+      stat:'critAdd', perLevel:0.4, unit:'%', label:'치명타 확률', prereq:{key:'smAcc1', lvl:5}},
+    {key:'smCrit2', name:'처형자의 눈', icon:'💀', maxLevel:30, baseCost:9, mult:1.24,
+      stat:'critDmgAdd', perLevel:1.5, unit:'%', label:'치명타 피해', prereq:{key:'smCrit1', lvl:10}},
+  ],
+  scavenger: [
+    {key:'scDrop1', name:'눈썰미', icon:'👁️', maxLevel:30, baseCost:3, mult:1.16,
+      stat:'dropAdd', perLevel:0.3, unit:'%p', label:'파편 드랍 확률', prereq:null},
+    {key:'scGold1', name:'빠른 손', icon:'🤲', maxLevel:35, baseCost:5, mult:1.18,
+      stat:'goldPct', perLevel:1, unit:'%', label:'물자 획득', prereq:{key:'scDrop1', lvl:5}},
+    {key:'scAtk1', name:'대박의 감', icon:'🎰', maxLevel:30, baseCost:9, mult:1.24,
+      stat:'atkPct', perLevel:0.8, unit:'%', label:'공격력', prereq:{key:'scGold1', lvl:10}},
+  ],
+  survivalist: [
+    {key:'svHp1', name:'인내의 한계', icon:'🩸', maxLevel:40, baseCost:3, mult:1.15,
+      stat:'hpPct', perLevel:1, unit:'%', label:'최대 체력', prereq:null},
+    {key:'svDef1', name:'회복력', icon:'💉', maxLevel:35, baseCost:5, mult:1.18,
+      stat:'defPct', perLevel:0.8, unit:'%', label:'방어력', prereq:{key:'svHp1', lvl:5}},
+    {key:'svAtk1', name:'최후의 저항', icon:'🔥', maxLevel:30, baseCost:9, mult:1.24,
+      stat:'atkPct', perLevel:0.8, unit:'%', label:'공격력', prereq:{key:'svDef1', lvl:10}},
+  ],
+};
+
+function jobMasteryTreeFor(jobKey){
+  return JOB_MASTERY_TREES[jobKey] || null;
+}
+
+// 직업별로 분리된 숙련도 진행 상태를 가져오거나(없으면) 새로 만든다.
+function jobMasteryStateFor(jobKey){
+  if(!state.jobMastery) state.jobMastery = {};
+  if(!state.jobMastery[jobKey]) state.jobMastery[jobKey] = {points:0, totalEarned:0, nodes:{}};
+  return state.jobMastery[jobKey];
+}
+
+function jobMasteryLevel(jobKey, key){
+  const ms = state.jobMastery && state.jobMastery[jobKey];
+  return (ms && ms.nodes && ms.nodes[key]) || 0;
+}
+
+function jobMasteryNodeCost(jobKey, node){
+  const lvl = jobMasteryLevel(jobKey, node.key);
+  return Math.ceil(node.baseCost * Math.pow(node.mult, lvl));
+}
+
+function jobMasteryNodeLocked(jobKey, node){
+  if(!node.prereq) return false;
+  return jobMasteryLevel(jobKey, node.prereq.key) < node.prereq.lvl;
+}
+
+// 현재 전직 중인 직업의 숙련도 트리가 주는 보너스만 stats()에 반영된다.
+// (직업을 바꾸면 그 직업의 트리로 보너스도 함께 전환됨 — 진행도 자체는 안 사라짐)
+function jobMasteryBonus(){
+  const b = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, accuracyAdd:0};
+  if(!state.job) return b;
+  const tree = jobMasteryTreeFor(state.job);
+  if(!tree) return b;
+  tree.forEach(node=>{
+    const lvl = jobMasteryLevel(state.job, node.key);
+    if(lvl<=0) return;
+    b[node.stat] += lvl * node.perLevel;
+  });
+  return b;
+}
+
+// 레벨업/보스 처치 시 호출 — 전직한 상태에서만 현재 직업의 숙련도 포인트가 쌓인다.
+function gainJobMasteryPoints(amount){
+  if(!state.job) return;
+  const ms = jobMasteryStateFor(state.job);
+  ms.points += amount;
+  ms.totalEarned = (ms.totalEarned||0) + amount;
+}
+
+function buyJobMasteryNode(key){
+  if(!state.job) return;
+  const tree = jobMasteryTreeFor(state.job);
+  const node = tree && tree.find(n=>n.key===key);
+  if(!node || jobMasteryNodeLocked(state.job, node)) return;
+  const lvl = jobMasteryLevel(state.job, key);
+  if(lvl >= node.maxLevel) return;
+  const ms = jobMasteryStateFor(state.job);
+  const cost = jobMasteryNodeCost(state.job, node);
+  if(ms.points < cost) return;
+  ms.points -= cost;
+  ms.nodes[key] = lvl + 1;
+  renderJobMasteryPanel();
+  renderAll();
+}
+
+function renderJobMasteryPanel(){
+  const wrap = document.getElementById('jobMasteryWrap');
+  const lockNotice = document.getElementById('jobMasteryLockNotice');
+  const el = document.getElementById('jobMasteryTree');
+  const ptText = document.getElementById('jobMasteryPointsText');
+  if(!wrap || !el) return;
+
+  if(!state.job){
+    wrap.style.display = 'block';
+    if(lockNotice) lockNotice.style.display = 'block';
+    el.style.display = 'none';
+    if(ptText) ptText.parentElement.style.display = 'none';
+    return;
+  }
+
+  wrap.style.display = 'block';
+  if(lockNotice) lockNotice.style.display = 'none';
+  el.style.display = 'grid';
+  if(ptText) ptText.parentElement.style.display = 'block';
+
+  const ms = jobMasteryStateFor(state.job);
+  const tree = jobMasteryTreeFor(state.job);
+  const jobMeta = currentJob();
+  if(ptText) ptText.textContent = Math.floor(ms.points).toLocaleString();
+
+  el.innerHTML = tree.map(node=>{
+    const lvl = jobMasteryLevel(state.job, node.key);
+    const locked = jobMasteryNodeLocked(state.job, node);
+    const maxed = lvl >= node.maxLevel;
+    const cost = jobMasteryNodeCost(state.job, node);
+    const totalVal = (lvl*node.perLevel).toFixed(node.perLevel % 1 !== 0 ? 1 : 0);
+    let footer;
+    if(locked){
+      const preq = tree.find(n=>n.key===node.prereq.key);
+      footer = `<div class="mutation-node-lock">🔒 ${preq.name} Lv.${node.prereq.lvl} 필요</div>`;
+    } else if(maxed){
+      footer = `<button class="mutation-buy-btn maxed" disabled>MAX</button>`;
+    } else {
+      const afford = ms.points >= cost;
+      footer = `<button class="mutation-buy-btn" data-key="${node.key}" ${afford?'':'disabled'}>🎖️ ${cost.toLocaleString()} 강화</button>`;
+    }
+    return `
+      <div class="mutation-node ${locked?'locked':''} ${maxed?'maxed':''}">
+        <div class="mutation-node-top">
+          <span class="mutation-node-icon">${node.icon}</span>
+          <span class="mutation-node-name">${node.name}</span>
+          <span class="mutation-node-lvl">Lv.${lvl}/${node.maxLevel}</span>
+        </div>
+        <div class="mutation-node-desc">${node.label} +${totalVal}${node.unit}</div>
+        ${footer}
+      </div>`;
+  }).join('');
+
+  el.querySelectorAll('.mutation-buy-btn[data-key]').forEach(btn=>{
+    btn.addEventListener('click', ()=>buyJobMasteryNode(btn.dataset.key));
   });
 }
 
@@ -1049,6 +1217,7 @@ function defaultState(){
     mutation: {points:0, totalEarned:0, nodes:{}},
     skills: {},
     job: null,
+    jobMastery: {}, // 직업별(warrior/sniper/scavenger/survivalist) 숙련도 트리 진행도, 재전직해도 보존됨
     claimedGlobalGifts: {},
     unlockedTitles: {}, // 한 번 조건을 달성한 칭호는 여기 영구 기록되어 환생해도 사라지지 않음
     lastSave: Date.now(),
@@ -1290,6 +1459,7 @@ function tryLevelUp(){
     state.exp -= needed;
     state.level++;
     if(typeof gainMutationPoints === 'function') gainMutationPoints(1);
+    if(typeof gainJobMasteryPoints === 'function') gainJobMasteryPoints(1);
     log(`레벨 업! Lv.${state.level}`, 'good');
     needed = expNeeded(state.level);
   }
@@ -1576,6 +1746,7 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
       state.repBossProgress++;
       state.totalBossKills = (state.totalBossKills||0) + 1;
       if(typeof gainMutationPoints === 'function') gainMutationPoints(3);
+      if(typeof gainJobMasteryPoints === 'function') gainJobMasteryPoints(2);
     }
     log(`${currentMonsterMeta().name}${boss? ' (보스)':''} 처치! +${goldGain}📦 +${expGain}EXP`, boss?'good':'new');
 
@@ -3958,6 +4129,7 @@ function renderAll(){
   renderRelicDungeonPanel();
   if(typeof renderMutationTree === 'function') renderMutationTree();
   if(typeof renderJobPanel === 'function') renderJobPanel();
+  if(typeof renderJobMasteryPanel === 'function') renderJobMasteryPanel();
   if(typeof renderSkillsPanel === 'function') renderSkillsPanel();
   if(typeof renderPvpRecord === 'function') renderPvpRecord();
   if(typeof renderBestiary === 'function') renderBestiary();

@@ -279,6 +279,7 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
       state.repBossProgress++;
       state.totalBossKills = (state.totalBossKills||0) + 1;
       if(typeof gainMutationPoints === 'function') gainMutationPoints(3);
+      if(typeof gainJobMasteryPoints === 'function') gainJobMasteryPoints(2);
     }
     log(`${currentMonsterMeta().name}${boss? ' (보스)':''} 처치! +${goldGain}📦 +${expGain}EXP`, boss?'good':'new');
 
