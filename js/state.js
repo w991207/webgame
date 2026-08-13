@@ -101,6 +101,26 @@ function defaultState(){
     rdPlayerHp: 0,
     rdCleared: false,
 
+    // ---------- Forge Dungeon (단조 구역, 강화석 보상) ----------
+    fdFloor: 1,
+    fdTicket: 3,
+    fdTicketLastRefill: Date.now(),
+    fdActive: false,
+    fdMonsterHp: 0,
+    fdMonsterMaxHp: 0,
+    fdPlayerHp: 0,
+    fdCleared: false,
+
+    // ---------- Training Dungeon (수련 구역, 경험치 보상) ----------
+    tdFloor: 1,
+    tdTicket: 3,
+    tdTicketLastRefill: Date.now(),
+    tdActive: false,
+    tdMonsterHp: 0,
+    tdMonsterMaxHp: 0,
+    tdPlayerHp: 0,
+    tdCleared: false,
+
     // ---------- Equipment (물자 뽑기 장비 시스템) ----------
     equipment: {weapon:null, armor:null, accessory:null},
     equipInventory: [],
@@ -163,6 +183,13 @@ function defaultState(){
 let state = defaultState();
 let playerTickHandle = null;
 let monsterTickHandle = null;
+
+// 서로 동시에 진행할 수 없는 "부속 전투 콘텐츠"들의 활성 상태 플래그 목록.
+// 새 던전/컨텐츠를 추가할 때 이 배열에만 키를 더하면 모든 기존 입장 체크에 자동으로 반영된다.
+const SUB_ACTIVITY_FLAGS = ['raidActive', 'gdActive', 'rdActive', 'wbActive', 'fdActive', 'tdActive'];
+function anySubActivityActive(excludeKey){
+  return SUB_ACTIVITY_FLAGS.some(k => k !== excludeKey && state[k]);
+}
 
 // ---------- 상한(캡)이 걸린 파생 스탯 상수 ----------
 // stats() 안에서만 쓰던 값을 밖으로 빼서, 강화 UI 쪽에서도 "지금 이미 캡인지" 체크할 수 있게 함.

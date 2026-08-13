@@ -40,8 +40,8 @@ let rdMonsterTickHandle = null;
 
 function enterRelicDungeon(){
   if(state.rdActive) return;
-  if(state.raidActive || state.gdActive){
-    alert('다른 전투(레이드/물자 구역) 진행 중에는 유산 구역에 입장할 수 없습니다.');
+  if(anySubActivityActive('rdActive')){
+    alert('다른 전투 콘텐츠가 진행 중에는 유산 구역에 입장할 수 없습니다.');
     return;
   }
   refreshRelicDungeonTickets();

@@ -154,6 +154,8 @@ function renderAll(){
   renderRaidPanel();
   renderGoldDungeonPanel();
   renderRelicDungeonPanel();
+  if(typeof renderForgeDungeonPanel === 'function') renderForgeDungeonPanel();
+  if(typeof renderTrainingDungeonPanel === 'function') renderTrainingDungeonPanel();
   if(typeof renderMutationTree === 'function') renderMutationTree();
   if(typeof renderJobPanel === 'function') renderJobPanel();
   if(typeof renderJobMasteryPanel === 'function') renderJobMasteryPanel();
@@ -165,6 +167,10 @@ function renderAll(){
   if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
+  if(typeof renderWorldMap === 'function'){
+    const wmOverlay = document.getElementById('worldMapOverlay');
+    if(wmOverlay && wmOverlay.style.display !== 'none') renderWorldMap();
+  }
   if(typeof renderTerritoryPanel === 'function') renderTerritoryPanel();
 }
 

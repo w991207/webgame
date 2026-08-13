@@ -58,6 +58,7 @@
       <button class="mode-btn active" id="modeNormalBtn">폐허 (기본 모드)</button>
       <button class="mode-btn" id="modeTowerBtn">무한의 탑 (100층)</button>
       <button class="mode-btn" id="modeTowerHardBtn">무한의 탑(어려움) 🔒</button>
+      <button class="mode-btn worldmap-open-btn" id="worldMapOpenBtn">🗺️ 세계지도</button>
     </div>
     <div class="currency-bar">
       <div class="currency gold"><span class="ico">📦</span><span id="goldDisplay">0</span></div>
@@ -219,7 +220,7 @@
     <div class="enhance-grid" id="enhanceGrid"></div>
   </div>
 
-  <div class="panel relic-panel">
+  <div class="panel relic-panel" id="jobPanelSection">
     <h2>🎖️ 전직 <span id="jobLevelReq" style="float:right;font-size:12px;color:var(--text-dim);font-weight:400;">Lv.1000 해금</span></h2>
     <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
       레벨 1000을 달성하면 4개 직업 중 하나를 선택해 전직할 수 있습니다. 직업마다 특화된 영구 보너스가 붙고, <b>최초 전직은 무료</b>이며 이후 재전직은 🧪 혈청이 듭니다.
@@ -449,6 +450,56 @@
       <div class="player-hp-label"><span>내 체력</span><span id="rdPlayerHpText">0 / 0</span></div>
     </div>
   </div>
+
+  <div class="panel relic-panel">
+    <h2>단조 구역</h2>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+      물자 구역과 같은 방식의 10층짜리 구역이지만, 보상이 <span style="color:#ffb454">🔩 강화석</span>입니다. 장비 강화 재료를 확정적으로 모으고 싶을 때 도전하세요.
+    </p>
+    <div class="relic-pull-row">
+      <div class="frag-count">📍 층수: <span id="fdFloorText">1/10</span></div>
+      <div class="frag-count">🎫 티켓: <span id="fdTicketText">0/3</span> <span id="fdTicketTimer" style="color:var(--text-dim);font-size:11px;"></span></div>
+    </div>
+    <div class="frag-count" style="margin-top:6px;">다음 클리어 보상: <span id="fdNextReward">-</span> 🔩</div>
+    <button class="pull-relic" id="fdEnterBtn" style="width:100%;margin-top:10px;">도전</button>
+
+    <div id="fdBattleBox" style="display:none;margin-top:14px;">
+      <div class="floor-badge">FORGE DUNGEON</div>
+      <div class="arch" style="max-width:200px;">
+        <div class="monster-emoji" id="fdMonsterEmoji">🔥</div>
+      </div>
+      <div class="monster-name" id="fdMonsterName">-</div>
+      <div class="hp-bar-outer"><div class="hp-bar-inner" id="fdMonsterHpBar" style="width:100%"></div></div>
+      <div class="hp-text" id="fdMonsterHpText">0 / 0</div>
+      <div class="player-hp-outer"><div class="player-hp-inner" id="fdPlayerHpBar" style="width:100%"></div></div>
+      <div class="player-hp-label"><span>내 체력</span><span id="fdPlayerHpText">0 / 0</span></div>
+    </div>
+  </div>
+
+  <div class="panel relic-panel">
+    <h2>수련 구역</h2>
+    <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
+      물자 구역과 같은 방식의 10층짜리 구역이지만, 보상이 확정 <span style="color:var(--soul)">경험치</span>입니다. 레벨업이 급할 때 도전하세요.
+    </p>
+    <div class="relic-pull-row">
+      <div class="frag-count">📍 층수: <span id="tdFloorText">1/10</span></div>
+      <div class="frag-count">🎫 티켓: <span id="tdTicketText">0/3</span> <span id="tdTicketTimer" style="color:var(--text-dim);font-size:11px;"></span></div>
+    </div>
+    <div class="frag-count" style="margin-top:6px;">다음 클리어 보상: <span id="tdNextReward">-</span> EXP</div>
+    <button class="pull-relic" id="tdEnterBtn" style="width:100%;margin-top:10px;">도전</button>
+
+    <div id="tdBattleBox" style="display:none;margin-top:14px;">
+      <div class="floor-badge">TRAINING DUNGEON</div>
+      <div class="arch" style="max-width:200px;">
+        <div class="monster-emoji" id="tdMonsterEmoji">🥋</div>
+      </div>
+      <div class="monster-name" id="tdMonsterName">-</div>
+      <div class="hp-bar-outer"><div class="hp-bar-inner" id="tdMonsterHpBar" style="width:100%"></div></div>
+      <div class="hp-text" id="tdMonsterHpText">0 / 0</div>
+      <div class="player-hp-outer"><div class="player-hp-inner" id="tdPlayerHpBar" style="width:100%"></div></div>
+      <div class="player-hp-label"><span>내 체력</span><span id="tdPlayerHpText">0 / 0</span></div>
+    </div>
+  </div>
   </div><!-- /tab-dungeon -->
 
   <div class="tab-content" id="tab-event" style="display:none;">
@@ -593,6 +644,25 @@
     <button id="importBtn">데이터 가져오기</button>
     <button id="resetBtn">전체 초기화</button>
     <input type="file" id="importFileInput" accept=".json" style="display:none;">
+  </div>
+</div>
+
+<!-- ---------- 세계지도 (오픈월드 스타일 이동 UI) ---------- -->
+<div class="modal-overlay worldmap-overlay" id="worldMapOverlay" style="display:none;">
+  <div class="worldmap-card">
+    <div class="worldmap-header">
+      <h3>🗺️ 황혼의 회랑 — 세계지도</h3>
+      <button class="worldmap-close-btn" id="worldMapCloseBtn">✕</button>
+    </div>
+    <p class="worldmap-hint">지역을 클릭해 이동하세요. 잠긴 지역은 조건을 채우면 열립니다.</p>
+    <div class="worldmap-canvas" id="worldMapCanvas">
+      <svg class="worldmap-lines" id="worldMapLines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+      <div class="worldmap-traveler" id="worldMapTraveler" style="display:none;">🚩</div>
+    </div>
+    <div class="worldmap-legend">
+      <span><span class="wm-dot unlocked"></span> 이동 가능</span>
+      <span><span class="wm-dot locked"></span> 잠김</span>
+    </div>
   </div>
 </div>
 

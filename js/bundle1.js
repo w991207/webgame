@@ -1258,6 +1258,26 @@ function defaultState(){
     rdPlayerHp: 0,
     rdCleared: false,
 
+    // ---------- Forge Dungeon (단조 구역, 강화석 보상) ----------
+    fdFloor: 1,
+    fdTicket: 3,
+    fdTicketLastRefill: Date.now(),
+    fdActive: false,
+    fdMonsterHp: 0,
+    fdMonsterMaxHp: 0,
+    fdPlayerHp: 0,
+    fdCleared: false,
+
+    // ---------- Training Dungeon (수련 구역, 경험치 보상) ----------
+    tdFloor: 1,
+    tdTicket: 3,
+    tdTicketLastRefill: Date.now(),
+    tdActive: false,
+    tdMonsterHp: 0,
+    tdMonsterMaxHp: 0,
+    tdPlayerHp: 0,
+    tdCleared: false,
+
     // ---------- Equipment (물자 뽑기 장비 시스템) ----------
     equipment: {weapon:null, armor:null, accessory:null},
     equipInventory: [],
@@ -1320,6 +1340,13 @@ function defaultState(){
 let state = defaultState();
 let playerTickHandle = null;
 let monsterTickHandle = null;
+
+// 서로 동시에 진행할 수 없는 "부속 전투 콘텐츠"들의 활성 상태 플래그 목록.
+// 새 던전/컨텐츠를 추가할 때 이 배열에만 키를 더하면 모든 기존 입장 체크에 자동으로 반영된다.
+const SUB_ACTIVITY_FLAGS = ['raidActive', 'gdActive', 'rdActive', 'wbActive', 'fdActive', 'tdActive'];
+function anySubActivityActive(excludeKey){
+  return SUB_ACTIVITY_FLAGS.some(k => k !== excludeKey && state[k]);
+}
 
 // ---------- 상한(캡)이 걸린 파생 스탯 상수 ----------
 // stats() 안에서만 쓰던 값을 밖으로 빼서, 강화 UI 쪽에서도 "지금 이미 캡인지" 체크할 수 있게 함.
@@ -3068,8 +3095,8 @@ function enterRaid(){
     return;
   }
   if(state.raidActive) return;
-  if(state.gdActive || state.rdActive){
-    alert('다른 전투(물자 구역/유산 구역) 진행 중에는 레이드에 입장할 수 없습니다.');
+  if(anySubActivityActive('raidActive')){
+    alert('다른 전투 콘텐츠가 진행 중에는 레이드에 입장할 수 없습니다.');
     return;
   }
   refreshRaidTickets();
@@ -3385,8 +3412,8 @@ let gdMonsterTickHandle = null;
 
 function enterGoldDungeon(){
   if(state.gdActive) return;
-  if(state.raidActive || state.rdActive){
-    alert('다른 전투(레이드/유산 구역) 진행 중에는 물자 구역에 입장할 수 없습니다.');
+  if(anySubActivityActive('gdActive')){
+    alert('다른 전투 콘텐츠가 진행 중에는 물자 구역에 입장할 수 없습니다.');
     return;
   }
   refreshGoldDungeonTickets();
@@ -3583,8 +3610,8 @@ let rdMonsterTickHandle = null;
 
 function enterRelicDungeon(){
   if(state.rdActive) return;
-  if(state.raidActive || state.gdActive){
-    alert('다른 전투(레이드/물자 구역) 진행 중에는 유산 구역에 입장할 수 없습니다.');
+  if(anySubActivityActive('rdActive')){
+    alert('다른 전투 콘텐츠가 진행 중에는 유산 구역에 입장할 수 없습니다.');
     return;
   }
   refreshRelicDungeonTickets();
@@ -3732,6 +3759,397 @@ function renderRelicDungeonPanel(){
 setInterval(()=>{
   refreshRelicDungeonTickets();
   renderRelicDungeonPanel();
+}, 1000);
+
+// ===== js/forgedungeon.js =====
+// ---------- Forge Dungeon (단조 구역) ----------
+// 물자/유산 구역과 동일한 구조(티켓제, 10층, 고정 스탯 전투)지만 보상이 🔩 강화석입니다.
+// 강화석은 지금까지 일반 전투 드랍(확률제)이 유일한 공급원이었는데, 장비 강화 시스템의
+// 비용이 강화 단계가 오를수록 지수적으로 뛰기 때문에(enhance.js 참고) 확정적으로 강화석을
+// 모을 수 있는 루트가 필요해서 신설되었다. 난이도 곡선은 물자/유산 구역과 동일하게 맞춘다.
+
+const FORGE_DUNGEON_TICKET_MAX = 3;
+const FORGE_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
+const FORGE_DUNGEON_MAX_FLOOR = 10;
+
+const FORGE_DUNGEON_META = {name:'단조로의 파수꾼', emoji:'🔥'};
+
+function fdHpFor(floor){ return Math.round(1600 * Math.pow(1.33, floor-1)); }
+function fdAtkFor(floor){ return Math.round(27 * Math.pow(1.33, floor-1)); }
+function fdDefFor(floor){ return Math.round(8 * Math.pow(1.33, floor-1)); }
+// 1층 3개부터 시작해 층마다 1.35배씩 증가 (10층 클리어 시 약 51개)
+function fdStoneFor(floor){ return Math.round(3 * Math.pow(1.35, floor-1)); }
+
+function refreshForgeDungeonTickets(){
+  if(state.fdTicket >= FORGE_DUNGEON_TICKET_MAX){
+    state.fdTicketLastRefill = Date.now();
+    return;
+  }
+  const now = Date.now();
+  const elapsed = now - state.fdTicketLastRefill;
+  const gained = Math.floor(elapsed / FORGE_DUNGEON_TICKET_INTERVAL_MS);
+  if(gained <= 0) return;
+  const newTicket = Math.min(FORGE_DUNGEON_TICKET_MAX, state.fdTicket + gained);
+  const actuallyGained = newTicket - state.fdTicket;
+  state.fdTicket = newTicket;
+  state.fdTicketLastRefill += actuallyGained * FORGE_DUNGEON_TICKET_INTERVAL_MS;
+  if(state.fdTicket >= FORGE_DUNGEON_TICKET_MAX){
+    state.fdTicketLastRefill = now;
+  }
+}
+
+let fdPlayerTickHandle = null;
+let fdMonsterTickHandle = null;
+
+function enterForgeDungeon(){
+  if(state.fdActive) return;
+  if(anySubActivityActive('fdActive')){
+    alert('다른 전투 콘텐츠가 진행 중에는 단조 구역에 입장할 수 없습니다.');
+    return;
+  }
+  refreshForgeDungeonTickets();
+  if(state.fdTicket <= 0){
+    alert('단조 구역 티켓이 부족합니다. (15분마다 1개씩 충전됩니다)');
+    renderForgeDungeonPanel();
+    return;
+  }
+  if(!confirm(`단조 구역 ${state.fdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
+
+  state.fdTicket--;
+  state.fdActive = true;
+  state.fdMonsterMaxHp = fdHpFor(state.fdFloor);
+  state.fdMonsterHp = state.fdMonsterMaxHp;
+  const s = stats();
+  state.fdPlayerHp = s.maxHp;
+
+  clearTimeout(playerTickHandle);
+  clearTimeout(monsterTickHandle);
+
+  log(`🔥 [단조 구역] ${state.fdFloor}층 ${FORGE_DUNGEON_META.name}에게 도전합니다!`, 'new');
+  renderAll();
+  scheduleFdPlayerTick();
+  scheduleFdMonsterTick();
+}
+
+function scheduleFdPlayerTick(){
+  const s = stats();
+  clearTimeout(fdPlayerTickHandle);
+  fdPlayerTickHandle = setTimeout(fdPlayerAttackTick, s.tickMs);
+}
+
+function scheduleFdMonsterTick(){
+  clearTimeout(fdMonsterTickHandle);
+  fdMonsterTickHandle = setTimeout(fdMonsterAttackTick, 1000);
+}
+
+function fdPlayerAttackTick(){
+  if(!state.fdActive) return;
+  const s = stats();
+  let dmg = Math.round(Math.max(1, s.atk - fdDefFor(state.fdFloor)));
+  const isCrit = Math.random() * 100 < s.critChance;
+  if(isCrit){
+    dmg = Math.round(dmg * s.critDamageMult);
+    floatText('CRIT! -'+dmg, 'crit');
+  } else {
+    floatText('-'+dmg, null);
+  }
+  state.fdMonsterHp -= dmg;
+
+  if(state.fdMonsterHp <= 0){
+    resolveForgeDungeonVictory();
+    return;
+  }
+  renderAll();
+  scheduleFdPlayerTick();
+}
+
+function fdMonsterAttackTick(){
+  if(!state.fdActive) return;
+  const s = stats();
+  const dmg = Math.round(Math.max(1, fdAtkFor(state.fdFloor) - s.def));
+  state.fdPlayerHp -= dmg;
+  floatText('-'+dmg, 'dmgToPlayer');
+
+  if(state.fdPlayerHp <= 0){
+    resolveForgeDungeonDefeat();
+    return;
+  }
+  renderAll();
+  scheduleFdMonsterTick();
+}
+
+function resolveForgeDungeonVictory(){
+  const stoneGain = fdStoneFor(state.fdFloor);
+  state.enhanceStone = (state.enhanceStone||0) + stoneGain;
+  state.totalEnhanceStonesEarned = (state.totalEnhanceStonesEarned||0) + stoneGain;
+  log(`🏆 [단조 구역] ${state.fdFloor}층 클리어! +${stoneGain.toLocaleString()}🔩`, 'good');
+
+  if(state.fdFloor >= FORGE_DUNGEON_MAX_FLOOR){
+    if(!state.fdCleared){
+      state.fdCleared = true;
+      log(`🔥 단조 구역을 모두 정복했습니다! 이제부터는 ${FORGE_DUNGEON_MAX_FLOOR}층을 반복해서 도전할 수 있습니다.`, 'good');
+    }
+  } else {
+    state.fdFloor++;
+  }
+  endForgeDungeon();
+}
+
+function resolveForgeDungeonDefeat(){
+  log(`💀 [단조 구역] ${state.fdFloor}층에서 패배했습니다. 다음 티켓으로 다시 도전하세요.`, 'warn');
+  endForgeDungeon();
+}
+
+function endForgeDungeon(){
+  state.fdActive = false;
+  clearTimeout(fdPlayerTickHandle);
+  clearTimeout(fdMonsterTickHandle);
+  schedulePlayerTick();
+  scheduleMonsterTick();
+  renderAll();
+}
+
+document.getElementById('fdEnterBtn')?.addEventListener('click', enterForgeDungeon);
+
+function renderForgeDungeonPanel(){
+  refreshForgeDungeonTickets();
+
+  const floorEl = document.getElementById('fdFloorText');
+  if(!floorEl) return;
+  floorEl.textContent = state.fdCleared
+    ? `${FORGE_DUNGEON_MAX_FLOOR}/${FORGE_DUNGEON_MAX_FLOOR} (정복 완료 · 반복 도전 가능)`
+    : `${state.fdFloor}/${FORGE_DUNGEON_MAX_FLOOR}`;
+  document.getElementById('fdNextReward').textContent = fdStoneFor(state.fdFloor).toLocaleString();
+
+  document.getElementById('fdTicketText').textContent = `${state.fdTicket}/${FORGE_DUNGEON_TICKET_MAX}`;
+  const timerEl = document.getElementById('fdTicketTimer');
+  if(state.fdTicket >= FORGE_DUNGEON_TICKET_MAX){
+    timerEl.textContent = '(가득 충전됨)';
+  } else {
+    const remain = FORGE_DUNGEON_TICKET_INTERVAL_MS - (Date.now() - state.fdTicketLastRefill);
+    timerEl.textContent = `(다음 충전까지 ${formatMs(remain)})`;
+  }
+
+  const enterBtn = document.getElementById('fdEnterBtn');
+  enterBtn.disabled = state.fdActive || state.fdTicket <= 0;
+  enterBtn.textContent = state.fdActive ? '전투 진행 중...' : `${state.fdFloor}층 도전`;
+
+  const battleBox = document.getElementById('fdBattleBox');
+  if(state.fdActive){
+    battleBox.style.display = 'block';
+    document.getElementById('fdMonsterEmoji').textContent = FORGE_DUNGEON_META.emoji;
+    document.getElementById('fdMonsterName').textContent = `${state.fdFloor}층 ${FORGE_DUNGEON_META.name}`;
+    const bPct = Math.max(0, (state.fdMonsterHp/state.fdMonsterMaxHp*100));
+    document.getElementById('fdMonsterHpBar').style.width = bPct+'%';
+    document.getElementById('fdMonsterHpText').textContent = `${Math.max(0,Math.ceil(state.fdMonsterHp))} / ${state.fdMonsterMaxHp}`;
+
+    const s = stats();
+    const pPct = Math.max(0, (state.fdPlayerHp/s.maxHp*100));
+    document.getElementById('fdPlayerHpBar').style.width = pPct+'%';
+    document.getElementById('fdPlayerHpText').textContent = `${Math.max(0,Math.ceil(state.fdPlayerHp))} / ${s.maxHp}`;
+  } else {
+    battleBox.style.display = 'none';
+  }
+}
+
+setInterval(()=>{
+  refreshForgeDungeonTickets();
+  renderForgeDungeonPanel();
+}, 1000);
+
+// ===== js/trainingdungeon.js =====
+// ---------- Training Dungeon (수련 구역) ----------
+// 물자/유산 구역과 동일한 구조(티켓제, 10층, 고정 스탯 전투)지만 보상이 확정 경험치입니다.
+// 물자/유산 구역과 마찬가지로 보상은 플레이어의 expMult 배율과 무관한 고정값 — 레벨 1000에
+// 전직이 걸려있어(job.js) 초중반 레벨업을 확정적으로 보조해줄 루트가 필요해서 신설되었다.
+
+const TRAINING_DUNGEON_TICKET_MAX = 3;
+const TRAINING_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
+const TRAINING_DUNGEON_MAX_FLOOR = 10;
+
+const TRAINING_DUNGEON_META = {name:'수련 인형', emoji:'🥋'};
+
+function tdHpFor(floor){ return Math.round(1600 * Math.pow(1.33, floor-1)); }
+function tdAtkFor(floor){ return Math.round(27 * Math.pow(1.33, floor-1)); }
+function tdDefFor(floor){ return Math.round(8 * Math.pow(1.33, floor-1)); }
+// 1층 400exp부터 시작해 층마다 1.45배씩 증가 (10층 클리어 시 약 12,840exp)
+function tdExpFor(floor){ return Math.round(400 * Math.pow(1.45, floor-1)); }
+
+function refreshTrainingDungeonTickets(){
+  if(state.tdTicket >= TRAINING_DUNGEON_TICKET_MAX){
+    state.tdTicketLastRefill = Date.now();
+    return;
+  }
+  const now = Date.now();
+  const elapsed = now - state.tdTicketLastRefill;
+  const gained = Math.floor(elapsed / TRAINING_DUNGEON_TICKET_INTERVAL_MS);
+  if(gained <= 0) return;
+  const newTicket = Math.min(TRAINING_DUNGEON_TICKET_MAX, state.tdTicket + gained);
+  const actuallyGained = newTicket - state.tdTicket;
+  state.tdTicket = newTicket;
+  state.tdTicketLastRefill += actuallyGained * TRAINING_DUNGEON_TICKET_INTERVAL_MS;
+  if(state.tdTicket >= TRAINING_DUNGEON_TICKET_MAX){
+    state.tdTicketLastRefill = now;
+  }
+}
+
+let tdPlayerTickHandle = null;
+let tdMonsterTickHandle = null;
+
+function enterTrainingDungeon(){
+  if(state.tdActive) return;
+  if(anySubActivityActive('tdActive')){
+    alert('다른 전투 콘텐츠가 진행 중에는 수련 구역에 입장할 수 없습니다.');
+    return;
+  }
+  refreshTrainingDungeonTickets();
+  if(state.tdTicket <= 0){
+    alert('수련 구역 티켓이 부족합니다. (15분마다 1개씩 충전됩니다)');
+    renderTrainingDungeonPanel();
+    return;
+  }
+  if(!confirm(`수련 구역 ${state.tdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
+
+  state.tdTicket--;
+  state.tdActive = true;
+  state.tdMonsterMaxHp = tdHpFor(state.tdFloor);
+  state.tdMonsterHp = state.tdMonsterMaxHp;
+  const s = stats();
+  state.tdPlayerHp = s.maxHp;
+
+  clearTimeout(playerTickHandle);
+  clearTimeout(monsterTickHandle);
+
+  log(`🥋 [수련 구역] ${state.tdFloor}층 ${TRAINING_DUNGEON_META.name}에게 도전합니다!`, 'new');
+  renderAll();
+  scheduleTdPlayerTick();
+  scheduleTdMonsterTick();
+}
+
+function scheduleTdPlayerTick(){
+  const s = stats();
+  clearTimeout(tdPlayerTickHandle);
+  tdPlayerTickHandle = setTimeout(tdPlayerAttackTick, s.tickMs);
+}
+
+function scheduleTdMonsterTick(){
+  clearTimeout(tdMonsterTickHandle);
+  tdMonsterTickHandle = setTimeout(tdMonsterAttackTick, 1000);
+}
+
+function tdPlayerAttackTick(){
+  if(!state.tdActive) return;
+  const s = stats();
+  let dmg = Math.round(Math.max(1, s.atk - tdDefFor(state.tdFloor)));
+  const isCrit = Math.random() * 100 < s.critChance;
+  if(isCrit){
+    dmg = Math.round(dmg * s.critDamageMult);
+    floatText('CRIT! -'+dmg, 'crit');
+  } else {
+    floatText('-'+dmg, null);
+  }
+  state.tdMonsterHp -= dmg;
+
+  if(state.tdMonsterHp <= 0){
+    resolveTrainingDungeonVictory();
+    return;
+  }
+  renderAll();
+  scheduleTdPlayerTick();
+}
+
+function tdMonsterAttackTick(){
+  if(!state.tdActive) return;
+  const s = stats();
+  const dmg = Math.round(Math.max(1, tdAtkFor(state.tdFloor) - s.def));
+  state.tdPlayerHp -= dmg;
+  floatText('-'+dmg, 'dmgToPlayer');
+
+  if(state.tdPlayerHp <= 0){
+    resolveTrainingDungeonDefeat();
+    return;
+  }
+  renderAll();
+  scheduleTdMonsterTick();
+}
+
+function resolveTrainingDungeonVictory(){
+  const expGain = tdExpFor(state.tdFloor);
+  state.exp += expGain;
+  tryLevelUp();
+  log(`🏆 [수련 구역] ${state.tdFloor}층 클리어! +${expGain.toLocaleString()}EXP`, 'good');
+
+  if(state.tdFloor >= TRAINING_DUNGEON_MAX_FLOOR){
+    if(!state.tdCleared){
+      state.tdCleared = true;
+      log(`🥋 수련 구역을 모두 정복했습니다! 이제부터는 ${TRAINING_DUNGEON_MAX_FLOOR}층을 반복해서 도전할 수 있습니다.`, 'good');
+    }
+  } else {
+    state.tdFloor++;
+  }
+  endTrainingDungeon();
+}
+
+function resolveTrainingDungeonDefeat(){
+  log(`💀 [수련 구역] ${state.tdFloor}층에서 패배했습니다. 다음 티켓으로 다시 도전하세요.`, 'warn');
+  endTrainingDungeon();
+}
+
+function endTrainingDungeon(){
+  state.tdActive = false;
+  clearTimeout(tdPlayerTickHandle);
+  clearTimeout(tdMonsterTickHandle);
+  schedulePlayerTick();
+  scheduleMonsterTick();
+  renderAll();
+}
+
+document.getElementById('tdEnterBtn')?.addEventListener('click', enterTrainingDungeon);
+
+function renderTrainingDungeonPanel(){
+  refreshTrainingDungeonTickets();
+
+  const floorEl = document.getElementById('tdFloorText');
+  if(!floorEl) return;
+  floorEl.textContent = state.tdCleared
+    ? `${TRAINING_DUNGEON_MAX_FLOOR}/${TRAINING_DUNGEON_MAX_FLOOR} (정복 완료 · 반복 도전 가능)`
+    : `${state.tdFloor}/${TRAINING_DUNGEON_MAX_FLOOR}`;
+  document.getElementById('tdNextReward').textContent = tdExpFor(state.tdFloor).toLocaleString();
+
+  document.getElementById('tdTicketText').textContent = `${state.tdTicket}/${TRAINING_DUNGEON_TICKET_MAX}`;
+  const timerEl = document.getElementById('tdTicketTimer');
+  if(state.tdTicket >= TRAINING_DUNGEON_TICKET_MAX){
+    timerEl.textContent = '(가득 충전됨)';
+  } else {
+    const remain = TRAINING_DUNGEON_TICKET_INTERVAL_MS - (Date.now() - state.tdTicketLastRefill);
+    timerEl.textContent = `(다음 충전까지 ${formatMs(remain)})`;
+  }
+
+  const enterBtn = document.getElementById('tdEnterBtn');
+  enterBtn.disabled = state.tdActive || state.tdTicket <= 0;
+  enterBtn.textContent = state.tdActive ? '전투 진행 중...' : `${state.tdFloor}층 도전`;
+
+  const battleBox = document.getElementById('tdBattleBox');
+  if(state.tdActive){
+    battleBox.style.display = 'block';
+    document.getElementById('tdMonsterEmoji').textContent = TRAINING_DUNGEON_META.emoji;
+    document.getElementById('tdMonsterName').textContent = `${state.tdFloor}층 ${TRAINING_DUNGEON_META.name}`;
+    const bPct = Math.max(0, (state.tdMonsterHp/state.tdMonsterMaxHp*100));
+    document.getElementById('tdMonsterHpBar').style.width = bPct+'%';
+    document.getElementById('tdMonsterHpText').textContent = `${Math.max(0,Math.ceil(state.tdMonsterHp))} / ${state.tdMonsterMaxHp}`;
+
+    const s = stats();
+    const pPct = Math.max(0, (state.tdPlayerHp/s.maxHp*100));
+    document.getElementById('tdPlayerHpBar').style.width = pPct+'%';
+    document.getElementById('tdPlayerHpText').textContent = `${Math.max(0,Math.ceil(state.tdPlayerHp))} / ${s.maxHp}`;
+  } else {
+    battleBox.style.display = 'none';
+  }
+}
+
+setInterval(()=>{
+  refreshTrainingDungeonTickets();
+  renderTrainingDungeonPanel();
 }, 1000);
 
 // ===== js/territory.js =====
@@ -4127,6 +4545,8 @@ function renderAll(){
   renderRaidPanel();
   renderGoldDungeonPanel();
   renderRelicDungeonPanel();
+  if(typeof renderForgeDungeonPanel === 'function') renderForgeDungeonPanel();
+  if(typeof renderTrainingDungeonPanel === 'function') renderTrainingDungeonPanel();
   if(typeof renderMutationTree === 'function') renderMutationTree();
   if(typeof renderJobPanel === 'function') renderJobPanel();
   if(typeof renderJobMasteryPanel === 'function') renderJobMasteryPanel();
@@ -4138,10 +4558,217 @@ function renderAll(){
   if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
+  if(typeof renderWorldMap === 'function'){
+    const wmOverlay = document.getElementById('worldMapOverlay');
+    if(wmOverlay && wmOverlay.style.display !== 'none') renderWorldMap();
+  }
   if(typeof renderTerritoryPanel === 'function') renderTerritoryPanel();
 }
 
 
+
+// ===== js/worldmap.js =====
+// ---------- 세계지도 (오픈월드 스타일 이동 UI) ----------
+// 실제 필드를 걸어다니는 오픈월드 엔진을 새로 만드는 대신, 기존에 이미 존재하는 컨텐츠들
+// (폐허/무한의 탑/구역/레이드/월드보스/영지/전직)을 "세계지도 위의 지역"으로 시각화해서
+// 지역을 클릭하면 그 위치로 "이동"하는 연출과 함께 해당 컨텐츠 화면으로 데려다주는 방식.
+// 해금 조건은 전부 각 시스템에 이미 존재하는 함수/상태를 그대로 재사용하며, 이 파일은
+// 새로운 해금 로직을 만들지 않는다 (예: 무한의 탑 레벨 조건, 레이드/월드보스 100층 조건 등).
+
+const WORLD_ZONES = [
+  {
+    key:'town', name:'🏘️ 마을', x:50, y:50,
+    unlockedFn: () => true,
+    action:{type:'tab', tab:'tab-growth'},
+  },
+  {
+    key:'ruins', name:'🏚️ 폐허', x:17, y:35,
+    unlockedFn: () => true,
+    action:{type:'mode', value:'normal'},
+  },
+  {
+    key:'tower', name:'🗼 무한의 탑', x:50, y:14,
+    unlockedFn: () => state.level >= TOWER_UNLOCK_LEVEL,
+    lockText: `레벨 ${typeof TOWER_UNLOCK_LEVEL !== 'undefined' ? TOWER_UNLOCK_LEVEL : 10} 이상 필요`,
+    action:{type:'mode', value:'tower'},
+  },
+  {
+    key:'towerHard', name:'👑 무한의 탑(어려움)', x:70, y:20,
+    unlockedFn: () => !!state.towerCleared,
+    lockText: '무한의 탑(100층) 클리어 필요',
+    action:{type:'mode', value:'towerHard'},
+  },
+  {
+    key:'raid', name:'☣️ 심연 (1인 레이드)', x:83, y:35,
+    unlockedFn: () => typeof raidUnlocked === 'function' && raidUnlocked(),
+    lockText: '무한의 탑 100층 클리어 필요',
+    action:{type:'tab', tab:'tab-dungeon', scrollTarget:'raidEnterBtn'},
+  },
+  {
+    key:'worldBoss', name:'🧟 월드보스 유적', x:86, y:55,
+    unlockedFn: () => typeof worldBossUnlocked === 'function' && worldBossUnlocked(),
+    lockText: '무한의 탑 100층 클리어 필요',
+    action:{type:'tab', tab:'tab-dungeon', scrollTarget:'wbEnterBtn'},
+  },
+  {
+    key:'territory', name:'🏰 영지', x:77, y:74,
+    unlockedFn: () => true,
+    action:{type:'tab', tab:'tab-territory'},
+  },
+  {
+    key:'relicDungeon', name:'🗿 유산 구역', x:60, y:85,
+    unlockedFn: () => true,
+    action:{type:'tab', tab:'tab-dungeon', scrollTarget:'rdEnterBtn'},
+  },
+  {
+    key:'forgeDungeon', name:'🔥 단조 구역', x:40, y:85,
+    unlockedFn: () => true,
+    action:{type:'tab', tab:'tab-dungeon', scrollTarget:'fdEnterBtn'},
+  },
+  {
+    key:'trainingDungeon', name:'🥋 수련 구역', x:23, y:74,
+    unlockedFn: () => true,
+    action:{type:'tab', tab:'tab-dungeon', scrollTarget:'tdEnterBtn'},
+  },
+  {
+    key:'goldDungeon', name:'📦 물자 구역', x:14, y:55,
+    unlockedFn: () => true,
+    action:{type:'tab', tab:'tab-dungeon', scrollTarget:'gdEnterBtn'},
+  },
+  {
+    key:'job', name:'⚜️ 전직의 제단', x:31, y:20,
+    unlockedFn: () => typeof jobUnlocked === 'function' && jobUnlocked(),
+    lockText: `레벨 ${typeof JOB_UNLOCK_LEVEL !== 'undefined' ? JOB_UNLOCK_LEVEL : 1000} 이상 필요`,
+    action:{type:'tab', tab:'tab-growth', scrollTarget:'jobPanelSection'},
+  },
+];
+
+// 마을(town)을 중심으로 뻗어나가는 기본 연결선 + 진행 흐름을 보여주는 추가 연결선.
+const WORLD_MAP_LINKS = [
+  ['town','ruins'], ['town','tower'], ['town','towerHard'], ['town','raid'],
+  ['town','worldBoss'], ['town','territory'], ['town','relicDungeon'],
+  ['town','forgeDungeon'], ['town','trainingDungeon'], ['town','goldDungeon'], ['town','job'],
+  ['tower','towerHard'], ['raid','worldBoss'],
+  ['goldDungeon','relicDungeon'], ['relicDungeon','forgeDungeon'], ['forgeDungeon','trainingDungeon'],
+];
+
+function worldZoneByKey(key){
+  return WORLD_ZONES.find(z => z.key === key);
+}
+
+function renderWorldMap(){
+  const canvas = document.getElementById('worldMapCanvas');
+  const svg = document.getElementById('worldMapLines');
+  if(!canvas || !svg) return;
+
+  // 연결선은 지도가 바뀌지 않으므로 최초 1회만 그린다.
+  if(!svg.dataset.built){
+    svg.innerHTML = WORLD_MAP_LINKS.map(([a,b])=>{
+      const za = worldZoneByKey(a), zb = worldZoneByKey(b);
+      if(!za || !zb) return '';
+      return `<line x1="${za.x}" y1="${za.y}" x2="${zb.x}" y2="${zb.y}" class="worldmap-link" />`;
+    }).join('');
+    svg.dataset.built = '1';
+  }
+
+  // 노드 div는 매번 다시 그리되(해금 상태가 실시간으로 바뀔 수 있으므로), 기존 요소가 있으면 재사용.
+  WORLD_ZONES.forEach(zone=>{
+    let node = canvas.querySelector(`.worldmap-node[data-key="${zone.key}"]`);
+    const unlocked = !!zone.unlockedFn();
+    if(!node){
+      node = document.createElement('div');
+      node.className = 'worldmap-node';
+      node.dataset.key = zone.key;
+      node.style.left = zone.x + '%';
+      node.style.top = zone.y + '%';
+      node.innerHTML = `
+        <div class="worldmap-node-icon"></div>
+        <div class="worldmap-node-label"></div>
+        <div class="worldmap-node-lock">🔒</div>
+      `;
+      node.addEventListener('click', ()=>travelToZone(zone.key));
+      canvas.appendChild(node);
+    }
+    node.classList.toggle('locked', !unlocked);
+    node.classList.toggle('home', zone.key === 'town');
+    node.querySelector('.worldmap-node-icon').textContent = zone.name.split(' ')[0];
+    node.querySelector('.worldmap-node-label').textContent = zone.name.split(' ').slice(1).join(' ');
+    node.title = unlocked ? zone.name : `🔒 ${zone.lockText || '조건 미충족'}`;
+  });
+}
+
+function openWorldMap(){
+  const overlay = document.getElementById('worldMapOverlay');
+  if(!overlay) return;
+  renderWorldMap();
+  overlay.style.display = 'flex';
+}
+
+function closeWorldMap(){
+  const overlay = document.getElementById('worldMapOverlay');
+  if(overlay) overlay.style.display = 'none';
+}
+
+// 마을 좌표에서 목적지 좌표까지 작은 깃발 마커가 이동하는 짧은 연출을 보여준 뒤,
+// 실제 화면 전환(모드 변경 or 탭 이동)을 수행한다. 잠긴 지역은 이유를 알려주고 끝낸다.
+function travelToZone(key){
+  const zone = worldZoneByKey(key);
+  if(!zone) return;
+  if(!zone.unlockedFn()){
+    alert(`🔒 아직 갈 수 없는 지역입니다.\n(${zone.lockText || '조건 미충족'})`);
+    return;
+  }
+
+  const traveler = document.getElementById('worldMapTraveler');
+  const town = worldZoneByKey('town');
+  if(traveler && zone.key !== 'town'){
+    traveler.style.transition = 'none';
+    traveler.style.left = town.x + '%';
+    traveler.style.top = town.y + '%';
+    traveler.style.display = 'block';
+    // 강제 리플로우 후 목적지로 트랜지션 이동 (연출용)
+    void traveler.offsetWidth;
+    traveler.style.transition = 'left .6s ease, top .6s ease';
+    traveler.style.left = zone.x + '%';
+    traveler.style.top = zone.y + '%';
+  }
+
+  setTimeout(()=>{
+    executeZoneAction(zone);
+    if(traveler) traveler.style.display = 'none';
+    closeWorldMap();
+  }, (traveler && zone.key !== 'town') ? 650 : 0);
+}
+
+function executeZoneAction(zone){
+  const a = zone.action;
+  if(a.type === 'mode'){
+    if(typeof setMode === 'function') setMode(a.value);
+  } else if(a.type === 'tab'){
+    const tabBtn = document.querySelector(`.tab-nav-btn[data-tab="${a.tab}"]`);
+    if(tabBtn) tabBtn.click();
+    if(a.scrollTarget){
+      setTimeout(()=>{
+        const el = document.getElementById(a.scrollTarget);
+        if(el){
+          el.scrollIntoView({behavior:'smooth', block:'center'});
+          const panel = el.closest('.panel');
+          if(panel){
+            panel.classList.add('worldmap-highlight');
+            setTimeout(()=>panel.classList.remove('worldmap-highlight'), 1600);
+          }
+        }
+      }, 80);
+    }
+  }
+  log(`🗺️ ${zone.name}(으)로 이동했습니다.`, 'new');
+}
+
+document.getElementById('worldMapOpenBtn')?.addEventListener('click', openWorldMap);
+document.getElementById('worldMapCloseBtn')?.addEventListener('click', closeWorldMap);
+document.getElementById('worldMapOverlay')?.addEventListener('click', (e)=>{
+  if(e.target && e.target.id === 'worldMapOverlay') closeWorldMap();
+});
 
 // ===== js/shop.js =====
 let shopBuyMultiplier = 1;

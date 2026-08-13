@@ -93,8 +93,8 @@ async function enterWorldBoss(){
     return;
   }
   if(state.wbActive) return;
-  if(state.raidActive || state.gdActive || state.rdActive){
-    alert('다른 전투(레이드/물자 구역/유산 구역) 진행 중에는 월드보스에 도전할 수 없습니다.');
+  if(anySubActivityActive('wbActive')){
+    alert('다른 전투 콘텐츠가 진행 중에는 월드보스에 도전할 수 없습니다.');
     return;
   }
   const user = fbAuth.currentUser;

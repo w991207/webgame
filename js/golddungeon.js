@@ -40,8 +40,8 @@ let gdMonsterTickHandle = null;
 
 function enterGoldDungeon(){
   if(state.gdActive) return;
-  if(state.raidActive || state.rdActive){
-    alert('다른 전투(레이드/유산 구역) 진행 중에는 물자 구역에 입장할 수 없습니다.');
+  if(anySubActivityActive('gdActive')){
+    alert('다른 전투 콘텐츠가 진행 중에는 물자 구역에 입장할 수 없습니다.');
     return;
   }
   refreshGoldDungeonTickets();

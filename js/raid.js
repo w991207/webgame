@@ -47,8 +47,8 @@ function enterRaid(){
     return;
   }
   if(state.raidActive) return;
-  if(state.gdActive || state.rdActive){
-    alert('다른 전투(물자 구역/유산 구역) 진행 중에는 레이드에 입장할 수 없습니다.');
+  if(anySubActivityActive('raidActive')){
+    alert('다른 전투 콘텐츠가 진행 중에는 레이드에 입장할 수 없습니다.');
     return;
   }
   refreshRaidTickets();
