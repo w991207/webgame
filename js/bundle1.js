@@ -431,6 +431,7 @@ const TITLES = [
   {key:'title_pvpNovice', name:'첫 승부', icon:'⚔️', condText:'PvP 1승 달성', check:s=>(s.pvpWins||0)>=1, stat:'accuracyAdd', value:3},
   {key:'title_pvpDuelist', name:'결투가', icon:'🤺', condText:'PvP 30승 달성', check:s=>(s.pvpWins||0)>=30, stat:'critDmgAdd', value:8},
   {key:'title_pvpChampion', name:'투기장의 지배자', icon:'🏆', condText:'PvP 150승 달성', check:s=>(s.pvpWins||0)>=150, stat:'accuracyAdd', value:15},
+  {key:'title_killPassLegend', name:'살육의 정점', icon:'🏅', condText:'처치 패스 50단계 완주', check:s=>(s.killPassClaimed||0)>=50, stat:'critDmgAdd', value:15},
 ];
 
 const SOUL_UPGRADES = [
@@ -491,6 +492,31 @@ const GACHA_TIERS = [
   {key:'t4', name:'전설 뽑기', baseCost:4000000,  costMult:1.04,  weights:{common:0,  rare:20, epic:72, legendary:8,  mythic:0}, unlockReq:{tier:'t3', count:20}},
   {key:'t5', name:'신화 뽑기', baseCost:30000000, costMult:1.045, weights:{common:0,  rare:0,  epic:25, legendary:65, mythic:10}, unlockReq:{tier:'t4', count:25}},
 ];
+
+// ---------- ⚔️ 몬스터 처치 패스 ----------
+// 누적 처치(state.totalKills)는 환생해도 초기화되지 않는 영구 값이라, 이를 기준으로
+// 순차 해금되는 장기 보상 트랙을 만듦. 50단계까지 있고, target/보상 모두 지수적으로 증가.
+// 짝수 단계마다 파편, 3의 배수 단계마다 혈청, 4의 배수 단계마다 강화석이 추가로 붙고,
+// 10단계마다(마지막 제외) 무료 유산 뽑기 1회, 최종 50단계에는 칭호가 함께 해금됨.
+// (target/reward 배율만 조절하면 패스 전체 페이스를 손쉽게 재조정할 수 있음)
+const KILL_PASS_TIER_COUNT = 50;
+const KILL_PASS_TIERS = (function(){
+  const tiers = [];
+  let target = 50;
+  for(let i=0;i<KILL_PASS_TIER_COUNT;i++){
+    const idx = i+1;
+    const rewards = { gold: Math.round(2000 * Math.pow(1.5, i)) };
+    if(idx % 2 === 0) rewards.frag = Math.round(20 * Math.pow(1.42, i/2));
+    if(idx % 3 === 0) rewards.soul = Math.round(3 * Math.pow(1.35, i/3));
+    if(idx % 4 === 0) rewards.stone = Math.round(4 * Math.pow(1.4, i/4));
+    let special = null;
+    if(idx % 10 === 0 && idx !== KILL_PASS_TIER_COUNT) special = 'pull';
+    if(idx === KILL_PASS_TIER_COUNT) special = 'title';
+    tiers.push({ tier: idx, target: Math.round(target), rewards, special });
+    target *= 1.5;
+  }
+  return tiers;
+})();
 
 const ATTENDANCE_REWARDS = [
     { type:"gold", amount:5000,  text:"📦 물자 5,000" },
@@ -1188,6 +1214,7 @@ function defaultState(){
     soulUpgrades: {atkMult:0, goldMult:0, defMult:0, expMult:0, dropAdd:0, critDmgAdd:0, accuracyAdd:0},
     totalKills: 0,
     totalBossKills: 0,
+    killPassClaimed: 0, // 처치 패스에서 순서대로 수령 완료한 단계 수 (환생해도 totalKills처럼 유지됨)
     rebirthCount: 0,
     dailyResetAt: Date.now(),
     dailyKills: 0,
@@ -4557,6 +4584,7 @@ function renderAll(){
   if(typeof renderSoulPackShop === 'function') renderSoulPackShop();
   if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
+  if(typeof renderKillPassPanel === 'function') renderKillPassPanel();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
   if(typeof renderWorldMap === 'function'){
     const wmOverlay = document.getElementById('worldMapOverlay');
@@ -5071,6 +5099,158 @@ function petTick(){
   if(changed) renderAll();
 }
 
+
+// ===== js/killpass.js =====
+// ---------- ⚔️ 몬스터 처치 패스 ----------
+// 누적 처치(state.totalKills) 기준으로 KILL_PASS_TIERS를 순서대로 하나씩만 수령할 수 있는
+// 장기 보상 트랙. state.killPassClaimed는 "이미 수령 완료한 단계 수"이며, 그 다음 인덱스
+// (KILL_PASS_TIERS[state.killPassClaimed])가 항상 "다음에 받을 단계"가 된다.
+
+function killPassNextTier(){
+  return KILL_PASS_TIERS[state.killPassClaimed || 0] || null;
+}
+
+// 지금 바로 수령 가능한(target을 이미 넘겼는데 아직 안 받은) 단계 수
+function killPassClaimableCount(){
+  let claimed = state.killPassClaimed || 0;
+  let count = 0;
+  while(claimed + count < KILL_PASS_TIERS.length && state.totalKills >= KILL_PASS_TIERS[claimed + count].target){
+    count++;
+  }
+  return count;
+}
+
+// 보상 지급(공용 로직). silent=true면 개별 로그를 남기지 않음(모아받기용).
+function killPassGrantReward(tier, silent){
+  const r = tier.rewards;
+  if(r.gold){
+    state.gold += r.gold;
+    state.lifetimeGoldEarned = (state.lifetimeGoldEarned || 0) + r.gold;
+  }
+  if(r.frag) state.fragments += r.frag;
+  if(r.soul) state.soul += r.soul;
+  if(r.stone){
+    state.enhanceStone += r.stone;
+    state.totalEnhanceStonesEarned = (state.totalEnhanceStonesEarned || 0) + r.stone;
+  }
+  if(tier.special === 'pull' && typeof RELICS !== 'undefined'){
+    const picked = RELICS[Math.floor(Math.random() * RELICS.length)];
+    state.relics[picked.key]++;
+    if(!silent) log(`🎁 처치 패스 ${tier.tier}단계: 무료 유산 뽑기 → ${picked.icon} ${picked.name}!`, 'good');
+  } else if(!silent){
+    log(`⚔️ 처치 패스 ${tier.tier}단계 보상 수령!`, 'good');
+  }
+}
+
+function claimKillPassTier(){
+  const idx = state.killPassClaimed || 0;
+  const tier = KILL_PASS_TIERS[idx];
+  if(!tier) return;
+  if(state.totalKills < tier.target) return;
+  killPassGrantReward(tier, false);
+  state.killPassClaimed = idx + 1;
+  renderKillPassPanel();
+  renderAll();
+  saveState(true);
+}
+
+function claimAllKillPassTiers(){
+  const startCount = killPassClaimableCount();
+  if(startCount <= 0){
+    alert('아직 수령 가능한 처치 패스 보상이 없습니다.');
+    return;
+  }
+  for(let i=0;i<startCount;i++){
+    const idx = state.killPassClaimed || 0;
+    const tier = KILL_PASS_TIERS[idx];
+    if(!tier || state.totalKills < tier.target) break;
+    killPassGrantReward(tier, true);
+    state.killPassClaimed = idx + 1;
+  }
+  log(`⚔️ 처치 패스 보상 ${startCount}단계분을 한꺼번에 수령했습니다! (현재 ${state.killPassClaimed}단계)`, 'good');
+  renderKillPassPanel();
+  renderAll();
+  saveState(true);
+}
+
+function killPassRewardText(tier){
+  const parts = [];
+  if(tier.rewards.gold) parts.push(`📦${tier.rewards.gold.toLocaleString()}`);
+  if(tier.rewards.frag) parts.push(`◈${tier.rewards.frag.toLocaleString()}`);
+  if(tier.rewards.soul) parts.push(`🧪${tier.rewards.soul.toLocaleString()}`);
+  if(tier.rewards.stone) parts.push(`🔩${tier.rewards.stone.toLocaleString()}`);
+  if(tier.special === 'pull') parts.push('🎁뽑기');
+  if(tier.special === 'title') parts.push('🏅칭호');
+  return parts.join(' ');
+}
+
+function renderKillPassPanel(){
+  const track = document.getElementById('killPassTrack');
+  if(!track) return;
+
+  const claimed = state.killPassClaimed || 0;
+  const claimable = killPassClaimableCount();
+  const next = killPassNextTier();
+
+  const tierText = document.getElementById('killPassTierText');
+  if(tierText) tierText.textContent = `${claimed} / ${KILL_PASS_TIER_COUNT}단계`;
+
+  const progressFill = document.getElementById('killPassProgressFill');
+  const progressText = document.getElementById('killPassProgressText');
+  if(progressFill && progressText){
+    if(!next){
+      progressFill.style.width = '100%';
+      progressText.textContent = `🏆 처치 패스 전 단계 완주! (누적 처치 ${Math.floor(state.totalKills).toLocaleString()})`;
+    } else {
+      const prevTarget = claimed > 0 ? KILL_PASS_TIERS[claimed - 1].target : 0;
+      const span = Math.max(1, next.target - prevTarget);
+      const pct = Math.max(0, Math.min(100, (state.totalKills - prevTarget) / span * 100));
+      progressFill.style.width = pct.toFixed(1) + '%';
+      progressText.textContent = `누적 처치 ${Math.floor(state.totalKills).toLocaleString()} / ${next.target.toLocaleString()} (다음: ${next.tier}단계)`;
+    }
+  }
+
+  // 카드 DOM은 최초 1회만 만들고 이후엔 클래스/텍스트만 갱신 (50개 카드 매번 재생성 방지)
+  if(!track.dataset.built){
+    track.innerHTML = KILL_PASS_TIERS.map(t => `
+      <div class="killpass-tier-card" data-tier="${t.tier}">
+        <div class="killpass-tier-num">${t.tier}</div>
+        <div class="killpass-tier-target">${t.target.toLocaleString()}킬</div>
+        <div class="killpass-tier-reward">${killPassRewardText(t)}</div>
+        <div class="killpass-tier-state"></div>
+      </div>
+    `).join('');
+    track.dataset.built = '1';
+  }
+
+  KILL_PASS_TIERS.forEach(t=>{
+    const card = track.querySelector(`.killpass-tier-card[data-tier="${t.tier}"]`);
+    if(!card) return;
+    const done = t.tier <= claimed;
+    const isNext = t.tier === claimed + 1;
+    const ready = done ? false : state.totalKills >= t.target;
+    card.classList.toggle('done', done);
+    card.classList.toggle('ready', ready);
+    card.classList.toggle('next', isNext && !ready);
+    const stateEl = card.querySelector('.killpass-tier-state');
+    stateEl.textContent = done ? '✅ 완료' : (ready ? '🎁 수령가능' : '🔒 대기');
+  });
+
+  const claimAllBtn = document.getElementById('killPassClaimAllBtn');
+  if(claimAllBtn){
+    claimAllBtn.disabled = claimable <= 0;
+    claimAllBtn.textContent = claimable > 0 ? `모아서 받기 (${claimable}단계)` : '모아서 받기';
+  }
+}
+
+document.getElementById('killPassClaimAllBtn')?.addEventListener('click', claimAllKillPassTiers);
+document.getElementById('killPassTrack')?.addEventListener('click', (e)=>{
+  const card = e.target.closest('.killpass-tier-card');
+  if(!card) return;
+  const tier = parseInt(card.dataset.tier, 10);
+  const claimed = state.killPassClaimed || 0;
+  if(tier === claimed + 1) claimKillPassTier();
+});
 
 // ===== js/pet-shelter.js =====
 // ---------- 동료 쉼터 (Pet Shelter) ----------

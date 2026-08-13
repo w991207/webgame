@@ -1435,3 +1435,39 @@ margin-top:4px;
     .worldmap-node-icon{width:30px;height:30px;font-size:14px;}
     .worldmap-node-label{font-size:8.5px;max-width:58px;}
   }
+
+  /* ---------- ⚔️ 몬스터 처치 패스 ---------- */
+  .killpass-hint{font-size:11px;color:var(--text-dim);margin:0 0 10px;}
+  .killpass-progress-bar{
+    width:100%;height:10px;border-radius:6px;background:var(--bg-deep);
+    border:1px solid var(--border);overflow:hidden;
+  }
+  .killpass-progress-fill{
+    height:100%;width:0%;border-radius:6px;
+    background:linear-gradient(90deg, var(--gold-dim), var(--gold));
+    transition:width .3s ease;
+  }
+  .killpass-progress-text{
+    font-size:10.5px;color:var(--text-dim);margin-top:5px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .killpass-track{
+    display:flex;gap:8px;overflow-x:auto;margin-top:12px;padding-bottom:8px;
+  }
+  .killpass-tier-card{
+    flex:0 0 auto;width:96px;background:var(--panel-2);border:1px solid var(--border);
+    border-radius:8px;padding:8px 6px;text-align:center;opacity:.55;
+  }
+  .killpass-tier-card.done{opacity:1;border-color:var(--frag);}
+  .killpass-tier-card.ready{
+    opacity:1;border-color:var(--gold);box-shadow:0 0 10px rgba(224,129,47,.4);cursor:pointer;
+  }
+  .killpass-tier-card.next{opacity:.85;border-color:var(--gold-dim);}
+  .killpass-tier-num{
+    font-family:'Black Han Sans',sans-serif;color:var(--gold);font-size:13px;margin-bottom:2px;
+  }
+  .killpass-tier-target{font-size:10px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
+  .killpass-tier-reward{font-size:11px;margin-top:5px;line-height:1.5;word-break:keep-all;}
+  .killpass-tier-state{font-size:9.5px;color:var(--text-dim);margin-top:5px;}
+  .killpass-tier-card.done .killpass-tier-state{color:var(--frag);}
+  .killpass-tier-card.ready .killpass-tier-state{color:var(--gold);}

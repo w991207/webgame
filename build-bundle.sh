@@ -37,6 +37,7 @@ BUNDLE1_FILES=(
   js/worldmap.js
   js/shop.js
   js/relics-pets.js
+  js/killpass.js
   js/pet-shelter.js
   js/quests.js
   js/attendance.js

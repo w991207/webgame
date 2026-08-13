@@ -166,6 +166,7 @@ function renderAll(){
   if(typeof renderSoulPackShop === 'function') renderSoulPackShop();
   if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
+  if(typeof renderKillPassPanel === 'function') renderKillPassPanel();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
   if(typeof renderWorldMap === 'function'){
     const wmOverlay = document.getElementById('worldMapOverlay');

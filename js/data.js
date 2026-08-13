@@ -209,6 +209,7 @@ const TITLES = [
   {key:'title_pvpNovice', name:'첫 승부', icon:'⚔️', condText:'PvP 1승 달성', check:s=>(s.pvpWins||0)>=1, stat:'accuracyAdd', value:3},
   {key:'title_pvpDuelist', name:'결투가', icon:'🤺', condText:'PvP 30승 달성', check:s=>(s.pvpWins||0)>=30, stat:'critDmgAdd', value:8},
   {key:'title_pvpChampion', name:'투기장의 지배자', icon:'🏆', condText:'PvP 150승 달성', check:s=>(s.pvpWins||0)>=150, stat:'accuracyAdd', value:15},
+  {key:'title_killPassLegend', name:'살육의 정점', icon:'🏅', condText:'처치 패스 50단계 완주', check:s=>(s.killPassClaimed||0)>=50, stat:'critDmgAdd', value:15},
 ];
 
 const SOUL_UPGRADES = [
@@ -269,6 +270,31 @@ const GACHA_TIERS = [
   {key:'t4', name:'전설 뽑기', baseCost:4000000,  costMult:1.04,  weights:{common:0,  rare:20, epic:72, legendary:8,  mythic:0}, unlockReq:{tier:'t3', count:20}},
   {key:'t5', name:'신화 뽑기', baseCost:30000000, costMult:1.045, weights:{common:0,  rare:0,  epic:25, legendary:65, mythic:10}, unlockReq:{tier:'t4', count:25}},
 ];
+
+// ---------- ⚔️ 몬스터 처치 패스 ----------
+// 누적 처치(state.totalKills)는 환생해도 초기화되지 않는 영구 값이라, 이를 기준으로
+// 순차 해금되는 장기 보상 트랙을 만듦. 50단계까지 있고, target/보상 모두 지수적으로 증가.
+// 짝수 단계마다 파편, 3의 배수 단계마다 혈청, 4의 배수 단계마다 강화석이 추가로 붙고,
+// 10단계마다(마지막 제외) 무료 유산 뽑기 1회, 최종 50단계에는 칭호가 함께 해금됨.
+// (target/reward 배율만 조절하면 패스 전체 페이스를 손쉽게 재조정할 수 있음)
+const KILL_PASS_TIER_COUNT = 50;
+const KILL_PASS_TIERS = (function(){
+  const tiers = [];
+  let target = 50;
+  for(let i=0;i<KILL_PASS_TIER_COUNT;i++){
+    const idx = i+1;
+    const rewards = { gold: Math.round(2000 * Math.pow(1.5, i)) };
+    if(idx % 2 === 0) rewards.frag = Math.round(20 * Math.pow(1.42, i/2));
+    if(idx % 3 === 0) rewards.soul = Math.round(3 * Math.pow(1.35, i/3));
+    if(idx % 4 === 0) rewards.stone = Math.round(4 * Math.pow(1.4, i/4));
+    let special = null;
+    if(idx % 10 === 0 && idx !== KILL_PASS_TIER_COUNT) special = 'pull';
+    if(idx === KILL_PASS_TIER_COUNT) special = 'title';
+    tiers.push({ tier: idx, target: Math.round(target), rewards, special });
+    target *= 1.5;
+  }
+  return tiers;
+})();
 
 const ATTENDANCE_REWARDS = [
     { type:"gold", amount:5000,  text:"📦 물자 5,000" },

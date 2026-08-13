@@ -31,6 +31,7 @@ function defaultState(){
     soulUpgrades: {atkMult:0, goldMult:0, defMult:0, expMult:0, dropAdd:0, critDmgAdd:0, accuracyAdd:0},
     totalKills: 0,
     totalBossKills: 0,
+    killPassClaimed: 0, // 처치 패스에서 순서대로 수령 완료한 단계 수 (환생해도 totalKills처럼 유지됨)
     rebirthCount: 0,
     dailyResetAt: Date.now(),
     dailyKills: 0,
