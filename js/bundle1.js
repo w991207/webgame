@@ -1377,10 +1377,10 @@ function anySubActivityActive(excludeKey){
 
 // ---------- 상한(캡)이 걸린 파생 스탯 상수 ----------
 // stats() 안에서만 쓰던 값을 밖으로 빼서, 강화 UI 쪽에서도 "지금 이미 캡인지" 체크할 수 있게 함.
-const GOLD_MULT_CAP = 50;
-const EXP_MULT_CAP = 50;
+const GOLD_MULT_CAP = 100;
+const EXP_MULT_CAP = 100;
 const DROP_CHANCE_CAP = 0.6;
-const TICK_MS_MIN = 150; // 공격속도 하한 (더 빨라질 수 없는 지점)
+const TICK_MS_MIN = 100; // 공격속도 하한 (더 빨라질 수 없는 지점, 초당 10타 상한)
 const ACCURACY_PER_LEVEL = 3; // '조준 훈련'(골드강화) 1레벨당 명중 +3 (이 스탯은 캡이 없음 — combat.js의 몬스터 회피 참고)
 const SOUL_ACCURACY_PER_LEVEL = 5; // '심안의 룬'(혈청강화) 1레벨당 명중 +5 (골드강화보다 상승폭이 큼, 역시 캡 없음)
 
