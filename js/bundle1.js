@@ -3384,10 +3384,10 @@ const GOLD_DUNGEON_META = {name:'물자 창고 경비병', emoji:'📦'};
 
 // 층별 고정 스탯. 1층은 무한의 탑 10층(보스) 수준으로 맞추고, 10층은 1인 레이드에 근접하는 난이도.
 // 이 네 함수의 배율(1.33, 1.5)만 조절하면 구역 전체 난이도/보상 곡선을 바꿀 수 있음.
-function gdHpFor(floor){ return Math.round(1600 * Math.pow(1.33, floor-1)); }
-function gdAtkFor(floor){ return Math.round(27 * Math.pow(1.33, floor-1)); }
-function gdDefFor(floor){ return Math.round(8 * Math.pow(1.33, floor-1)); }
-function gdGoldFor(floor){ return Math.round(5000 * Math.pow(1.5, floor-1)); }
+function gdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
+function gdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
+function gdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
+function gdGoldFor(floor){ return Math.round(6000 * Math.pow(1.55, floor-1)); }
 
 function refreshGoldDungeonTickets(){
   if(state.gdTicket >= GOLD_DUNGEON_TICKET_MAX){
@@ -3581,11 +3581,11 @@ const RELIC_DUNGEON_MAX_FLOOR = 10;
 const RELIC_DUNGEON_META = {name:'유산 수호자', emoji:'🗿'};
 
 // 층별 고정 스탯. 물자 구역과 동일한 전투 난이도 곡선을 사용.
-function rdHpFor(floor){ return Math.round(1600 * Math.pow(1.33, floor-1)); }
-function rdAtkFor(floor){ return Math.round(27 * Math.pow(1.33, floor-1)); }
-function rdDefFor(floor){ return Math.round(8 * Math.pow(1.33, floor-1)); }
+function rdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
+function rdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
+function rdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
 // 보상은 유산 파편. 1층 5개부터 시작해 층마다 1.4배씩 증가 (10층 클리어 시 약 103개)
-function rdFragFor(floor){ return Math.round(5 * Math.pow(1.4, floor-1)); }
+function rdFragFor(floor){ return Math.round(6 * Math.pow(1.45, floor-1)); }
 
 function refreshRelicDungeonTickets(){
   if(state.rdTicket >= RELIC_DUNGEON_TICKET_MAX){
@@ -3774,11 +3774,11 @@ const FORGE_DUNGEON_MAX_FLOOR = 10;
 
 const FORGE_DUNGEON_META = {name:'단조로의 파수꾼', emoji:'🔥'};
 
-function fdHpFor(floor){ return Math.round(1600 * Math.pow(1.33, floor-1)); }
-function fdAtkFor(floor){ return Math.round(27 * Math.pow(1.33, floor-1)); }
-function fdDefFor(floor){ return Math.round(8 * Math.pow(1.33, floor-1)); }
+function fdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
+function fdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
+function fdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
 // 1층 3개부터 시작해 층마다 1.35배씩 증가 (10층 클리어 시 약 51개)
-function fdStoneFor(floor){ return Math.round(3 * Math.pow(1.35, floor-1)); }
+function fdStoneFor(floor){ return Math.round(4 * Math.pow(1.4, floor-1)); }
 
 function refreshForgeDungeonTickets(){
   if(state.fdTicket >= FORGE_DUNGEON_TICKET_MAX){
@@ -3969,11 +3969,11 @@ const TRAINING_DUNGEON_MAX_FLOOR = 10;
 
 const TRAINING_DUNGEON_META = {name:'수련 인형', emoji:'🥋'};
 
-function tdHpFor(floor){ return Math.round(1600 * Math.pow(1.33, floor-1)); }
-function tdAtkFor(floor){ return Math.round(27 * Math.pow(1.33, floor-1)); }
-function tdDefFor(floor){ return Math.round(8 * Math.pow(1.33, floor-1)); }
+function tdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
+function tdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
+function tdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
 // 1층 400exp부터 시작해 층마다 1.45배씩 증가 (10층 클리어 시 약 12,840exp)
-function tdExpFor(floor){ return Math.round(400 * Math.pow(1.45, floor-1)); }
+function tdExpFor(floor){ return Math.round(480 * Math.pow(1.5, floor-1)); }
 
 function refreshTrainingDungeonTickets(){
   if(state.tdTicket >= TRAINING_DUNGEON_TICKET_MAX){

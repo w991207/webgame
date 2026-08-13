@@ -12,10 +12,10 @@ const GOLD_DUNGEON_META = {name:'물자 창고 경비병', emoji:'📦'};
 
 // 층별 고정 스탯. 1층은 무한의 탑 10층(보스) 수준으로 맞추고, 10층은 1인 레이드에 근접하는 난이도.
 // 이 네 함수의 배율(1.33, 1.5)만 조절하면 구역 전체 난이도/보상 곡선을 바꿀 수 있음.
-function gdHpFor(floor){ return Math.round(1600 * Math.pow(1.33, floor-1)); }
-function gdAtkFor(floor){ return Math.round(27 * Math.pow(1.33, floor-1)); }
-function gdDefFor(floor){ return Math.round(8 * Math.pow(1.33, floor-1)); }
-function gdGoldFor(floor){ return Math.round(5000 * Math.pow(1.5, floor-1)); }
+function gdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
+function gdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
+function gdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
+function gdGoldFor(floor){ return Math.round(6000 * Math.pow(1.55, floor-1)); }
 
 function refreshGoldDungeonTickets(){
   if(state.gdTicket >= GOLD_DUNGEON_TICKET_MAX){

@@ -11,11 +11,11 @@ const RELIC_DUNGEON_MAX_FLOOR = 10;
 const RELIC_DUNGEON_META = {name:'유산 수호자', emoji:'🗿'};
 
 // 층별 고정 스탯. 물자 구역과 동일한 전투 난이도 곡선을 사용.
-function rdHpFor(floor){ return Math.round(1600 * Math.pow(1.33, floor-1)); }
-function rdAtkFor(floor){ return Math.round(27 * Math.pow(1.33, floor-1)); }
-function rdDefFor(floor){ return Math.round(8 * Math.pow(1.33, floor-1)); }
+function rdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
+function rdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
+function rdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
 // 보상은 유산 파편. 1층 5개부터 시작해 층마다 1.4배씩 증가 (10층 클리어 시 약 103개)
-function rdFragFor(floor){ return Math.round(5 * Math.pow(1.4, floor-1)); }
+function rdFragFor(floor){ return Math.round(6 * Math.pow(1.45, floor-1)); }
 
 function refreshRelicDungeonTickets(){
   if(state.rdTicket >= RELIC_DUNGEON_TICKET_MAX){
