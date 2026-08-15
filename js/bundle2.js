@@ -890,7 +890,7 @@ function renderPvpRecord(){
 //      - hp(숫자), maxHp(숫자, hp와 동일한 값), resetDate(숫자, 0)
 //      - manualResetAt(숫자, 0) ← 전 유저 도전 기록 강제 초기화용 (아래 설명)
 //    (resetDate를 0으로 두면 접속한 유저가 처음 열었을 때 자동으로 오늘 날짜로 리셋되며 시작합니다)
-//    → hp/maxHp 권장값(50000층 보스 HP와 동일한 스케일): 4491736036725317
+//    → hp/maxHp 권장값(30000층 보스 HP와 동일한 스케일): 5297343927422
 //      이미 문서가 있는 기존 서버라면 hp/maxHp를 이 값으로 콘솔에서 직접 수정해야
 //      난이도 상향이 실제로 적용됩니다 (코드만 고쳐서는 Firestore에 저장된 체력이 안 바뀜).
 //
@@ -908,27 +908,29 @@ function renderPvpRecord(){
 //    hp 필드를 maxHp와 같은 값으로 함께 바꿔주세요.
 
 const WORLD_BOSS_META = {name:'창세의 균주, 제로', emoji:'🧟'};
-// 난이도 기준: 일반모드(폐허) 50000층 보스와 동일한 ATK/DEF 스케일로 맞춤
-// (monsterAtkFor(50000, true) / monsterDefFor(50000, true) 계산값을 그대로 상수화)
-// ⚠️ HP(maxHp)는 Firestore의 worldboss/state 문서 값이라 코드로는 못 바꿈 — 아래 참고.
-const WB_ATK = 4580069871593;
-const WB_DEF = 9134157076400;
+// 난이도 기준: 일반모드(폐허) 30000층 보스와 동일한 ATK/DEF 스케일로 맞춤
+// (monsterAtkFor(30000, true) / monsterDefFor(30000, true) 계산값을 그대로 상수화)
+// ⚠️ HP(maxHp)는 Firestore의 worldboss/state 문서 값이라 코드로는 못 바꿈 — 위 설명 참고.
+const WB_ATK = 6296149846;
+const WB_DEF = 11336977738;
 const WB_TIME_LIMIT_MS = 60 * 1000; // 도전 1회당 제한시간 1분
 const WB_COOLDOWN_MS = 4 * 3600 * 1000; // 개인 도전 쿨타임 (4시간마다 재도전 가능)
-const WB_KILL_BONUS_GOLD = 50000000000; // 500억
+// 킬/순위 보상 중 골드만 30000층 기준 goldDropFor(30000,true)(≈128억) 스케일에 맞춰 재조정.
+// 파편/혈청은 유산 뽑기 비용(relicPullCost)처럼 전투 층수와 무관하게 커지는 재화라
+// 보스 층수를 낮춰도 그대로 유지함.
+const WB_KILL_BONUS_GOLD = 40000000; // 4천만
 const WB_KILL_BONUS_FRAG = 500;
 
 // 데미지량이 아니라 "오늘 이 시점까지의 내 순위"로 보상을 고정 지급한다.
 // (캐릭터 스탯이 앞으로 얼마나 커지든 보상 액수가 같이 폭증하지 않도록 데미지와 완전히 분리함)
 // maxRank: 이 순위 이하일 때 해당 보상을 받음. 배열 순서대로 검사하므로 오름차순 유지 필요.
-// 난이도 상향(50000층 보스 스케일)에 맞춰 보상도 같은 자릿수(조 단위)로 재조정함
-// — 기준: 해당 층에서 보스 1마리 처치 시 골드 드랍량(goldDropFor(50000, true) ≈ 17.8조)
+// 골드는 30000층 보스 처치 시 골드 드랍량(goldDropFor(30000, true) ≈ 128억) 기준으로 재조정함
 const WB_RANK_REWARDS = [
-  {maxRank:1,        gold:20000000000000, frag:200000, soul:20}, // 20조
-  {maxRank:3,        gold:12000000000000, frag:120000, soul:12}, // 12조
-  {maxRank:10,       gold:6000000000000,  frag:60000,  soul:6},  // 6조
-  {maxRank:30,       gold:2000000000000,  frag:20000,  soul:0},  // 2조
-  {maxRank:Infinity, gold:300000000000,   frag:3000,   soul:0},  // 3000억, 31위 이하 참여 보상
+  {maxRank:1,        gold:14000000000, frag:200000, soul:20}, // 140억
+  {maxRank:3,        gold:8500000000,  frag:120000, soul:12}, // 85억
+  {maxRank:10,       gold:4300000000,  frag:60000,  soul:6},  // 43억
+  {maxRank:30,       gold:1400000000,  frag:20000,  soul:0},  // 14억
+  {maxRank:Infinity, gold:200000000,   frag:3000,   soul:0},  // 2억, 31위 이하 참여 보상
 ];
 function wbRewardForRank(rank){
   const tier = WB_RANK_REWARDS.find(t => rank <= t.maxRank) || WB_RANK_REWARDS[WB_RANK_REWARDS.length-1];
