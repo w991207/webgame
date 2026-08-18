@@ -509,7 +509,7 @@ async function fetchRanking(){
         <div class="ranking-row${isMe ? ' me' : ''}">
           <span class="rk-rank">#${rank}</span>
           <span class="rk-name">${titleBadgeHtml(d.title)}${escapeHtml(d.nickname || '익명')}</span>
-          <span class="rk-cp">⚡${(d.cp || 0).toLocaleString()}</span>
+          <span class="rk-cp" title="${(d.cp || 0).toLocaleString()}">⚡${formatCompactNumber(d.cp || 0)}</span>
           <span class="rk-floor">${(d.highestFloor || 1).toLocaleString()}층</span>
           ${isMe ? '<span></span>' : `<button type="button" class="rk-challenge-btn" data-uid="${doc.id}">⚔️ 도전</button>`}
         </div>
@@ -601,7 +601,7 @@ function plazaRenderOnlineList(docs){
     return `
       <div class="ranking-row${isMe ? ' me' : ''}">
         <span class="rk-name">${titleBadgeHtml(d.title)}${escapeHtml(d.nickname || '익명')}${isMe ? ' (나)' : ''}</span>
-        <span class="rk-cp">⚡${(d.cp || 0).toLocaleString()}</span>
+        <span class="rk-cp" title="${(d.cp || 0).toLocaleString()}">⚡${formatCompactNumber(d.cp || 0)}</span>
         <span class="rk-floor">Lv.${d.level || 1}</span>
       </div>
     `;

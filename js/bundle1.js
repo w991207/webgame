@@ -1507,6 +1507,24 @@ function calcCombatPower(s){
   const survivability = s.def * 8 + s.maxHp * 0.5;
   return Math.round(dps * 12 + survivability);
 }
+
+// ---------- 숫자 축약 표기 (만/억/조) ----------
+// 랭킹/광장처럼 칸이 좁은 목록에서 큰 숫자가 옆 칸과 겹치는 것을 막기 위해 사용.
+// 정확한 원래 값은 반환값과 별개로 필요하면 toLocaleString()으로 따로 표시.
+function formatCompactNumber(n){
+  n = Math.floor(n || 0);
+  const sign = n < 0 ? '-' : '';
+  n = Math.abs(n);
+  const trim = (v) => {
+    let str = v.toFixed(2);
+    str = str.replace(/0+$/,'').replace(/\.$/,'');
+    return str;
+  };
+  if(n >= 1e12) return sign + trim(n/1e12) + '조';
+  if(n >= 1e8) return sign + trim(n/1e8) + '억';
+  if(n >= 1e4) return sign + trim(n/1e4) + '만';
+  return sign + n.toLocaleString();
+}
 function expNeeded(lvl){ return Math.round(50 * Math.pow(lvl, 1.4)); }
 function tryLevelUp(){
   let needed = expNeeded(state.level);

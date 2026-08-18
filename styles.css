@@ -1087,7 +1087,7 @@
   }
   .ranking-refresh-btn:hover{border-color:var(--gold);color:var(--gold);}
   .ranking-header-row,.ranking-row{
-    display:grid;grid-template-columns:34px 1fr 78px 54px 60px;gap:6px;align-items:center;
+    display:grid;grid-template-columns:30px 1fr 72px 50px 58px;gap:6px;align-items:center;
     padding:6px 8px;font-size:12px;
   }
   .rk-challenge-btn{
@@ -1106,7 +1106,7 @@
   .ranking-row{border-bottom:1px solid rgba(255,255,255,.04);}
   .ranking-row.me{background:rgba(224,129,47,.12);border-radius:6px;font-weight:700;color:var(--gold);}
   .rk-rank{color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
-  .rk-cp,.rk-floor{font-family:'JetBrains Mono',monospace;text-align:right;}
+  .rk-cp,.rk-floor{font-family:'JetBrains Mono',monospace;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .rk-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .ranking-my-row{font-size:11px;color:var(--text-dim);text-align:center;margin-top:8px;}
 
