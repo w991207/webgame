@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>프로토타입 · 전투 화면 반복 퀘스트 위젯 (v2.13.7)</title>
+<!-- 실제 게임 styles.css를 그대로 적용 (색/패널/위젯 스타일 모두 동일) -->
+<link rel="stylesheet" href="../styles.css">
+<style>
+  /* ---------- 프로토타입 전용 스타일 (게임에는 포함되지 않음) ---------- */
+  body{ min-height:100vh; }
+  .proto-bar{
+    max-width:1200px; margin:0 auto 18px;
+    background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--gold);
+    border-radius:8px; padding:12px 16px;
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px;
+  }
+  .proto-bar h1{ font-size:14px; margin:0; letter-spacing:1px; color:var(--text); }
+  .proto-bar .hint{ font-size:11px; color:var(--text-dim); }
+  .proto-bar .btn{
+    background:var(--panel-2); border:1px solid var(--border); color:var(--text);
+    font-family:'JetBrains Mono',monospace; font-size:11px; padding:5px 10px; border-radius:6px; cursor:pointer;
+  }
+  .proto-bar .btn.on{ border-color:var(--gold); color:var(--gold); }
+  .proto-bar .btn:hover{ filter:brightness(1.25); }
+
+  /* 모바일(<=820px) 흉내용 오버라이드 — 실제 게임의 @media와 동일한 결과 */
+  .proto-mobile .grid{ grid-template-columns:1fr !important; }
+  .proto-mobile .combat-quests-grid{ grid-template-columns:1fr !important; }
+
+  /* 사이드 패널(축약) 더미 아이템 */
+  .proto-stat{ display:flex; justify-content:space-between; padding:5px 0; font-size:12px; }
+  .proto-stat .l{ color:var(--text-dim); }
+  .proto-stat .v{ font-family:'JetBrains Mono',monospace; color:var(--text); }
+  .proto-shop-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; gap:8px;
+  }
+  .proto-shop-item:last-child{ border-bottom:none; }
+  .proto-shop-item .n{ color:var(--text); }
+  .proto-shop-item .c{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--gold); white-space:nowrap; }
+</style>
+</head>
+<body>
+
+  <div class="proto-bar">
+    <h1>🧪 프로토타입 · 전투 화면 반복 퀘스트 위젯</h1>
+    <span class="hint">실제 styles.css를 그대로 적용한 미리보기 — 아레나(전투 화면) 전투 로그 아래 배치</span>
+    <div style="margin-left:auto; display:flex; gap:6px; flex-wrap:wrap;">
+      <button class="btn on" id="btnReady" onclick="setState(true)">✅ 수령 가능</button>
+      <button class="btn" id="btnProgress" onclick="setState(false)">⏳ 진행 중</button>
+      <button class="btn" id="btnMobile" onclick="toggleMobile()">📱 모바일 (390px)</button>
+    </div>
+  </div>
+
+  <div class="grid" id="protoGrid">
+
+    <!-- LEFT: 모험가 (축약) -->
+    <div class="panel">
+      <h2>모험가</h2>
+      <div class="proto-stat"><span class="l">공격력</span><span class="v">1,248</span></div>
+      <div class="proto-stat"><span class="l">방어력</span><span class="v">512</span></div>
+      <div class="proto-stat"><span class="l">최대 체력</span><span class="v">2,000</span></div>
+      <div class="proto-stat"><span class="l">공격 속도</span><span class="v">3.33/s</span></div>
+      <div class="proto-stat"><span class="l">물자 획득</span><span class="v">x12.00</span></div>
+      <div class="proto-stat"><span class="l">경험치 획득</span><span class="v">x8.00</span></div>
+    </div>
+
+    <!-- CENTER: 아레나 (전투 화면) -->
+    <div class="panel arena">
+      <h2 id="arenaTitle">폐허</h2>
+      <div class="floor-badge">FLOOR 50</div>
+      <div class="arch arch-main" id="arenaBox">
+        <div class="player-sprite" id="playerSprite">
+          <img src="../image/player/knight.png" class="player-sprite-img" alt="플레이어">
+        </div>
+        <div class="monster-emoji" id="monsterEmoji">👻</div>
+      </div>
+      <div class="monster-name" id="monsterName">떠오르는 망령</div>
+      <div class="kill-progress" id="killProgressText">처치: 3 / 5</div>
+      <div class="accuracy-line" id="accuracyLine">권장 명중 92</div>
+
+      <div class="hp-bar-outer"><div class="hp-bar-inner" style="width:62%"></div></div>
+      <div class="hp-text">124 / 200</div>
+
+      <div class="player-hp-outer"><div class="player-hp-inner" style="width:88%"></div></div>
+      <div class="player-hp-label"><span>내 체력</span><span>1,760 / 2,000</span></div>
+
+      <div class="log" id="log">
+        <div class="new">떠오르는 망령 처치! +1,392📦 +244EXP</div>
+        <div class="good">반복 퀘스트 완료: 연속 사냥 (+2,884📦)</div>
+        <div class="new">보스 처치! +11,136📦 +1,952EXP</div>
+        <div>50층으로 진입합니다.</div>
+      </div>
+
+      <!-- ⭐ 전투 화면 반복 퀘스트 컴팩트 위젯 (index.html과 동일한 마크업) -->
+      <div class="combat-quests">
+        <div class="combat-quests-head">
+          <span>반복 퀘스트</span>
+          <button id="combatClaimAllRepeatBtn" class="claim" style="font-size:10px;padding:3px 8px;">모두 받기</button>
+        </div>
+        <div id="combatRepeatQuestList" class="combat-quests-grid">
+          <!-- 아래 카드들은 renderCombatRepeatQuests()가 만드는 실제 HTML과 동일 (50층, 물자 배율 x12 기준) -->
+          <div class="combat-quest-card ready">
+            <div class="cq-name">연속 사냥<span class="stack">x2</span></div>
+            <div class="quest-progress-outer"><div class="quest-progress-inner done" style="width:100%"></div></div>
+            <div class="cq-foot">
+              <span class="cq-reward">+2,884📦</span>
+              <button class="claim ready">받기</button>
+            </div>
+          </div>
+          <div class="combat-quest-card ready">
+            <div class="cq-name">층 돌파<span class="stack">x2</span></div>
+            <div class="quest-progress-outer"><div class="quest-progress-inner done" style="width:100%"></div></div>
+            <div class="cq-foot">
+              <span class="cq-reward">+11,436📦</span>
+              <button class="claim ready">받기</button>
+            </div>
+          </div>
+          <div class="combat-quest-card ready">
+            <div class="cq-name">보스 사냥꾼<span class="stack">x3</span></div>
+            <div class="quest-progress-outer"><div class="quest-progress-inner done" style="width:100%"></div></div>
+            <div class="cq-foot">
+              <span class="cq-reward">+3,184📦</span>
+              <button class="claim ready">받기</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: 상점 (축약) -->
+    <div class="panel">
+      <h2>강화 (물자)</h2>
+      <div class="proto-shop-item"><span class="n">무기 정비</span><span class="c">1,200📦</span></div>
+      <div class="proto-shop-item"><span class="n">방어구 보강</span><span class="c">1,200📦</span></div>
+      <div class="proto-shop-item"><span class="n">물자 상자</span><span class="c">3,400📦</span></div>
+      <h2 style="margin-top:14px;">영구 강화 (혈청)</h2>
+      <div class="proto-shop-item"><span class="n">영혼의 검</span><span class="c">6🧪</span></div>
+      <div class="proto-shop-item"><span class="n">탐욕의 인장</span><span class="c">6🧪</span></div>
+    </div>
+
+  </div>
+
+<script>
+  function setState(ready){
+    const cards = document.querySelectorAll('#combatRepeatQuestList .combat-quest-card');
+    const fills = ['50%','33%','66%']; // 진행 중 상태의 예시 진행률
+    cards.forEach((c,i)=>{
+      c.className = 'combat-quest-card' + (ready ? ' ready' : '');
+      const bar = c.querySelector('.quest-progress-inner');
+      bar.className = 'quest-progress-inner' + (ready ? ' done' : '');
+      bar.style.width = ready ? '100%' : fills[i];
+      const btn = c.querySelector('button.claim');
+      btn.className = 'claim' + (ready ? ' ready' : '');
+      btn.disabled = !ready;
+      btn.textContent = ready ? '받기' : '대기';
+    });
+    document.getElementById('combatClaimAllRepeatBtn').disabled = !ready;
+    document.getElementById('btnReady').classList.toggle('on', ready);
+    document.getElementById('btnProgress').classList.toggle('on', !ready);
+  }
+  function toggleMobile(){
+    const grid = document.getElementById('protoGrid');
+    const btn = document.getElementById('btnMobile');
+    const isMobile = grid.classList.toggle('proto-mobile');
+    btn.classList.toggle('on', isMobile);
+    btn.textContent = isMobile ? '💻 데스크톱 (1280px)' : '📱 모바일 (390px)';
+  }
+</script>
+
+</body>
+</html>
