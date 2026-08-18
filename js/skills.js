@@ -179,6 +179,7 @@ function triggerActiveSkill(sk, lvl){
       floatText('+'+healAmt, 'heal');
     }
     state.ironWillCharges = (state.ironWillCharges||0) + 1;
+    state.ironWillChargesLastGainTime = Date.now(); // 충전 획득 시각 기록 (decay 타이머 시작)
     log(`💪 불굴의 의지 발동! (+${healAmt} 체력, 치명적인 일격 1회 방지 준비)`, 'good');
     return true;
   }
@@ -192,7 +193,18 @@ function checkActiveSkills(){
   // 액티브 스킬은 그 더미를 계속 타격 가능한 대상으로 인식해 무한정 발동할 수 있었다.
   // 클리어 후에는 스킬도 완전히 멈춰야 하므로(강탈 일격 등으로 골드가 계속 들어오는 문제 방지) 여기서 차단.
   if((state.mode === 'tower' && state.towerCleared) || (state.mode === 'towerHard' && state.htCleared)) return;
-  const now = Date.now();
+    const now = Date.now();
+  // 불굴의 의지 충전 decay: 5분마다 충전 1개 감소 (누적 충전으로 죽지 않게 하는 문제 방지)
+  if((state.ironWillCharges||0) > 0 && state.ironWillChargesLastGainTime > 0){
+    const elapsed = now - state.ironWillChargesLastGainTime;
+    if(elapsed >= state.ironWillChargesDecayInterval){
+      state.ironWillCharges--;
+      state.ironWillChargesLastGainTime = now; // decay 타이머 초기화
+      if(state.ironWillCharges > 0){
+        log(`⏳ 불굴의 의지 충전이 1개 감소했습니다. (남은 충전: ${state.ironWillCharges})`);
+      }
+    }
+  }
   let touched = false;
   ACTIVE_SKILLS.forEach(sk=>{
     const lvl = skillLevel(sk.key);

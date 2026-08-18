@@ -151,8 +151,12 @@ function defaultState(){
     // ---------- Titles (칭호) ----------
     equippedTitle: null,
 
-    // ---------- Skills (직업 전용 스킬용 상태) ----------
+        // ---------- Skills (직업 전용 스킬용 상태) ----------
     ironWillCharges: 0, // '불굴의 의지'(생존 전문가 전용 스킬)로 쌓아둔, 치명적인 일격 방지 충전 수
+    // 불굴의 의지 충전이 유지되는 시간 제한 (decay) - 충전이 계속 쌓여서 죽지 못하는 문제 방지
+    ironWillChargesLastGainTime: 0, // 마지막으로 충전이 쌓인 시각 (ms)
+    ironWillChargesDecayInterval: 300000, // 5분마다 충전 1개씩 감소 (300,000ms = 5분)
+
 
     // ---------- PvP ----------
     // 스탯 캡을 다 채운 유저도 계속 할 게 있도록 만든 콘텐츠 — 승리해도 스탯 보상은 안 줌
