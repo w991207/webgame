@@ -165,6 +165,8 @@ function renderAll(){
   if(typeof renderBestiary === 'function') renderBestiary();
   if(typeof renderPotionShop === 'function') renderPotionShop();
   if(typeof renderSoulPackShop === 'function') renderSoulPackShop();
+  if(typeof renderRaidTicketShop === 'function') renderRaidTicketShop();
+  if(typeof renderEnhanceScrollShop === 'function') renderEnhanceScrollShop();
   if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
   if(typeof renderKillPassPanel === 'function') renderKillPassPanel();

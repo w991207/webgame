@@ -43,6 +43,8 @@ function defaultState(){
     dailyBossKills: 0,
     dailyClaims: {},
     dailySoulPacksBought: 0, // 아래 물약 상점 "혈청 팩" 일일 구매 횟수 제한용
+    dailyRaidTicketsBought: 0, // 아래 잡화상점 "레이드 입장권" 일일 구매 횟수 제한용
+    enhanceScrolls: {rateUp:0, noDowngrade:0, noDestroy:0}, // 강화 주문서 보유 개수
     achClaims: {},
     repKillProgress: 0,
     repFloorProgress: 0,

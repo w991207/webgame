@@ -62,6 +62,7 @@ function processImportedData(jsonStr){
     state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
     state.unlockedTitles = loaded.unlockedTitles || {};
     state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
+    state.enhanceScrolls = Object.assign({rateUp:0, noDowngrade:0, noDestroy:0}, loaded.enhanceScrolls||{});
     state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});
     abortStuckActivities('가져온 세이브에서');
 
@@ -175,6 +176,7 @@ async function loadState(){
       state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
       state.unlockedTitles = loaded.unlockedTitles || {};
       state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
+      state.enhanceScrolls = Object.assign({rateUp:0, noDowngrade:0, noDestroy:0}, loaded.enhanceScrolls||{});
       state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});
       abortStuckActivities('이전에');
       return true;

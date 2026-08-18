@@ -45,6 +45,9 @@ function enhanceMultiplier(item){
 
 const ENHANCE_SLOT_LABEL = {weapon:'⚔️ 무기', armor:'🛡️ 방어구', accessory:'💍 장신구'};
 
+// 부위별로 "다음 강화 시도에 어떤 주문서를 쓸지" 선택 상태 (소모되기 전까지 화면에만 남는 임시 상태).
+let enhanceScrollSelection = {weapon:{rateUp:false, protect:false}, armor:{rateUp:false, protect:false}, accessory:{rateUp:false, protect:false}};
+
 function attemptEnhance(slot){
   const item = state.equipment && state.equipment[slot];
   if(!item){
@@ -64,11 +67,18 @@ function attemptEnhance(slot){
     return;
   }
 
-  if(info.risk === 'destroy'){
+  const scrolls = state.enhanceScrolls || {rateUp:0, noDowngrade:0, noDestroy:0};
+  const sel = enhanceScrollSelection[slot] || {rateUp:false, protect:false};
+  const protectKey = info.risk === 'downgrade' ? 'noDowngrade' : (info.risk === 'destroy' ? 'noDestroy' : null);
+  const useRateUp = !!sel.rateUp && (scrolls.rateUp||0) > 0;
+  const useProtect = !!sel.protect && protectKey && (scrolls[protectKey]||0) > 0;
+  const effectiveRate = Math.min(100, info.rate + (useRateUp ? 10 : 0));
+
+  if(info.risk === 'destroy' && !useProtect){
     const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
     const ok = confirm(
       `${ENHANCE_SLOT_LABEL[slot]} [${rarity.name}] +${current} → +${target} 강화를 시도합니다.\n` +
-      `성공 확률: ${info.rate}%\n` +
+      `성공 확률: ${effectiveRate}%\n` +
       `⚠️ 실패 시 ${info.destroyChance}% 확률로 장비가 완전히 파괴됩니다 (파괴되지 않으면 +${Math.max(0, current-1)}로 하락).\n\n` +
       `강화석 🔩${cost}을(를) 소모하고 진행하시겠습니까?`
     );
@@ -76,30 +86,45 @@ function attemptEnhance(slot){
   }
 
   state.enhanceStone -= cost;
-  const success = Math.random() * 100 < info.rate;
+  if(useRateUp) state.enhanceScrolls.rateUp--;
+  if(useProtect) state.enhanceScrolls[protectKey]--;
+  enhanceScrollSelection[slot] = {rateUp:false, protect:false}; // 시도 1회 후 선택은 초기화
+
+  const success = Math.random() * 100 < effectiveRate;
+  const scrollNote = useRateUp ? ' (📈 확률 주문서 사용)' : '';
 
   if(success){
     item.enhance = target;
-    log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 성공! +${current} → +${target}`, 'good');
+    log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 성공! +${current} → +${target}${scrollNote}`, 'good');
     showEnhanceResult(slot, 'success', `✅ 강화 성공! +${current} → +${target}`);
   } else if(info.risk === 'safe'){
-    log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패... (+${current} 유지)`);
+    log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패... (+${current} 유지)${scrollNote}`);
     showEnhanceResult(slot, 'fail', `❌ 강화 실패... (+${current} 유지)`);
   } else if(info.risk === 'downgrade'){
-    item.enhance = Math.max(0, current - 1);
-    log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 단계가 하락했습니다. +${current} → +${item.enhance}`, 'bad');
-    showEnhanceResult(slot, 'fail', `❌ 강화 실패! 단계 하락 +${current} → +${item.enhance}`);
-  } else { // destroy risk
-    const destroyed = Math.random() * 100 < info.destroyChance;
-    if(destroyed){
-      state.equipment[slot] = null;
-      state.enhanceDestroyedCount = (state.enhanceDestroyedCount||0) + 1;
-      log(`💥 ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 장비가 파괴되어 사라졌습니다...`, 'bad');
-      showEnhanceResult(slot, 'destroy', `💥 장비 파괴! ${ENHANCE_SLOT_LABEL[slot]}가 사라졌습니다`);
+    if(useProtect){
+      log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 🛡️ 하락 방지 주문서로 단계를 지켰습니다. (+${current} 유지)${scrollNote}`, 'good');
+      showEnhanceResult(slot, 'fail', `❌ 강화 실패! (🛡️ 하락 방지로 +${current} 유지)`);
     } else {
       item.enhance = Math.max(0, current - 1);
-      log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 아슬아슬하게 파괴는 면했지만 단계가 하락했습니다. +${current} → +${item.enhance}`, 'bad');
-      showEnhanceResult(slot, 'fail', `❌ 강화 실패! 단계 하락 +${current} → +${item.enhance} (파괴는 면함)`);
+      log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 단계가 하락했습니다. +${current} → +${item.enhance}${scrollNote}`, 'bad');
+      showEnhanceResult(slot, 'fail', `❌ 강화 실패! 단계 하락 +${current} → +${item.enhance}`);
+    }
+  } else { // destroy risk
+    if(useProtect){
+      log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 💎 파괴 방지 주문서로 장비와 단계를 모두 지켰습니다. (+${current} 유지)${scrollNote}`, 'good');
+      showEnhanceResult(slot, 'fail', `❌ 강화 실패! (💎 파괴 방지로 +${current} 유지)`);
+    } else {
+      const destroyed = Math.random() * 100 < info.destroyChance;
+      if(destroyed){
+        state.equipment[slot] = null;
+        state.enhanceDestroyedCount = (state.enhanceDestroyedCount||0) + 1;
+        log(`💥 ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 장비가 파괴되어 사라졌습니다...`, 'bad');
+        showEnhanceResult(slot, 'destroy', `💥 장비 파괴! ${ENHANCE_SLOT_LABEL[slot]}가 사라졌습니다`);
+      } else {
+        item.enhance = Math.max(0, current - 1);
+        log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 아슬아슬하게 파괴는 면했지만 단계가 하락했습니다. +${current} → +${item.enhance}`, 'bad');
+        showEnhanceResult(slot, 'fail', `❌ 강화 실패! 단계 하락 +${current} → +${item.enhance} (파괴는 면함)`);
+      }
     }
   }
 
@@ -178,10 +203,35 @@ function renderEnhancePanel(){
       else if(info.risk === 'downgrade') riskLabel = `<span class="enhance-risk warn">실패 시 강화 단계 -1</span>`;
       else riskLabel = `<span class="enhance-risk danger">실패 시 ${info.destroyChance}% 확률로 파괴!</span>`;
 
+      const scrolls = state.enhanceScrolls || {rateUp:0, noDowngrade:0, noDestroy:0};
+      const sel = enhanceScrollSelection[slot] || {rateUp:false, protect:false};
+      const protectKey = info.risk === 'downgrade' ? 'noDowngrade' : (info.risk === 'destroy' ? 'noDestroy' : null);
+      const protectLabel = info.risk === 'downgrade' ? '🛡️ 하락 방지 주문서' : (info.risk === 'destroy' ? '💎 파괴 방지 주문서' : null);
+      const useRateUp = !!sel.rateUp && (scrolls.rateUp||0) > 0;
+      const useProtect = !!sel.protect && protectKey && (scrolls[protectKey]||0) > 0;
+      const effectiveRate = Math.min(100, info.rate + (useRateUp ? 10 : 0));
+
+      let scrollHtml = '<div class="enhance-scrolls">';
+      scrollHtml += `
+        <label class="enhance-scroll-toggle ${(scrolls.rateUp||0) <= 0 ? 'disabled' : ''}">
+          <input type="checkbox" class="enhance-scroll-check" data-slot="${slot}" data-field="rateUp" ${useRateUp ? 'checked' : ''} ${(scrolls.rateUp||0) <= 0 ? 'disabled' : ''}>
+          📈 확률 +10%p 주문서 (보유 ${scrolls.rateUp||0}개)
+        </label>`;
+      if(protectKey){
+        const owned = scrolls[protectKey]||0;
+        scrollHtml += `
+        <label class="enhance-scroll-toggle ${owned <= 0 ? 'disabled' : ''}">
+          <input type="checkbox" class="enhance-scroll-check" data-slot="${slot}" data-field="protect" ${useProtect ? 'checked' : ''} ${owned <= 0 ? 'disabled' : ''}>
+          ${protectLabel} (보유 ${owned}개)
+        </label>`;
+      }
+      scrollHtml += '</div>';
+
       body = `
         <div class="enhance-next">+${current} → +${target} 시도</div>
-        <div class="enhance-rate">성공 확률 <b>${info.rate}%</b></div>
+        <div class="enhance-rate">성공 확률 <b>${effectiveRate}%</b>${useRateUp ? ` <span class="enhance-rate-boost">(기본 ${info.rate}% +10%p)</span>` : ''}</div>
         ${riskLabel}
+        ${scrollHtml}
         <button class="enhance-btn" type="button" data-slot="${slot}" ${afford ? '' : 'disabled'}>
           🔩 ${cost.toLocaleString()} 소모하고 강화
         </button>
@@ -198,5 +248,13 @@ function renderEnhancePanel(){
 
   grid.querySelectorAll('.enhance-btn[data-slot]').forEach(btn => {
     btn.addEventListener('click', () => attemptEnhance(btn.dataset.slot));
+  });
+  grid.querySelectorAll('.enhance-scroll-check').forEach(chk => {
+    chk.addEventListener('change', () => {
+      const slot = chk.dataset.slot, field = chk.dataset.field;
+      if(!enhanceScrollSelection[slot]) enhanceScrollSelection[slot] = {rateUp:false, protect:false};
+      enhanceScrollSelection[slot][field] = chk.checked;
+      renderEnhancePanel();
+    });
   });
 }

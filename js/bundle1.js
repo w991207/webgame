@@ -1229,6 +1229,8 @@ function defaultState(){
     dailyBossKills: 0,
     dailyClaims: {},
     dailySoulPacksBought: 0, // 아래 물약 상점 "혈청 팩" 일일 구매 횟수 제한용
+    dailyRaidTicketsBought: 0, // 아래 잡화상점 "레이드 입장권" 일일 구매 횟수 제한용
+    enhanceScrolls: {rateUp:0, noDowngrade:0, noDestroy:0}, // 강화 주문서 보유 개수
     achClaims: {},
     repKillProgress: 0,
     repFloorProgress: 0,
@@ -1337,11 +1339,12 @@ function defaultState(){
     // ---------- Titles (칭호) ----------
     equippedTitle: null,
 
-    // ---------- Skills (직업 전용 스킬용 상태) ----------
+        // ---------- Skills (직업 전용 스킬용 상태) ----------
     ironWillCharges: 0, // '불굴의 의지'(생존 전문가 전용 스킬)로 쌓아둔, 치명적인 일격 방지 충전 수
     // 불굴의 의지 충전이 유지되는 시간 제한 (decay) - 충전이 계속 쌓여서 죽지 못하는 문제 방지
     ironWillChargesLastGainTime: 0, // 마지막으로 충전이 쌓인 시각 (ms)
     ironWillChargesDecayInterval: 300000, // 5분마다 충전 1개씩 감소 (300,000ms = 5분)
+
 
     // ---------- PvP ----------
     // 스탯 캡을 다 채운 유저도 계속 할 게 있도록 만든 콘텐츠 — 승리해도 스탯 보상은 안 줌
@@ -2284,7 +2287,7 @@ function checkActiveSkills(){
   // 클리어 후에는 스킬도 완전히 멈춰야 하므로(강탈 일격 등으로 골드가 계속 들어오는 문제 방지) 여기서 차단.
   if((state.mode === 'tower' && state.towerCleared) || (state.mode === 'towerHard' && state.htCleared)) return;
     const now = Date.now();
-  // 불굴의 의지 충전 decay: 5분마다 충전 1개 감소 (누적 충전으로 죽지 못하는 문제 방지)
+  // 불굴의 의지 충전 decay: 5분마다 충전 1개 감소 (누적 충전으로 죽지 않게 하는 문제 방지)
   if((state.ironWillCharges||0) > 0 && state.ironWillChargesLastGainTime > 0){
     const elapsed = now - state.ironWillChargesLastGainTime;
     if(elapsed >= state.ironWillChargesDecayInterval){
@@ -2956,6 +2959,9 @@ function enhanceMultiplier(item){
 
 const ENHANCE_SLOT_LABEL = {weapon:'⚔️ 무기', armor:'🛡️ 방어구', accessory:'💍 장신구'};
 
+// 부위별로 "다음 강화 시도에 어떤 주문서를 쓸지" 선택 상태 (소모되기 전까지 화면에만 남는 임시 상태).
+let enhanceScrollSelection = {weapon:{rateUp:false, protect:false}, armor:{rateUp:false, protect:false}, accessory:{rateUp:false, protect:false}};
+
 function attemptEnhance(slot){
   const item = state.equipment && state.equipment[slot];
   if(!item){
@@ -2975,11 +2981,18 @@ function attemptEnhance(slot){
     return;
   }
 
-  if(info.risk === 'destroy'){
+  const scrolls = state.enhanceScrolls || {rateUp:0, noDowngrade:0, noDestroy:0};
+  const sel = enhanceScrollSelection[slot] || {rateUp:false, protect:false};
+  const protectKey = info.risk === 'downgrade' ? 'noDowngrade' : (info.risk === 'destroy' ? 'noDestroy' : null);
+  const useRateUp = !!sel.rateUp && (scrolls.rateUp||0) > 0;
+  const useProtect = !!sel.protect && protectKey && (scrolls[protectKey]||0) > 0;
+  const effectiveRate = Math.min(100, info.rate + (useRateUp ? 10 : 0));
+
+  if(info.risk === 'destroy' && !useProtect){
     const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
     const ok = confirm(
       `${ENHANCE_SLOT_LABEL[slot]} [${rarity.name}] +${current} → +${target} 강화를 시도합니다.\n` +
-      `성공 확률: ${info.rate}%\n` +
+      `성공 확률: ${effectiveRate}%\n` +
       `⚠️ 실패 시 ${info.destroyChance}% 확률로 장비가 완전히 파괴됩니다 (파괴되지 않으면 +${Math.max(0, current-1)}로 하락).\n\n` +
       `강화석 🔩${cost}을(를) 소모하고 진행하시겠습니까?`
     );
@@ -2987,30 +3000,45 @@ function attemptEnhance(slot){
   }
 
   state.enhanceStone -= cost;
-  const success = Math.random() * 100 < info.rate;
+  if(useRateUp) state.enhanceScrolls.rateUp--;
+  if(useProtect) state.enhanceScrolls[protectKey]--;
+  enhanceScrollSelection[slot] = {rateUp:false, protect:false}; // 시도 1회 후 선택은 초기화
+
+  const success = Math.random() * 100 < effectiveRate;
+  const scrollNote = useRateUp ? ' (📈 확률 주문서 사용)' : '';
 
   if(success){
     item.enhance = target;
-    log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 성공! +${current} → +${target}`, 'good');
+    log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 성공! +${current} → +${target}${scrollNote}`, 'good');
     showEnhanceResult(slot, 'success', `✅ 강화 성공! +${current} → +${target}`);
   } else if(info.risk === 'safe'){
-    log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패... (+${current} 유지)`);
+    log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패... (+${current} 유지)${scrollNote}`);
     showEnhanceResult(slot, 'fail', `❌ 강화 실패... (+${current} 유지)`);
   } else if(info.risk === 'downgrade'){
-    item.enhance = Math.max(0, current - 1);
-    log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 단계가 하락했습니다. +${current} → +${item.enhance}`, 'bad');
-    showEnhanceResult(slot, 'fail', `❌ 강화 실패! 단계 하락 +${current} → +${item.enhance}`);
-  } else { // destroy risk
-    const destroyed = Math.random() * 100 < info.destroyChance;
-    if(destroyed){
-      state.equipment[slot] = null;
-      state.enhanceDestroyedCount = (state.enhanceDestroyedCount||0) + 1;
-      log(`💥 ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 장비가 파괴되어 사라졌습니다...`, 'bad');
-      showEnhanceResult(slot, 'destroy', `💥 장비 파괴! ${ENHANCE_SLOT_LABEL[slot]}가 사라졌습니다`);
+    if(useProtect){
+      log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 🛡️ 하락 방지 주문서로 단계를 지켰습니다. (+${current} 유지)${scrollNote}`, 'good');
+      showEnhanceResult(slot, 'fail', `❌ 강화 실패! (🛡️ 하락 방지로 +${current} 유지)`);
     } else {
       item.enhance = Math.max(0, current - 1);
-      log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 아슬아슬하게 파괴는 면했지만 단계가 하락했습니다. +${current} → +${item.enhance}`, 'bad');
-      showEnhanceResult(slot, 'fail', `❌ 강화 실패! 단계 하락 +${current} → +${item.enhance} (파괴는 면함)`);
+      log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 단계가 하락했습니다. +${current} → +${item.enhance}${scrollNote}`, 'bad');
+      showEnhanceResult(slot, 'fail', `❌ 강화 실패! 단계 하락 +${current} → +${item.enhance}`);
+    }
+  } else { // destroy risk
+    if(useProtect){
+      log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 💎 파괴 방지 주문서로 장비와 단계를 모두 지켰습니다. (+${current} 유지)${scrollNote}`, 'good');
+      showEnhanceResult(slot, 'fail', `❌ 강화 실패! (💎 파괴 방지로 +${current} 유지)`);
+    } else {
+      const destroyed = Math.random() * 100 < info.destroyChance;
+      if(destroyed){
+        state.equipment[slot] = null;
+        state.enhanceDestroyedCount = (state.enhanceDestroyedCount||0) + 1;
+        log(`💥 ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 장비가 파괴되어 사라졌습니다...`, 'bad');
+        showEnhanceResult(slot, 'destroy', `💥 장비 파괴! ${ENHANCE_SLOT_LABEL[slot]}가 사라졌습니다`);
+      } else {
+        item.enhance = Math.max(0, current - 1);
+        log(`⚒️ ${ENHANCE_SLOT_LABEL[slot]} 강화 실패! 아슬아슬하게 파괴는 면했지만 단계가 하락했습니다. +${current} → +${item.enhance}`, 'bad');
+        showEnhanceResult(slot, 'fail', `❌ 강화 실패! 단계 하락 +${current} → +${item.enhance} (파괴는 면함)`);
+      }
     }
   }
 
@@ -3089,10 +3117,35 @@ function renderEnhancePanel(){
       else if(info.risk === 'downgrade') riskLabel = `<span class="enhance-risk warn">실패 시 강화 단계 -1</span>`;
       else riskLabel = `<span class="enhance-risk danger">실패 시 ${info.destroyChance}% 확률로 파괴!</span>`;
 
+      const scrolls = state.enhanceScrolls || {rateUp:0, noDowngrade:0, noDestroy:0};
+      const sel = enhanceScrollSelection[slot] || {rateUp:false, protect:false};
+      const protectKey = info.risk === 'downgrade' ? 'noDowngrade' : (info.risk === 'destroy' ? 'noDestroy' : null);
+      const protectLabel = info.risk === 'downgrade' ? '🛡️ 하락 방지 주문서' : (info.risk === 'destroy' ? '💎 파괴 방지 주문서' : null);
+      const useRateUp = !!sel.rateUp && (scrolls.rateUp||0) > 0;
+      const useProtect = !!sel.protect && protectKey && (scrolls[protectKey]||0) > 0;
+      const effectiveRate = Math.min(100, info.rate + (useRateUp ? 10 : 0));
+
+      let scrollHtml = '<div class="enhance-scrolls">';
+      scrollHtml += `
+        <label class="enhance-scroll-toggle ${(scrolls.rateUp||0) <= 0 ? 'disabled' : ''}">
+          <input type="checkbox" class="enhance-scroll-check" data-slot="${slot}" data-field="rateUp" ${useRateUp ? 'checked' : ''} ${(scrolls.rateUp||0) <= 0 ? 'disabled' : ''}>
+          📈 확률 +10%p 주문서 (보유 ${scrolls.rateUp||0}개)
+        </label>`;
+      if(protectKey){
+        const owned = scrolls[protectKey]||0;
+        scrollHtml += `
+        <label class="enhance-scroll-toggle ${owned <= 0 ? 'disabled' : ''}">
+          <input type="checkbox" class="enhance-scroll-check" data-slot="${slot}" data-field="protect" ${useProtect ? 'checked' : ''} ${owned <= 0 ? 'disabled' : ''}>
+          ${protectLabel} (보유 ${owned}개)
+        </label>`;
+      }
+      scrollHtml += '</div>';
+
       body = `
         <div class="enhance-next">+${current} → +${target} 시도</div>
-        <div class="enhance-rate">성공 확률 <b>${info.rate}%</b></div>
+        <div class="enhance-rate">성공 확률 <b>${effectiveRate}%</b>${useRateUp ? ` <span class="enhance-rate-boost">(기본 ${info.rate}% +10%p)</span>` : ''}</div>
         ${riskLabel}
+        ${scrollHtml}
         <button class="enhance-btn" type="button" data-slot="${slot}" ${afford ? '' : 'disabled'}>
           🔩 ${cost.toLocaleString()} 소모하고 강화
         </button>
@@ -3109,6 +3162,108 @@ function renderEnhancePanel(){
 
   grid.querySelectorAll('.enhance-btn[data-slot]').forEach(btn => {
     btn.addEventListener('click', () => attemptEnhance(btn.dataset.slot));
+  });
+  grid.querySelectorAll('.enhance-scroll-check').forEach(chk => {
+    chk.addEventListener('change', () => {
+      const slot = chk.dataset.slot, field = chk.dataset.field;
+      if(!enhanceScrollSelection[slot]) enhanceScrollSelection[slot] = {rateUp:false, protect:false};
+      enhanceScrollSelection[slot][field] = chk.checked;
+      renderEnhancePanel();
+    });
+  });
+}
+
+// ===== js/goods-shop.js =====
+// ---------- 잡화 상점 (레이드 입장권 + 강화 주문서) ----------
+// 물자(gold)로 구매하는 소모품 상점. 레이드 입장권은 자연 충전(1시간당 1개, 최대 3개)과 별개로
+// 하루 3개까지 즉시 구매해 최대치를 넘겨 보유할 수 있다 (js/gifts.js의 선물 지급과 동일한 방식).
+// 강화 주문서는 js/enhance.js의 강화 시도 화면에서 사용해 성공 확률을 올리거나 실패 페널티를 막는다.
+
+const RAID_TICKET_BUY_COST = 50000000;   // 개당 5천만 물자
+const RAID_TICKET_BUY_DAILY_LIMIT = 3;   // 하루 최대 구매 개수
+
+function buyRaidTicketWithGold(){
+  if((state.dailyRaidTicketsBought||0) >= RAID_TICKET_BUY_DAILY_LIMIT){
+    log(`🎟️ 레이드 입장권은 하루 ${RAID_TICKET_BUY_DAILY_LIMIT}개까지만 구매할 수 있습니다. 내일 다시 시도해주세요.`, 'warn');
+    return;
+  }
+  if(state.gold < RAID_TICKET_BUY_COST) return;
+
+  state.gold -= RAID_TICKET_BUY_COST;
+  state.raidTicket = (state.raidTicket||0) + 1; // 자연 충전 최대치(3)를 넘겨도 그대로 지급
+  state.dailyRaidTicketsBought = (state.dailyRaidTicketsBought||0) + 1;
+  log(`🎟️ 레이드 입장권 구매! +1개 (오늘 ${state.dailyRaidTicketsBought}/${RAID_TICKET_BUY_DAILY_LIMIT}회 구매)`, 'good');
+  renderAll();
+}
+
+function renderRaidTicketShop(){
+  const el = document.getElementById('raidTicketShop');
+  if(!el) return;
+
+  const bought = state.dailyRaidTicketsBought || 0;
+  const remaining = Math.max(0, RAID_TICKET_BUY_DAILY_LIMIT - bought);
+  const soldOut = remaining <= 0;
+  const afford = state.gold >= RAID_TICKET_BUY_COST;
+
+  el.innerHTML = `
+    <div class="shop-item">
+      <div class="info">
+        <div class="name">🎟️ 레이드 입장권 <span class="potion-active-tag">오늘 ${bought}/${RAID_TICKET_BUY_DAILY_LIMIT}</span></div>
+        <div class="desc">즉시 🎟️ 레이드 입장권 1개 획득 (자연 충전 최대치와 별개로 하루 ${RAID_TICKET_BUY_DAILY_LIMIT}개 한정 구매)</div>
+      </div>
+      <button class="buy" id="buyRaidTicketBtn" ${(soldOut || !afford) ? 'disabled' : ''}>${soldOut ? '오늘 매진' : RAID_TICKET_BUY_COST.toLocaleString() + ' 📦 구매'}</button>
+    </div>`;
+  document.getElementById('buyRaidTicketBtn')?.addEventListener('click', buyRaidTicketWithGold);
+}
+
+// ---------- 강화 주문서 ----------
+const ENHANCE_SCROLLS = [
+  {
+    key: 'rateUp', icon: '📈', name: '강화 확률 증가 주문서', cost: 50000000,
+    desc: '강화 시도 시 성공 확률 +10%p (모든 단계에서 사용 가능)',
+  },
+  {
+    key: 'noDowngrade', icon: '🛡️', name: '하락 방지 주문서', cost: 100000000,
+    desc: '실패해도 강화 단계가 하락하지 않음 (+5 ~ +7 구간 전용)',
+  },
+  {
+    key: 'noDestroy', icon: '💎', name: '파괴 방지 주문서', cost: 1000000000,
+    desc: '실패해도 장비가 파괴되지 않고 단계도 하락하지 않음 (+8 ~ +15 구간 전용)',
+  },
+];
+
+function buyEnhanceScroll(key){
+  const s = ENHANCE_SCROLLS.find(x => x.key === key);
+  if(!s) return;
+  if(state.gold < s.cost) return;
+
+  state.gold -= s.cost;
+  if(!state.enhanceScrolls) state.enhanceScrolls = {rateUp:0, noDowngrade:0, noDestroy:0};
+  state.enhanceScrolls[key] = (state.enhanceScrolls[key]||0) + 1;
+  log(`${s.icon} ${s.name} 구매! (보유 ${state.enhanceScrolls[key]}개)`, 'good');
+  renderAll();
+}
+
+function renderEnhanceScrollShop(){
+  const el = document.getElementById('enhanceScrollShop');
+  if(!el) return;
+  const scrolls = state.enhanceScrolls || {rateUp:0, noDowngrade:0, noDestroy:0};
+
+  el.innerHTML = ENHANCE_SCROLLS.map(s => {
+    const owned = scrolls[s.key] || 0;
+    const afford = state.gold >= s.cost;
+    return `
+      <div class="shop-item">
+        <div class="info">
+          <div class="name">${s.icon} ${s.name} <span class="potion-active-tag">보유 ${owned}개</span></div>
+          <div class="desc">${s.desc}</div>
+        </div>
+        <button class="buy" data-key="${s.key}" ${afford ? '' : 'disabled'}>${s.cost.toLocaleString()} 📦 구매</button>
+      </div>`;
+  }).join('');
+
+  el.querySelectorAll('button[data-key]').forEach(btn => {
+    btn.addEventListener('click', () => buyEnhanceScroll(btn.dataset.key));
   });
 }
 
@@ -4633,6 +4788,8 @@ function renderAll(){
   if(typeof renderBestiary === 'function') renderBestiary();
   if(typeof renderPotionShop === 'function') renderPotionShop();
   if(typeof renderSoulPackShop === 'function') renderSoulPackShop();
+  if(typeof renderRaidTicketShop === 'function') renderRaidTicketShop();
+  if(typeof renderEnhanceScrollShop === 'function') renderEnhanceScrollShop();
   if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
   if(typeof renderKillPassPanel === 'function') renderKillPassPanel();
@@ -5472,6 +5629,7 @@ function checkDailyReset(){
     state.dailyBossKills = 0;
     state.dailyClaims = {};
     state.dailySoulPacksBought = 0;
+    state.dailyRaidTicketsBought = 0;
     log('일일 퀘스트가 초기화되었습니다.', 'new');
   }
 }
@@ -5961,6 +6119,7 @@ function processImportedData(jsonStr){
     state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
     state.unlockedTitles = loaded.unlockedTitles || {};
     state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
+    state.enhanceScrolls = Object.assign({rateUp:0, noDowngrade:0, noDestroy:0}, loaded.enhanceScrolls||{});
     state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});
     abortStuckActivities('가져온 세이브에서');
 
@@ -6074,6 +6233,7 @@ async function loadState(){
       state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
       state.unlockedTitles = loaded.unlockedTitles || {};
       state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
+      state.enhanceScrolls = Object.assign({rateUp:0, noDowngrade:0, noDestroy:0}, loaded.enhanceScrolls||{});
       state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});
       abortStuckActivities('이전에');
       return true;

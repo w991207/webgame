@@ -26,6 +26,7 @@ BUNDLE1_FILES=(
   js/equipment.js
   js/potions.js
   js/enhance.js
+  js/goods-shop.js
   js/raid.js
   js/golden.js
   js/golddungeon.js

@@ -856,6 +856,15 @@
   .enhance-risk.safe{color:#6fce7f;}
   .enhance-risk.warn{color:#e8a33d;}
   .enhance-risk.danger{color:#e05656;}
+  .enhance-rate-boost{color:#6fce7f;font-size:10px;font-weight:400;}
+  .enhance-scrolls{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
+  .enhance-scroll-toggle{
+    display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--text-dim);
+    cursor:pointer;user-select:none;
+  }
+  .enhance-scroll-toggle input{cursor:pointer;}
+  .enhance-scroll-toggle.disabled{opacity:.4;cursor:not-allowed;}
+  .enhance-scroll-toggle.disabled input{cursor:not-allowed;}
   .enhance-maxed{font-size:12px;color:var(--gold);text-align:center;padding:8px 0;font-weight:700;}
   .enhance-btn{
     width:100%;font-size:11px;padding:7px 6px;border-radius:6px;border:1px solid var(--border);
