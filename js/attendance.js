@@ -90,6 +90,8 @@ state.attendance.lastClaim=Date.now();
 
 state.attendance.day++;
 
+state.attendance.total=(state.attendance.total||0)+1;
+
 if(state.attendance.day>=7){
 
 state.attendance.day=0;

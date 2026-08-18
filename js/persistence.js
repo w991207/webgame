@@ -14,6 +14,30 @@ document.getElementById('resetBtn').addEventListener('click', async ()=>{
 });
 
 // ---------- Export / Import Logic ----------
+
+// 로드/가져오기 시점에 진행 중이던 부속 전투 콘텐츠를 안전하게 종료 처리한다.
+// 탭/브라우저를 닫아 전투가 중단된 채 세이브된 Active 플래그(레이드/월드보스/던전 4종)가 그대로
+// 남으면, 이후 모든 부속 전투(레이드/월드보스/물자·유산·단조·수련 구역) 입장이 차단된다.
+// 티켓은 이미 소모된 상태로 유지하고, 중단된 전투 상태(체력 등)만 정리한다.
+function abortStuckActivities(context){
+  const flags = [
+    ['레이드','raidActive'], ['월드보스','wbActive'],
+    ['물자 구역','gdActive'], ['유산 구역','rdActive'],
+    ['단조 구역','fdActive'], ['수련 구역','tdActive'],
+  ];
+  const stuck = flags.filter(([,k])=>state[k]).map(([name])=>name);
+  if(stuck.length > 0){
+    log(`${context} 진행 중이던 ${stuck.join('·')}이(가) 중단되어 종료 처리되었습니다.`, 'warn');
+  }
+  flags.forEach(([,k])=>{ state[k] = false; });
+  state.raidBossHp = 0; state.raidBossMaxHp = 0; state.raidPlayerHp = 0;
+  state.wbHp = 0; state.wbMaxHp = 0; state.wbPlayerHp = 0; state.wbSessionDamage = 0;
+  state.gdMonsterHp = 0; state.gdMonsterMaxHp = 0; state.gdPlayerHp = 0;
+  state.rdMonsterHp = 0; state.rdMonsterMaxHp = 0; state.rdPlayerHp = 0;
+  state.fdMonsterHp = 0; state.fdMonsterMaxHp = 0; state.fdPlayerHp = 0;
+  state.tdMonsterHp = 0; state.tdMonsterMaxHp = 0; state.tdPlayerHp = 0;
+}
+
 function processImportedData(jsonStr){
   try{
     const loaded = JSON.parse(jsonStr);
@@ -38,16 +62,8 @@ function processImportedData(jsonStr){
     state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
     state.unlockedTitles = loaded.unlockedTitles || {};
     state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
-    if(state.raidActive) log('가져온 세이브에서 중단된 레이드가 종료 처리되었습니다.', 'warn');
-    state.raidActive = false;
-    state.raidBossHp = 0;
-    state.raidBossMaxHp = 0;
-    state.raidPlayerHp = 0;
-    state.wbActive = false;
-    state.wbHp = 0;
-    state.wbMaxHp = 0;
-    state.wbPlayerHp = 0;
-    state.wbSessionDamage = 0;
+    state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});
+    abortStuckActivities('가져온 세이브에서');
 
     document.getElementById('modeNormalBtn').classList.toggle('active', state.mode==='normal');
     document.getElementById('modeTowerBtn').classList.toggle('active', state.mode==='tower');
@@ -159,17 +175,8 @@ async function loadState(){
       state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
       state.unlockedTitles = loaded.unlockedTitles || {};
       state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
-      // 세이브 시점에 레이드가 진행 중이었다면 안전하게 종료 처리 (티켓은 이미 소모된 상태로 유지)
-      if(state.raidActive) log('이전에 진행 중이던 레이드가 저장 시점에 중단되어 종료 처리되었습니다.', 'warn');
-      state.raidActive = false;
-      state.raidBossHp = 0;
-      state.raidBossMaxHp = 0;
-      state.raidPlayerHp = 0;
-      state.wbActive = false;
-      state.wbHp = 0;
-      state.wbMaxHp = 0;
-      state.wbPlayerHp = 0;
-      state.wbSessionDamage = 0;
+      state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});
+      abortStuckActivities('이전에');
       return true;
     }
   }catch(e){

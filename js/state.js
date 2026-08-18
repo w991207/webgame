@@ -31,6 +31,8 @@ function defaultState(){
     soulUpgrades: {atkMult:0, goldMult:0, defMult:0, expMult:0, dropAdd:0, critDmgAdd:0, accuracyAdd:0},
     totalKills: 0,
     totalBossKills: 0,
+    lifetimeGoldEarned: 0,     // 누적 물자 획득 (환생해도 유지 — 업적/통계용)
+    totalFragmentsEarned: 0,   // 누적 유산 파편 획득 (환생해도 유지 — 업적/통계용)
     killPassClaimed: 0, // 처치 패스에서 순서대로 수령 완료한 단계 수 (환생해도 totalKills처럼 유지됨)
     rebirthCount: 0,
     rebirthHistory: [], // 환생 1회당 1건씩 기록: {at, floor, gainSoul, gainFrag}. 환생해도 이 기록 자체는 유지됨
@@ -68,7 +70,8 @@ function defaultState(){
     lastSave: Date.now(),
     attendance: {
       day: 0,
-      lastClaim: 0
+      lastClaim: 0,
+      total: 0 // 총 출석일 (7일 주기 day와 별개로 영구 누적 — 출석 달성 칭호 조건에 사용)
     },
 
     // ---------- Raid (1인 레이드) ----------

@@ -423,7 +423,7 @@ const TITLES = [
   {key:'title_judge', name:'심판자', icon:'⚖️', condText:'1인 레이드 15회 클리어', check:s=>(s.raidClearCount||0)>=15, stat:'critDmgAdd', value:6},
   {key:'title_goldHoarder', name:'물자 수집광', icon:'📦', condText:'물자 구역 완전 정복', check:s=>!!s.gdCleared, stat:'goldPct', value:5},
   {key:'title_relicSeeker', name:'유산 탐구자', icon:'🔍', condText:'유산 구역 완전 정복', check:s=>!!s.rdCleared, stat:'dropAdd', value:2},
-  {key:'title_dailyGrinder', name:'성실한 하루하루', icon:'📅', condText:'출석 20일 달성', check:s=>((s.attendance&&s.attendance.day)||0)>=20, stat:'expPct', value:5},
+  {key:'title_dailyGrinder', name:'성실한 하루하루', icon:'📅', condText:'출석 20일 달성', check:s=>((s.attendance&&s.attendance.total)||0)>=20, stat:'expPct', value:5},
   {key:'title_richMan', name:'대부호', icon:'💰', condText:'물자 200,000 보유', check:s=>s.gold>=200000, stat:'goldPct', value:4},
   {key:'title_relicMaster', name:'유산 마스터', icon:'✨', condText:'유산 뽑기 150회', check:s=>(s.totalRelicPulls||0)>=150, stat:'expPct', value:4},
   // PvP 승수 마일스톤 — 캡 있는 스탯(물자/경험치) 말고 상한 없는 스탯으로만 구성해서
@@ -556,7 +556,7 @@ function recordBestiaryKill(meta, bonusGoldBase){
   if(isNew){
     const bonusGold = Math.max(1, Math.round(bonusGoldBase * 5));
     state.gold += bonusGold;
-    state.lifetimeGoldEarned += bonusGold;
+    state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + bonusGold;
     log(`📖 도감에 "${meta.name}"을(를) 새로 기록했습니다! (+${bonusGold.toLocaleString()}📦)`, 'good');
 
     if(bestiaryDiscoveredCount() >= bestiaryTotalCount()){
@@ -1214,6 +1214,8 @@ function defaultState(){
     soulUpgrades: {atkMult:0, goldMult:0, defMult:0, expMult:0, dropAdd:0, critDmgAdd:0, accuracyAdd:0},
     totalKills: 0,
     totalBossKills: 0,
+    lifetimeGoldEarned: 0,     // 누적 물자 획득 (환생해도 유지 — 업적/통계용)
+    totalFragmentsEarned: 0,   // 누적 유산 파편 획득 (환생해도 유지 — 업적/통계용)
     killPassClaimed: 0, // 처치 패스에서 순서대로 수령 완료한 단계 수 (환생해도 totalKills처럼 유지됨)
     rebirthCount: 0,
     rebirthHistory: [], // 환생 1회당 1건씩 기록: {at, floor, gainSoul, gainFrag}. 환생해도 이 기록 자체는 유지됨
@@ -1251,7 +1253,8 @@ function defaultState(){
     lastSave: Date.now(),
     attendance: {
       day: 0,
-      lastClaim: 0
+      lastClaim: 0,
+      total: 0 // 총 출석일 (7일 주기 day와 별개로 영구 누적 — 출석 달성 칭호 조건에 사용)
     },
 
     // ---------- Raid (1인 레이드) ----------
@@ -1808,7 +1811,7 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
     const goldGain = Math.round(goldDropFor(currentFloor, boss) * s.goldMult);
     const expGain = Math.round(expDropFor(currentFloor, boss) * s.expMult);
     state.gold += goldGain;
-    state.lifetimeGoldEarned += goldGain;
+    state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + goldGain;
     state.exp += expGain;
     state.totalKills++;
     state.dailyKills++;
@@ -1876,7 +1879,7 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
     if(Math.random() < s.dropChance){
       const fragGain = boss ? 3 : 1;
       state.fragments += fragGain;
-      state.totalFragmentsEarned += fragGain;
+      state.totalFragmentsEarned = (state.totalFragmentsEarned||0) + fragGain;
       log(`◈ 유산 파편 획득! +${fragGain}`, 'good');
     }
     // 강화석은 파편과 별개의 고정 확률로 드랍 (강화 시스템 전용 재화 — enhance.js 참고)
@@ -2217,7 +2220,7 @@ function triggerActiveSkill(sk, lvl){
     const bonusGold = Math.round(goldDropFor(currentFloor, state.isBoss) * s.goldMult * (0.3 + lvl*0.1));
     dealDamageToMonster(dmg, false, {floatClass:'skill'});
     state.gold += bonusGold;
-    state.lifetimeGoldEarned += bonusGold;
+    state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + bonusGold;
     floatText('+'+bonusGold+'📦', 'good');
     log(`💰 강탈 일격 발동! (+${bonusGold}📦)`, 'good');
     return true;
@@ -2245,7 +2248,7 @@ function triggerActiveSkill(sk, lvl){
     if(state.monsterHp <= 0) return false;
     const bonusGold = Math.round(goldDropFor(currentFloor, state.isBoss) * s.goldMult * (2.0 + lvl*0.3));
     state.gold += bonusGold;
-    state.lifetimeGoldEarned += bonusGold;
+    state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + bonusGold;
     state.fragments = (state.fragments||0) + 1;
     floatText('+'+bonusGold+'📦', 'good');
     log(`🎰 대박 사냥 발동! (+${bonusGold}📦, ◈ 유산 파편 +1)`, 'good');
@@ -3198,7 +3201,8 @@ function raidPlayerAttackTick(){
     resolveRaidVictory();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderRaidPanel();
   scheduleRaidPlayerTick();
 }
 
@@ -3213,7 +3217,8 @@ function raidMonsterAttackTick(){
     resolveRaidDefeat();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderRaidPanel();
   scheduleRaidMonsterTick();
 }
 
@@ -3515,7 +3520,8 @@ function gdPlayerAttackTick(){
     resolveGoldDungeonVictory();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderGoldDungeonPanel();
   scheduleGdPlayerTick();
 }
 
@@ -3530,7 +3536,8 @@ function gdMonsterAttackTick(){
     resolveGoldDungeonDefeat();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderGoldDungeonPanel();
   scheduleGdMonsterTick();
 }
 
@@ -3712,7 +3719,8 @@ function rdPlayerAttackTick(){
     resolveRelicDungeonVictory();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderRelicDungeonPanel();
   scheduleRdPlayerTick();
 }
 
@@ -3727,7 +3735,8 @@ function rdMonsterAttackTick(){
     resolveRelicDungeonDefeat();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderRelicDungeonPanel();
   scheduleRdMonsterTick();
 }
 
@@ -3905,7 +3914,8 @@ function fdPlayerAttackTick(){
     resolveForgeDungeonVictory();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderForgeDungeonPanel();
   scheduleFdPlayerTick();
 }
 
@@ -3920,7 +3930,8 @@ function fdMonsterAttackTick(){
     resolveForgeDungeonDefeat();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderForgeDungeonPanel();
   scheduleFdMonsterTick();
 }
 
@@ -4100,7 +4111,8 @@ function tdPlayerAttackTick(){
     resolveTrainingDungeonVictory();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderTrainingDungeonPanel();
   scheduleTdPlayerTick();
 }
 
@@ -4115,7 +4127,8 @@ function tdMonsterAttackTick(){
     resolveTrainingDungeonDefeat();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderTrainingDungeonPanel();
   scheduleTdMonsterTick();
 }
 
@@ -5797,6 +5810,8 @@ state.attendance.lastClaim=Date.now();
 
 state.attendance.day++;
 
+state.attendance.total=(state.attendance.total||0)+1;
+
 if(state.attendance.day>=7){
 
 state.attendance.day=0;
@@ -5833,6 +5848,30 @@ document.getElementById('resetBtn').addEventListener('click', async ()=>{
 });
 
 // ---------- Export / Import Logic ----------
+
+// 로드/가져오기 시점에 진행 중이던 부속 전투 콘텐츠를 안전하게 종료 처리한다.
+// 탭/브라우저를 닫아 전투가 중단된 채 세이브된 Active 플래그(레이드/월드보스/던전 4종)가 그대로
+// 남으면, 이후 모든 부속 전투(레이드/월드보스/물자·유산·단조·수련 구역) 입장이 차단된다.
+// 티켓은 이미 소모된 상태로 유지하고, 중단된 전투 상태(체력 등)만 정리한다.
+function abortStuckActivities(context){
+  const flags = [
+    ['레이드','raidActive'], ['월드보스','wbActive'],
+    ['물자 구역','gdActive'], ['유산 구역','rdActive'],
+    ['단조 구역','fdActive'], ['수련 구역','tdActive'],
+  ];
+  const stuck = flags.filter(([,k])=>state[k]).map(([name])=>name);
+  if(stuck.length > 0){
+    log(`${context} 진행 중이던 ${stuck.join('·')}이(가) 중단되어 종료 처리되었습니다.`, 'warn');
+  }
+  flags.forEach(([,k])=>{ state[k] = false; });
+  state.raidBossHp = 0; state.raidBossMaxHp = 0; state.raidPlayerHp = 0;
+  state.wbHp = 0; state.wbMaxHp = 0; state.wbPlayerHp = 0; state.wbSessionDamage = 0;
+  state.gdMonsterHp = 0; state.gdMonsterMaxHp = 0; state.gdPlayerHp = 0;
+  state.rdMonsterHp = 0; state.rdMonsterMaxHp = 0; state.rdPlayerHp = 0;
+  state.fdMonsterHp = 0; state.fdMonsterMaxHp = 0; state.fdPlayerHp = 0;
+  state.tdMonsterHp = 0; state.tdMonsterMaxHp = 0; state.tdPlayerHp = 0;
+}
+
 function processImportedData(jsonStr){
   try{
     const loaded = JSON.parse(jsonStr);
@@ -5857,16 +5896,8 @@ function processImportedData(jsonStr){
     state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
     state.unlockedTitles = loaded.unlockedTitles || {};
     state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
-    if(state.raidActive) log('가져온 세이브에서 중단된 레이드가 종료 처리되었습니다.', 'warn');
-    state.raidActive = false;
-    state.raidBossHp = 0;
-    state.raidBossMaxHp = 0;
-    state.raidPlayerHp = 0;
-    state.wbActive = false;
-    state.wbHp = 0;
-    state.wbMaxHp = 0;
-    state.wbPlayerHp = 0;
-    state.wbSessionDamage = 0;
+    state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});
+    abortStuckActivities('가져온 세이브에서');
 
     document.getElementById('modeNormalBtn').classList.toggle('active', state.mode==='normal');
     document.getElementById('modeTowerBtn').classList.toggle('active', state.mode==='tower');
@@ -5978,17 +6009,8 @@ async function loadState(){
       state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
       state.unlockedTitles = loaded.unlockedTitles || {};
       state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
-      // 세이브 시점에 레이드가 진행 중이었다면 안전하게 종료 처리 (티켓은 이미 소모된 상태로 유지)
-      if(state.raidActive) log('이전에 진행 중이던 레이드가 저장 시점에 중단되어 종료 처리되었습니다.', 'warn');
-      state.raidActive = false;
-      state.raidBossHp = 0;
-      state.raidBossMaxHp = 0;
-      state.raidPlayerHp = 0;
-      state.wbActive = false;
-      state.wbHp = 0;
-      state.wbMaxHp = 0;
-      state.wbPlayerHp = 0;
-      state.wbSessionDamage = 0;
+      state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});
+      abortStuckActivities('이전에');
       return true;
     }
   }catch(e){

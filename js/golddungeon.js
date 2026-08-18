@@ -97,7 +97,8 @@ function gdPlayerAttackTick(){
     resolveGoldDungeonVictory();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderGoldDungeonPanel();
   scheduleGdPlayerTick();
 }
 
@@ -112,7 +113,8 @@ function gdMonsterAttackTick(){
     resolveGoldDungeonDefeat();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderGoldDungeonPanel();
   scheduleGdMonsterTick();
 }
 

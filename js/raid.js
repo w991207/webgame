@@ -104,7 +104,8 @@ function raidPlayerAttackTick(){
     resolveRaidVictory();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderRaidPanel();
   scheduleRaidPlayerTick();
 }
 
@@ -119,7 +120,8 @@ function raidMonsterAttackTick(){
     resolveRaidDefeat();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderRaidPanel();
   scheduleRaidMonsterTick();
 }
 

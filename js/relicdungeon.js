@@ -96,7 +96,8 @@ function rdPlayerAttackTick(){
     resolveRelicDungeonVictory();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderRelicDungeonPanel();
   scheduleRdPlayerTick();
 }
 
@@ -111,7 +112,8 @@ function rdMonsterAttackTick(){
     resolveRelicDungeonDefeat();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderRelicDungeonPanel();
   scheduleRdMonsterTick();
 }
 

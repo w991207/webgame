@@ -26,7 +26,7 @@ function recordBestiaryKill(meta, bonusGoldBase){
   if(isNew){
     const bonusGold = Math.max(1, Math.round(bonusGoldBase * 5));
     state.gold += bonusGold;
-    state.lifetimeGoldEarned += bonusGold;
+    state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + bonusGold;
     log(`📖 도감에 "${meta.name}"을(를) 새로 기록했습니다! (+${bonusGold.toLocaleString()}📦)`, 'good');
 
     if(bestiaryDiscoveredCount() >= bestiaryTotalCount()){

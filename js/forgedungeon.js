@@ -95,7 +95,8 @@ function fdPlayerAttackTick(){
     resolveForgeDungeonVictory();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderForgeDungeonPanel();
   scheduleFdPlayerTick();
 }
 
@@ -110,7 +111,8 @@ function fdMonsterAttackTick(){
     resolveForgeDungeonDefeat();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderForgeDungeonPanel();
   scheduleFdMonsterTick();
 }
 

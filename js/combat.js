@@ -268,7 +268,7 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
     const goldGain = Math.round(goldDropFor(currentFloor, boss) * s.goldMult);
     const expGain = Math.round(expDropFor(currentFloor, boss) * s.expMult);
     state.gold += goldGain;
-    state.lifetimeGoldEarned += goldGain;
+    state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + goldGain;
     state.exp += expGain;
     state.totalKills++;
     state.dailyKills++;
@@ -336,7 +336,7 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
     if(Math.random() < s.dropChance){
       const fragGain = boss ? 3 : 1;
       state.fragments += fragGain;
-      state.totalFragmentsEarned += fragGain;
+      state.totalFragmentsEarned = (state.totalFragmentsEarned||0) + fragGain;
       log(`◈ 유산 파편 획득! +${fragGain}`, 'good');
     }
     // 강화석은 파편과 별개의 고정 확률로 드랍 (강화 시스템 전용 재화 — enhance.js 참고)

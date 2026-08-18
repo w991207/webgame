@@ -136,7 +136,7 @@ function triggerActiveSkill(sk, lvl){
     const bonusGold = Math.round(goldDropFor(currentFloor, state.isBoss) * s.goldMult * (0.3 + lvl*0.1));
     dealDamageToMonster(dmg, false, {floatClass:'skill'});
     state.gold += bonusGold;
-    state.lifetimeGoldEarned += bonusGold;
+    state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + bonusGold;
     floatText('+'+bonusGold+'📦', 'good');
     log(`💰 강탈 일격 발동! (+${bonusGold}📦)`, 'good');
     return true;
@@ -164,7 +164,7 @@ function triggerActiveSkill(sk, lvl){
     if(state.monsterHp <= 0) return false;
     const bonusGold = Math.round(goldDropFor(currentFloor, state.isBoss) * s.goldMult * (2.0 + lvl*0.3));
     state.gold += bonusGold;
-    state.lifetimeGoldEarned += bonusGold;
+    state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + bonusGold;
     state.fragments = (state.fragments||0) + 1;
     floatText('+'+bonusGold+'📦', 'good');
     log(`🎰 대박 사냥 발동! (+${bonusGold}📦, ◈ 유산 파편 +1)`, 'good');

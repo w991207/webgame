@@ -94,7 +94,8 @@ function tdPlayerAttackTick(){
     resolveTrainingDungeonVictory();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderTrainingDungeonPanel();
   scheduleTdPlayerTick();
 }
 
@@ -109,7 +110,8 @@ function tdMonsterAttackTick(){
     resolveTrainingDungeonDefeat();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderTrainingDungeonPanel();
   scheduleTdMonsterTick();
 }
 

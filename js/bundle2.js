@@ -1100,7 +1100,8 @@ async function wbPlayerAttackTick(){
     finalizeWorldBossSession();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderWorldBossPanel();
   scheduleWbPlayerTick();
 }
 
@@ -1116,7 +1117,8 @@ function wbMonsterAttackTick(){
     finalizeWorldBossSession();
     return;
   }
-  renderAll();
+  renderCombatFrame();
+  renderWorldBossPanel();
   scheduleWbMonsterTick();
 }
 
