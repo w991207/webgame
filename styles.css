@@ -1495,3 +1495,22 @@ margin-top:4px;
   .killpass-tier-state{font-size:9.5px;color:var(--text-dim);margin-top:5px;}
   .killpass-tier-card.done .killpass-tier-state{color:var(--frag);}
   .killpass-tier-card.ready .killpass-tier-state{color:var(--gold);}
+
+  /* ---------- 🧟 월드보스 일일 정산 결과 팝업 ---------- */
+  .wb-result-modal{max-width:340px;}
+  .wb-result-hint{margin-bottom:12px;}
+  .wb-result-body{
+    display:flex;flex-direction:column;gap:8px;margin-bottom:18px;
+    max-height:260px;overflow-y:auto;
+  }
+  .wb-result-row{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    background:var(--bg-deep);border:1px solid var(--border);border-radius:8px;
+    padding:8px 12px;
+  }
+  .wb-result-rank{
+    font-family:'Black Han Sans',sans-serif;color:var(--gold);font-size:13px;white-space:nowrap;
+  }
+  .wb-result-reward{
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--text);text-align:right;
+  }
