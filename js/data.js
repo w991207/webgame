@@ -150,9 +150,12 @@ const DAILY_QUESTS = [
 ];
 
 const REPEATABLE_QUESTS = [
-  {key:'repKill', name:'연속 사냥', desc:'변이체 10마리 처치할 때마다', target:10, statKey:'repKillProgress', reward:{gold:45}},
-  {key:'repFloor', name:'층 돌파', desc:'3개 층 오를 때마다', target:3, statKey:'repFloorProgress', reward:{gold:100}},
-  {key:'repBoss', name:'보스 사냥꾼', desc:'보스 처치할 때마다', target:1, statKey:'repBossProgress', reward:{gold:250}},
+  // 보상은 '고정 값(reward) + 층수 비례 값(scale)'으로 계산한다 (quests.js repeatQuestReward 참고).
+  // scale은 '현재 층 일반 몬스터 1마리 물자값(goldDropFor) × 물자 배율(goldMult)'의 몇 배를
+  // 추가로 주는지. 층수가 오를수록 보상도 자동으로 커져서 후반에도 무의미해지지 않는다.
+  {key:'repKill', name:'연속 사냥', desc:'변이체 10마리 처치할 때마다', target:10, statKey:'repKillProgress', reward:{gold:100}, scale:2},
+  {key:'repFloor', name:'층 돌파', desc:'3개 층 오를 때마다', target:3, statKey:'repFloorProgress', reward:{gold:300}, scale:8},
+  {key:'repBoss', name:'보스 사냥꾼', desc:'보스 처치할 때마다', target:1, statKey:'repBossProgress', reward:{gold:400}, scale:2},
 ];
 
 const ACHIEVEMENTS = [

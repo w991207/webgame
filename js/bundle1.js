@@ -372,9 +372,12 @@ const DAILY_QUESTS = [
 ];
 
 const REPEATABLE_QUESTS = [
-  {key:'repKill', name:'연속 사냥', desc:'변이체 10마리 처치할 때마다', target:10, statKey:'repKillProgress', reward:{gold:45}},
-  {key:'repFloor', name:'층 돌파', desc:'3개 층 오를 때마다', target:3, statKey:'repFloorProgress', reward:{gold:100}},
-  {key:'repBoss', name:'보스 사냥꾼', desc:'보스 처치할 때마다', target:1, statKey:'repBossProgress', reward:{gold:250}},
+  // 보상은 '고정 값(reward) + 층수 비례 값(scale)'으로 계산한다 (quests.js repeatQuestReward 참고).
+  // scale은 '현재 층 일반 몬스터 1마리 물자값(goldDropFor) × 물자 배율(goldMult)'의 몇 배를
+  // 추가로 주는지. 층수가 오를수록 보상도 자동으로 커져서 후반에도 무의미해지지 않는다.
+  {key:'repKill', name:'연속 사냥', desc:'변이체 10마리 처치할 때마다', target:10, statKey:'repKillProgress', reward:{gold:100}, scale:2},
+  {key:'repFloor', name:'층 돌파', desc:'3개 층 오를 때마다', target:3, statKey:'repFloorProgress', reward:{gold:300}, scale:8},
+  {key:'repBoss', name:'보스 사냥꾼', desc:'보스 처치할 때마다', target:1, statKey:'repBossProgress', reward:{gold:400}, scale:2},
 ];
 
 const ACHIEVEMENTS = [
@@ -5471,6 +5474,17 @@ function rewardText(reward){
   return parts.join(' ');
 }
 
+// 반복 퀘스트 보상은 '고정 값(q.reward) + 층수 비례 값(q.scale)'으로 계산한다.
+// q.scale은 '현재 층 일반 몬스터 1마리 물자값(goldDropFor) × 물자 배율(goldMult)'의 몇 배인지.
+// 층수가 오를수록 보상이 자동으로 커져서 초반엔 확실하게, 후반에도 계속 의미 있게 받을 수 있다.
+function repeatQuestReward(q){
+  const base = q.reward || {};
+  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const s = stats();
+  const scaled = q.scale ? Math.round(goldDropFor(currentFloor, false) * s.goldMult * q.scale) : 0;
+  return {gold:(base.gold||0)+scaled, soul:base.soul||0, frag:base.frag||0};
+}
+
 function claimDaily(key){
   const q = DAILY_QUESTS.find(x=>x.key===key);
   if(!q || state.dailyClaims[key]) return;
@@ -5560,8 +5574,9 @@ function claimRepeatable(key){
   if(!q) return;
   if(state[q.statKey] < q.target) return;
   state[q.statKey] -= q.target;
-  applyReward(q.reward);
-  log(`반복 퀘스트 완료: ${q.name} (${rewardText(q.reward)})`, 'good');
+  const reward = repeatQuestReward(q);
+  applyReward(reward);
+  log(`반복 퀘스트 완료: ${q.name} (${rewardText(reward)})`, 'good');
   renderAll();
 }
 
@@ -5573,9 +5588,10 @@ function claimAllRepeatable(){
     if(stacks <= 0) return;
     state[q.statKey] -= stacks * q.target;
     totalClaims += stacks;
-    if(q.reward.gold) totalReward.gold += q.reward.gold * stacks;
-    if(q.reward.soul) totalReward.soul += q.reward.soul * stacks;
-    if(q.reward.frag) totalReward.frag += q.reward.frag * stacks;
+    const r = repeatQuestReward(q);
+    if(r.gold) totalReward.gold += r.gold * stacks;
+    if(r.soul) totalReward.soul += r.soul * stacks;
+    if(r.frag) totalReward.frag += r.frag * stacks;
   });
   if(totalClaims === 0) return;
   applyReward(totalReward);
@@ -5594,6 +5610,7 @@ function renderRepeatableQuests(){
     const displayProgress = raw % q.target;
     const ready = stacks >= 1;
     if(ready) anyReady = true;
+    const reward = repeatQuestReward(q);
     const row = document.createElement('div');
     row.className = 'quest-item';
     row.innerHTML = `
@@ -5602,7 +5619,7 @@ function renderRepeatableQuests(){
           <div class="qname">${q.name}${stacks>1? `<span class="stack">x${stacks} 대기중</span>`:''}</div>
           <div class="qdesc">${q.desc}</div>
         </div>
-        <div class="qreward">${rewardText(q.reward)}</div>
+        <div class="qreward">${rewardText(reward)}</div>
       </div>
       <div class="quest-progress-outer"><div class="quest-progress-inner ${ready?'done':''}" style="width:${(ready?100:(displayProgress/q.target*100))}%"></div></div>
       <div class="quest-foot">
