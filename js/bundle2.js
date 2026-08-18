@@ -890,13 +890,6 @@ function renderPvpRecord(){
 //      - hp(숫자), maxHp(숫자, hp와 동일한 값), resetDate(숫자, 0)
 //      - manualResetAt(숫자, 0) ← 전 유저 도전 기록 강제 초기화용 (아래 설명)
 //    (resetDate를 0으로 두면 접속한 유저가 처음 열었을 때 자동으로 오늘 날짜로 리셋되며 시작합니다)
-//    → hp/maxHp 권장값(30000층 보스 HP와 동일한 스케일): 5297343927422
-//      이미 문서가 있는 기존 서버라면 hp/maxHp를 이 값으로 콘솔에서 직접 수정해야
-//      난이도 상향이 실제로 적용됩니다 (코드만 고쳐서는 Firestore에 저장된 체력이 안 바뀜).
-//
-// 명중/회피 미적용 안내: 월드보스는 의도적으로 명중률 판정(hitChanceFor 등)을 쓰지 않음.
-//    플레이어 공격과 보스 공격 둘 다 100% 명중 고정 — 상단 회피 시스템(monsterEvasionFor)과
-//    무관하게 항상 맞는다. 실수로 hitChanceFor를 끌어와 붙이지 말 것.
 //
 // 🔧 관리자가 "전 유저 도전 기록"을 마음대로 초기화하고 싶을 때:
 //    Firebase 콘솔 > Firestore > worldboss/state 문서 > manualResetAt 필드 값을
@@ -908,29 +901,22 @@ function renderPvpRecord(){
 //    hp 필드를 maxHp와 같은 값으로 함께 바꿔주세요.
 
 const WORLD_BOSS_META = {name:'창세의 균주, 제로', emoji:'🧟'};
-// 난이도 기준: 일반모드(폐허) 30000층 보스와 동일한 ATK/DEF 스케일로 맞춤
-// (monsterAtkFor(30000, true) / monsterDefFor(30000, true) 계산값을 그대로 상수화)
-// ⚠️ HP(maxHp)는 Firestore의 worldboss/state 문서 값이라 코드로는 못 바꿈 — 위 설명 참고.
-const WB_ATK = 6296149846;
-const WB_DEF = 11336977738;
+const WB_ATK = 10000;
+const WB_DEF = 5000;
 const WB_TIME_LIMIT_MS = 60 * 1000; // 도전 1회당 제한시간 1분
 const WB_COOLDOWN_MS = 4 * 3600 * 1000; // 개인 도전 쿨타임 (4시간마다 재도전 가능)
-// 킬/순위 보상 중 골드만 30000층 기준 goldDropFor(30000,true)(≈128억) 스케일에 맞춰 재조정.
-// 파편/혈청은 유산 뽑기 비용(relicPullCost)처럼 전투 층수와 무관하게 커지는 재화라
-// 보스 층수를 낮춰도 그대로 유지함.
-const WB_KILL_BONUS_GOLD = 40000000; // 4천만
-const WB_KILL_BONUS_FRAG = 500;
+const WB_KILL_BONUS_GOLD = 5000;
+const WB_KILL_BONUS_FRAG = 50;
 
 // 데미지량이 아니라 "오늘 이 시점까지의 내 순위"로 보상을 고정 지급한다.
 // (캐릭터 스탯이 앞으로 얼마나 커지든 보상 액수가 같이 폭증하지 않도록 데미지와 완전히 분리함)
 // maxRank: 이 순위 이하일 때 해당 보상을 받음. 배열 순서대로 검사하므로 오름차순 유지 필요.
-// 골드는 30000층 보스 처치 시 골드 드랍량(goldDropFor(30000, true) ≈ 128억) 기준으로 재조정함
 const WB_RANK_REWARDS = [
-  {maxRank:1,        gold:14000000000, frag:200000, soul:20}, // 140억
-  {maxRank:3,        gold:8500000000,  frag:120000, soul:12}, // 85억
-  {maxRank:10,       gold:4300000000,  frag:60000,  soul:6},  // 43억
-  {maxRank:30,       gold:1400000000,  frag:20000,  soul:0},  // 14억
-  {maxRank:Infinity, gold:200000000,   frag:3000,   soul:0},  // 2억, 31위 이하 참여 보상
+  {maxRank:1,        gold:8000, frag:80, soul:3},
+  {maxRank:3,        gold:5000, frag:50, soul:2},
+  {maxRank:10,       gold:3000, frag:30, soul:1},
+  {maxRank:30,       gold:1500, frag:15, soul:0},
+  {maxRank:Infinity, gold:500,  frag:5,  soul:0}, // 31위 이하 참여 보상
 ];
 function wbRewardForRank(rank){
   const tier = WB_RANK_REWARDS.find(t => rank <= t.maxRank) || WB_RANK_REWARDS[WB_RANK_REWARDS.length-1];
@@ -1189,16 +1175,15 @@ async function finalizeWorldBossSession(){
 // 자정(KST)이 지나면 그 날짜의 데미지 기록엔 더 이상 아무도 쓰지 않으므로, 그 시점부터
 // "어제(혹은 그 이전) 날짜"의 순위는 이미 확정된 것으로 본다. 각자 접속할 때 자기 uid로만
 // 조회/지급하므로 다른 유저의 문서를 건드릴 필요가 없어 보안 규칙 변경 없이 동작한다.
-// 반환값: 지급이 이루어졌으면 {day, rank, reward} (팝업 표시용), 해당 없으면 null.
 async function settleWorldBossDayReward(day){
   const user = fbAuth.currentUser;
-  if(!user) return null;
+  if(!user) return;
   try{
     const myRef = fbDb.collection('worldboss_damage').doc(String(day)).collection('hits').doc(user.uid);
     const mySnap = await myRef.get();
-    if(!mySnap.exists) return null; // 그날 참여하지 않았으면 보상 없음
+    if(!mySnap.exists) return; // 그날 참여하지 않았으면 보상 없음
     const myDamage = mySnap.data().damage || 0;
-    if(myDamage <= 0) return null;
+    if(myDamage <= 0) return;
 
     const allSnap = await fbDb.collection('worldboss_damage').doc(String(day)).collection('hits')
       .orderBy('damage', 'desc').get();
@@ -1215,31 +1200,9 @@ async function settleWorldBossDayReward(day){
     state.fragments += reward.frag;
     if(reward.soul) state.soul += reward.soul;
     log(`🏆 [월드보스] ${day}일자 최종 ${rank}위 확정! 보상: 📦${reward.gold.toLocaleString()} ◈${reward.frag}${reward.soul?` 🧪${reward.soul}`:''}`, 'good');
-    return {day, rank, reward};
   }catch(e){
     console.warn(`월드보스 ${day}일자 순위 보상 정산 실패`, e);
-    return null;
   }
-}
-
-// 자정(KST)이 지나 정산이 확정된 날짜가 하나 이상 있으면, 순위/보상 목록을 모아
-// 한 번의 팝업으로 보여준다 (며칠치가 한꺼번에 밀려있어도 팝업 하나로 정리해서 표시).
-function showWorldBossDailyResultModal(results){
-  const modal = document.getElementById('wbResultModal');
-  const body = document.getElementById('wbResultBody');
-  if(!modal || !body) return;
-  body.innerHTML = results.map(r => {
-    const reward = r.reward;
-    const rewardParts = [`📦${reward.gold.toLocaleString()}`, `◈${reward.frag.toLocaleString()}`];
-    if(reward.soul) rewardParts.push(`🧪${reward.soul}`);
-    return `
-      <div class="wb-result-row">
-        <div class="wb-result-rank">🏆 ${r.rank}위</div>
-        <div class="wb-result-reward">${rewardParts.join(' ')}</div>
-      </div>
-    `;
-  }).join('');
-  modal.style.display = 'flex';
 }
 
 async function checkWorldBossDailyRewards(){
@@ -1248,16 +1211,15 @@ async function checkWorldBossDailyRewards(){
   const today = wbDayId();
   // 한 번도 정산한 적 없는 유저는 "어제부터"만 정산 대상으로 삼는다 (과거 무한 소급 방지)
   let lastClaimed = (state.wbLastRewardClaimedDay || (today - 1));
-  const results = [];
+  let anySettled = false;
   for(let day = lastClaimed + 1; day < today; day++){
-    const result = await settleWorldBossDayReward(day);
+    await settleWorldBossDayReward(day);
     state.wbLastRewardClaimedDay = day;
-    if(result) results.push(result);
+    anySettled = true;
   }
-  if(results.length > 0){
+  if(anySettled){
     renderAll();
     if(typeof saveState === 'function') saveState(false);
-    showWorldBossDailyResultModal(results);
   }
 }
 
@@ -1393,9 +1355,6 @@ function renderWorldBossPanel(){
 }
 
 document.getElementById('wbEnterBtn')?.addEventListener('click', enterWorldBoss);
-document.getElementById('wbResultCloseBtn')?.addEventListener('click', ()=>{
-  document.getElementById('wbResultModal').style.display = 'none';
-});
 
 // 카운트다운/상태 표시 갱신용 (해금 전에는 스킵)
 setInterval(()=>{
