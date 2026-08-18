@@ -199,6 +199,16 @@ document.getElementById('rebirthBtn').addEventListener('click', ()=>{
   state.soul += gainSoul;
   state.fragments += gainFrag;
   state.rebirthCount++;
+  if(!Array.isArray(state.rebirthHistory)) state.rebirthHistory = [];
+  state.rebirthHistory.push({
+    at: Date.now(),
+    order: state.rebirthCount,
+    floor: state.highestFloor,
+    level: state.level,
+    gainSoul,
+    gainFrag,
+  });
+  if(state.rebirthHistory.length > 300) state.rebirthHistory = state.rebirthHistory.slice(-300); // 저장 용량 보호용 상한
   state.level = 1;
   state.exp = 0;
   state.gold = 0;
@@ -224,4 +234,42 @@ document.getElementById('rebirthBtn').addEventListener('click', ()=>{
   log(`환생 완료! 🧪 ${gainSoul} 혈청, ◈ ${gainFrag} 유산 파편 획득.`, 'good');
   renderAll();
 });
+
+// ---------- 환생 이력 (사용자별) ----------
+function openRebirthHistory(){
+  const user = (typeof fbAuth !== 'undefined') ? fbAuth.currentUser : null;
+  const nickname = state.nickname || '닉네임 미설정';
+  const idLabel = user ? (user.isAnonymous ? '게스트' : (user.email || 'Google 계정')) : '연결 중...';
+
+  const summaryEl = document.getElementById('rebirthHistorySummary');
+  if(summaryEl){
+    summaryEl.textContent = `${nickname} (${idLabel}) · 총 환생 횟수: ${state.rebirthCount || 0}회`;
+  }
+
+  const history = Array.isArray(state.rebirthHistory) ? state.rebirthHistory : [];
+  const bodyEl = document.getElementById('rebirthHistoryBody');
+  if(bodyEl){
+    if(history.length === 0){
+      bodyEl.innerHTML = `<p style="color:var(--text-dim);font-size:13px;">아직 환생 기록이 없습니다. 15층 이상 도달 후 환생하면 여기에 기록됩니다.</p>`;
+    } else {
+      const rows = history.slice().reverse().map(h => {
+        const d = new Date(h.at);
+        const dateStr = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        return `
+          <div class="rebirth-history-row">
+            <div class="rhr-order">#${h.order}</div>
+            <div class="rhr-mid">
+              <div class="rhr-date">${dateStr}</div>
+              <div class="rhr-detail">Lv.${h.level||'-'} · 최고 ${h.floor}층 도달</div>
+            </div>
+            <div class="rhr-gain">🧪 +${h.gainSoul} &nbsp; ◈ +${h.gainFrag}</div>
+          </div>`;
+      }).join('');
+      bodyEl.innerHTML = rows;
+    }
+  }
+
+  document.getElementById('rebirthHistoryModal').style.display = 'flex';
+}
+document.getElementById('rebirthHistoryBtn')?.addEventListener('click', openRebirthHistory);
 

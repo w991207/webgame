@@ -49,6 +49,22 @@
     border: 1px solid var(--border);
     margin-top: 8px;
   }
+  .rebirth-history-row{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 8px; border-bottom:1px solid var(--border);
+    text-align:left;
+  }
+  .rebirth-history-row:last-child{ border-bottom:none; }
+  .rebirth-history-row .rhr-order{
+    flex:0 0 auto; font-family:'Black Han Sans',sans-serif; font-size:13px;
+    color:var(--soul); min-width:28px;
+  }
+  .rebirth-history-row .rhr-mid{ flex:1; min-width:0; }
+  .rebirth-history-row .rhr-date{ font-size:11px; color:var(--text-dim); }
+  .rebirth-history-row .rhr-detail{ font-size:13px; color:var(--text); margin-top:2px; }
+  .rebirth-history-row .rhr-gain{
+    flex:0 0 auto; font-size:12px; color:var(--gold); white-space:nowrap; text-align:right;
+  }
   :root{
     --bg: #14160f;
     --bg-deep: #0a0b07;
@@ -787,6 +803,14 @@
   }
   button.rebirth:disabled{opacity:.3;cursor:not-allowed;}
   button.rebirth:hover:not(:disabled){filter:brightness(1.15);}
+  button.rebirth.secondary{
+    margin-top:8px;
+    background:linear-gradient(180deg,#242438,#15151f);
+    border:1px solid var(--border);
+    color:var(--text-dim);
+    font-size:12px;padding:9px;
+  }
+  button.rebirth.secondary:hover{filter:brightness(1.25);color:var(--text);}
 
   .quest-panel{margin-top:16px;}
 

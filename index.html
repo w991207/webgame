@@ -96,6 +96,7 @@
       <div class="rebirth-box">
         <p id="rebirthDesc">15층 이상 도달 시 <b>환생</b>이 가능합니다. 환생하면 진행이 초기화되지만 혈청을 얻어 영구 강화를 살 수 있습니다.</p>
         <button class="rebirth" id="rebirthBtn">환생하기</button>
+        <button class="rebirth secondary" id="rebirthHistoryBtn" type="button">📜 환생 이력 보기</button>
       </div>
     </div>
 
@@ -718,6 +719,24 @@
     </button>
 
   </div>
+</div>
+
+<div id="rebirthHistoryModal" class="patch-modal-overlay" style="display:none;">
+    <div class="patch-modal-card">
+
+        <h2>♻️ 환생 이력</h2>
+        <p id="rebirthHistorySummary" style="font-size:13px;color:var(--text-dim);margin:-6px 0 12px;"></p>
+
+        <div class="patch-modal-scroll">
+          <div id="rebirthHistoryBody"></div>
+        </div>
+
+        <button class="patch-btn"
+            onclick="document.getElementById('rebirthHistoryModal').style.display='none'">
+            닫기
+        </button>
+
+    </div>
 </div>
 
 <div id="patchHistoryModal" class="patch-modal-overlay" style="display:none;">

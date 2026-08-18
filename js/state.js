@@ -33,6 +33,7 @@ function defaultState(){
     totalBossKills: 0,
     killPassClaimed: 0, // 처치 패스에서 순서대로 수령 완료한 단계 수 (환생해도 totalKills처럼 유지됨)
     rebirthCount: 0,
+    rebirthHistory: [], // 환생 1회당 1건씩 기록: {at, floor, gainSoul, gainFrag}. 환생해도 이 기록 자체는 유지됨
     dailyResetAt: Date.now(),
     dailyKills: 0,
     dailyGoldEarned: 0,
