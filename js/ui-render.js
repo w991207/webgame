@@ -149,6 +149,7 @@ function renderAll(){
   checkDailyReset();
   renderDailyQuests();
   renderRepeatableQuests();
+  renderCombatRepeatQuests();
   state.relicsOwnedCount = RELICS.filter(r=>state.relics[r.key]>0).length;
   renderAchievements();
   renderRaidPanel();

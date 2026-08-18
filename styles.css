@@ -1009,6 +1009,37 @@
   .quest-progress-inner.done{background:linear-gradient(90deg,#c98a2e,var(--gold));}
   .quest-foot{display:flex;justify-content:space-between;align-items:center;margin-top:6px;}
   .quest-foot .ptext{font-size:10px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
+
+  /* 전투 화면 반복 퀘스트 (컴팩트 위젯) */
+  .combat-quests{
+    margin-top:14px;
+    text-align:left;
+  }
+  .combat-quests-head{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:11px;letter-spacing:1.5px;color:var(--text-dim);
+    font-family:'JetBrains Mono',monospace;text-transform:uppercase;
+    border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:8px;
+  }
+  .combat-quests-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  }
+  @media (max-width:820px){
+    .combat-quests-grid{grid-template-columns:1fr;}
+  }
+  .combat-quest-card{
+    background:var(--bg-deep);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px 10px;
+    min-width:0;
+  }
+  .combat-quest-card.ready{border-color:var(--gold);}
+  .cq-name{font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;}
+  .cq-name .stack{color:var(--soul);font-size:10px;font-family:'JetBrains Mono',monospace;}
+  .cq-foot{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:6px;}
+  .cq-reward{font-size:10px;color:var(--gold);font-family:'JetBrains Mono',monospace;line-height:1.4;}
+
   .mutation-tree{
     display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:4px;
   }

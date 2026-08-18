@@ -129,6 +129,15 @@
       <div class="skill-tray" id="skillTray"></div>
 
       <div class="log" id="log"></div>
+
+      <!-- 전투 화면 반복 퀘스트 컴팩트 위젯 (이벤트 탭과 별도로, 전투 중에도 바로 확인/수령 가능) -->
+      <div class="combat-quests">
+        <div class="combat-quests-head">
+          <span>반복 퀘스트</span>
+          <button id="combatClaimAllRepeatBtn" class="claim" style="font-size:10px;padding:3px 8px;" disabled>모두 받기</button>
+        </div>
+        <div id="combatRepeatQuestList" class="combat-quests-grid"></div>
+      </div>
     </div>
 
     <!-- RIGHT: Shop -->

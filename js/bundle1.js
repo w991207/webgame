@@ -4602,6 +4602,7 @@ function renderAll(){
   checkDailyReset();
   renderDailyQuests();
   renderRepeatableQuests();
+  renderCombatRepeatQuests();
   state.relicsOwnedCount = RELICS.filter(r=>state.relics[r.key]>0).length;
   renderAchievements();
   renderRaidPanel();
@@ -5633,6 +5634,38 @@ function renderRepeatableQuests(){
   const claimAllBtn = document.getElementById('claimAllRepeatBtn');
   if(claimAllBtn) claimAllBtn.disabled = !anyReady;
 }
+
+// 전투 화면(아레나) 아래에 표시되는 컴팩트 반복 퀘스트 위젯.
+// 이벤트 탭의 renderRepeatableQuests()와 동일한 데이터를 더 작은 카드로 그린다.
+function renderCombatRepeatQuests(){
+  const container = document.getElementById('combatRepeatQuestList');
+  if(!container) return;
+  container.innerHTML = '';
+  let anyReady = false;
+  REPEATABLE_QUESTS.forEach(q=>{
+    const raw = state[q.statKey];
+    const stacks = Math.floor(raw / q.target);
+    const displayProgress = raw % q.target;
+    const ready = stacks >= 1;
+    if(ready) anyReady = true;
+    const reward = repeatQuestReward(q);
+    const card = document.createElement('div');
+    card.className = 'combat-quest-card'+(ready?' ready':'');
+    card.innerHTML = `
+      <div class="cq-name">${q.name}${stacks>1? `<span class="stack">x${stacks}</span>`:''}</div>
+      <div class="quest-progress-outer"><div class="quest-progress-inner ${ready?'done':''}" style="width:${(ready?100:(displayProgress/q.target*100))}%"></div></div>
+      <div class="cq-foot">
+        <span class="cq-reward">${rewardText(reward)}</span>
+        <button class="claim ${ready?'ready':''}" ${ready?'':'disabled'} data-key="${q.key}">${ready?'받기':'대기'}</button>
+      </div>
+    `;
+    container.appendChild(card);
+    card.querySelector('button').addEventListener('click', ()=>claimRepeatable(q.key));
+  });
+  const claimAllBtn = document.getElementById('combatClaimAllRepeatBtn');
+  if(claimAllBtn) claimAllBtn.disabled = !anyReady;
+}
+document.getElementById('combatClaimAllRepeatBtn')?.addEventListener('click', claimAllRepeatable);
 
 function updateRebirthAvailability(){
   const btn = document.getElementById('rebirthBtn');
