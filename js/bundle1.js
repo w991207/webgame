@@ -1378,6 +1378,7 @@ function defaultState(){
     monsterMaxHp: 0,
     monsterIndex: 0,
     isBoss: false,
+    isGolden: false,
     playerHp: 0,
     goldUpgrades: {atk:0, def:0, hp:0, goldGain:0, expGain:0, atkSpeed:0, critChance:0, critDamage:0, accuracy:0},
     soulUpgrades: {atkMult:0, goldMult:0, defMult:0, expMult:0, dropAdd:0, critDmgAdd:0, accuracyAdd:0},
@@ -1775,12 +1776,16 @@ function applyCorridorTheme(){
 }
 
 // ---------- Monster generation ----------
-function monsterHpFor(floor, boss){
+function monsterHpFor(floor, boss, golden){
   if(state.mode === 'tower'){
-    return Math.round(50 * Math.pow(floor, 1.3));
+    let hp = Math.round(50 * Math.pow(floor, 1.3));
+    if(golden) hp *= GOLDEN_HP_MULT;
+    return Math.round(hp);
   }
   if(state.mode === 'towerHard'){
-    return Math.round(300 * Math.pow(floor, 1.5));
+    let hp = Math.round(300 * Math.pow(floor, 1.5));
+    if(golden) hp *= GOLDEN_HP_MULT;
+    return Math.round(hp);
   }
   let hp =
   Math.round(
@@ -1788,38 +1793,52 @@ function monsterHpFor(floor, boss){
   );
   if(boss)
     hp *= 6;
-  return Math.round(hp * normalTierMult(floor));
+  hp = Math.round(hp * normalTierMult(floor));
+  if(golden) hp *= GOLDEN_HP_MULT;
+  return Math.round(hp);
 }
-function monsterAtkFor(floor, boss){
+function monsterAtkFor(floor, boss, golden){
 
   if(state.mode === 'tower'){
-    return Math.round(
+    let atk = Math.round(
       10 + floor*8
     );
+    if(golden) atk *= GOLDEN_ATK_MULT;
+    return Math.round(atk);
   }
   if(state.mode === 'towerHard'){
-    return Math.round(40 + floor*25);
+    let atk = Math.round(40 + floor*25);
+    if(golden) atk *= GOLDEN_ATK_MULT;
+    return Math.round(atk);
   }
   let atk =
   8 + Math.pow(floor, 1.15) * 2.5;
   if(boss)
     atk *= 2.2;
-  return Math.round(atk * normalTierMult(floor));
+  atk = atk * normalTierMult(floor);
+  if(golden) atk *= GOLDEN_ATK_MULT;
+  return Math.round(atk);
 }
-function monsterDefFor(floor, boss){
+function monsterDefFor(floor, boss, golden){
   if(state.mode === 'tower'){
-    return Math.round(
+    let def = Math.round(
       floor*0.8
     );
+    if(golden) def *= GOLDEN_DEF_MULT;
+    return Math.round(def);
   }
   if(state.mode === 'towerHard'){
-    return Math.round(floor*3.5);
+    let def = Math.round(floor*3.5);
+    if(golden) def *= GOLDEN_DEF_MULT;
+    return Math.round(def);
   }
   let def =
   Math.pow(floor, 1.35) * 0.7;
   if(boss)
     def *= 1.8;
-  return Math.round(def * normalTierMult(floor));
+  def = def * normalTierMult(floor);
+  if(golden) def *= GOLDEN_DEF_MULT;
+  return Math.round(def);
 }
 
 // ---------- 회피/명중 (Evasion / Accuracy) ----------
@@ -1900,6 +1919,8 @@ function expDropFor(floor, boss){
 }
 
 function spawnMonster(){
+  state.isGolden = false;
+  if(typeof clearGoldenBattleTimer === 'function') clearGoldenBattleTimer();
   if(state.mode === 'tower'){
     if(state.towerCleared){
       state.isBoss = false;
@@ -1936,6 +1957,9 @@ function spawnMonster(){
 }
 
 function currentMonsterMeta(){
+  if(state.isGolden){
+    return {name:'황금 몬스터', emoji:'✨'};
+  }
   if(state.mode === 'tower'){
     if(state.towerCleared){
       return {name:'무한의 탑 정복 완료', emoji:'🏆'};
@@ -2028,6 +2052,7 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
 
   if(state.monsterHp <= 0){
     const boss = state.isBoss;
+    const golden = state.isGolden;
     const goldGain = Math.round(goldDropFor(currentFloor, boss) * s.goldMult);
     const expGain = Math.round(expDropFor(currentFloor, boss) * s.expMult);
     state.gold += goldGain;
@@ -2048,6 +2073,10 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
 
     if(typeof recordBestiaryKill === 'function'){
       recordBestiaryKill(currentMonsterMeta(), goldGain);
+    }
+
+    if(golden && typeof awardGoldenKillBonus === 'function'){
+      awardGoldenKillBonus(currentFloor, s);
     }
 
     tryLevelUp();
@@ -2150,7 +2179,7 @@ function playerAttackTick(){
     return;
   }
 
-  let dmgToMonster = Math.round(Math.max(1, s.atk - monsterDefFor(currentFloor, state.isBoss)));
+  let dmgToMonster = Math.round(Math.max(1, s.atk - monsterDefFor(currentFloor, state.isBoss, state.isGolden)));
   const isCrit = Math.random() * 100 < s.critChance;
   if(isCrit){
     dmgToMonster = Math.round(dmgToMonster * s.critDamageMult);
@@ -2174,7 +2203,7 @@ function monsterAttackTick(){
   }
 
   const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
-  const monAtk = monsterAtkFor(currentFloor, state.isBoss);
+  const monAtk = monsterAtkFor(currentFloor, state.isBoss, state.isGolden);
   const dmgToPlayer = Math.round(Math.max(1, monAtk - s.def));
   state.playerHp -= dmgToPlayer;
   floatText('-'+dmgToPlayer, 'dmgToPlayer');
@@ -3718,26 +3747,33 @@ setInterval(()=>{
 }, 1000);
 
 // ===== js/golden.js =====
-// ---------- 황금 몬스터 (레어 보너스 스폰) ----------
-// 평소 몬스터랑 별개로, 아주 낮은 확률로 화면 위에 반짝이는 황금 몬스터가 잠깐 나타난다.
-// 제한 시간 안에 클릭하면 큰 보상을 즉시 주고, 못 누르면 그냥 사라진다.
-// 지금 싸우고 있는 몬스터(state.monsterHp 등)와는 완전히 별개의 오버레이라
-// 처치 진행도/스테이지 로직에는 전혀 영향을 주지 않는다 — 순수 보너스 이벤트.
+// ---------- 황금 몬스터 (레어 강화 조우) ----------
+// 아주 낮은 확률로 화면 위에 반짝이는 황금 몬스터 표식이 잠깐 나타난다.
+// 클릭하면 지금 싸우고 있는 몬스터가 그 자리에서 "황금 몬스터"로 변신(HP/공격/방어 대폭 강화)해
+// 실제 전투로 처치해야 하고, 제한 시간 안에 못 잡으면 도망쳐서 원래 몬스터로 돌아간다.
+// 처치하면 도감에도 "황금 몬스터"로 기록되고 큰 보너스 물자/유산 파편을 즉시 지급한다.
 
 const GOLDEN_CHECK_INTERVAL_MS = 1000;      // 스폰 여부를 확인하는 주기
 const GOLDEN_SPAWN_CHANCE = 0.0025;         // 확인할 때마다 스폰될 확률 (평균 약 6~7분에 한 번꼴)
 const GOLDEN_MIN_GAP_MS = 90 * 1000;        // 스폰 사이 최소 간격 (연달아 뜨는 것 방지)
-const GOLDEN_LIFETIME_MS = 180000;          // 못 누르면 사라지기까지 시간 (화면을 계속 보고 있지 않는 유저 감안해 3분)
-const GOLDEN_GOLD_MULT_MIN = 20;            // 평소 처치 보상 대비 배율 (하한)
-const GOLDEN_GOLD_MULT_MAX = 45;            // 평소 처치 보상 대비 배율 (상한)
+const GOLDEN_LIFETIME_MS = 180000;          // 표식을 못 누르면 사라지기까지 시간 (자리 비움 감안 3분)
+const GOLDEN_BATTLE_TIME_MS = 20000;        // 변신 후 처치해야 하는 제한 시간 — 넘기면 도망감
+const GOLDEN_HP_MULT = 9;                   // 그 층 일반 몬스터 대비 체력 배율
+const GOLDEN_ATK_MULT = 2.4;                // 그 층 일반 몬스터 대비 공격력 배율
+const GOLDEN_DEF_MULT = 1.6;                // 그 층 일반 몬스터 대비 방어력 배율
+const GOLDEN_GOLD_MULT_MIN = 20;            // 처치 시 보너스 물자 — 평소 처치 보상 대비 배율(하한)
+const GOLDEN_GOLD_MULT_MAX = 45;            // 처치 시 보너스 물자 — 평소 처치 보상 대비 배율(상한)
 
-let goldenActive = false;
-let goldenDespawnTimer = null;
+let goldenActive = false;       // 표식이 떠 있거나, 변신해서 전투 중인 상태 전체를 가리킴
+let goldenDespawnTimer = null;  // 표식을 안 눌렀을 때 사라지는 타이머
+let goldenBattleTimer = null;   // 변신 후 처치 제한시간 타이머
 let goldenLastSpawnAt = 0;
 
 function goldenMonsterTick(){
   if(goldenActive) return;
-  if(state.playerHp <= 0) return; // 죽어있는 상태에선 안 띄움
+  if(state.playerHp <= 0) return;      // 죽어있는 상태에선 안 띄움
+  if(state.isBoss) return;             // 보스전 중엔 등장하지 않음 (변신 시 처치 불가능한 난이도가 될 수 있어서)
+  if(!(state.monsterHp > 0)) return;   // 싸울 몬스터가 없는 순간엔 스킵
   const now = Date.now();
   if(now - goldenLastSpawnAt < GOLDEN_MIN_GAP_MS) return;
   if(Math.random() >= GOLDEN_SPAWN_CHANCE) return;
@@ -3764,6 +3800,7 @@ function spawnGoldenMonster(){
   goldenDespawnTimer = setTimeout(despawnGoldenMonster, GOLDEN_LIFETIME_MS);
 }
 
+// 표식을 못 누르고 시간이 지나 그냥 사라지는 경우 (전투 전환 전).
 function despawnGoldenMonster(){
   const el = document.getElementById('goldenMonster');
   if(el){
@@ -3774,34 +3811,64 @@ function despawnGoldenMonster(){
   goldenDespawnTimer = null;
 }
 
+// 표식 클릭 — 지금 싸우고 있는 몬스터를 황금 몬스터로 변신시킨다.
 function clickGoldenMonster(){
   if(!goldenActive) return;
+  // 클릭하는 사이 상황이 바뀌어(보스 조우/이미 변신 등) 변신시킬 수 없는 경우 그냥 표식만 치운다.
+  if(state.isBoss || state.isGolden || !(state.monsterHp > 0)){
+    despawnGoldenMonster();
+    return;
+  }
   if(goldenDespawnTimer){ clearTimeout(goldenDespawnTimer); goldenDespawnTimer = null; }
 
+  const el = document.getElementById('goldenMonster');
+  if(el){
+    el.classList.remove('show');
+    el.style.display = 'none';
+  }
+
   const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
-  const s = stats();
+  state.isGolden = true;
+  state.monsterMaxHp = monsterHpFor(currentFloor, false, true);
+  state.monsterHp = state.monsterMaxHp;
+
+  log(`✨ 몬스터가 황금빛으로 변했습니다! ${Math.round(GOLDEN_BATTLE_TIME_MS/1000)}초 안에 처치하세요!`, 'good');
+  if(typeof renderMonster === 'function') renderMonster();
+  if(typeof renderAll === 'function') renderAll();
+
+  goldenBattleTimer = setTimeout(fleeGoldenMonster, GOLDEN_BATTLE_TIME_MS);
+}
+
+// 원정/스폰 등으로 몬스터가 바뀔 때 combat.js(spawnMonster)에서 호출 — 남은 도망 타이머를 정리.
+function clearGoldenBattleTimer(){
+  if(goldenBattleTimer){ clearTimeout(goldenBattleTimer); goldenBattleTimer = null; }
+}
+
+// 제한 시간 안에 처치하지 못해 도망치는 경우.
+function fleeGoldenMonster(){
+  goldenBattleTimer = null;
+  if(!state.isGolden) return; // 이미 처치되어 넘어간 경우
+  state.isGolden = false;
+  goldenActive = false;
+  log('✨ 황금 몬스터가 도망쳤습니다...', 'warn');
+  if(typeof spawnMonster === 'function') spawnMonster();
+  if(typeof renderAll === 'function') renderAll();
+}
+
+// 처치 성공 시 combat.js(dealDamageToMonster)에서 호출 — 보너스 물자/유산 파편 지급.
+function awardGoldenKillBonus(currentFloor, s){
+  clearGoldenBattleTimer();
+  goldenActive = false;
   const mult = GOLDEN_GOLD_MULT_MIN + Math.random() * (GOLDEN_GOLD_MULT_MAX - GOLDEN_GOLD_MULT_MIN);
   const bonusGold = Math.max(1, Math.round(goldDropFor(currentFloor, false) * s.goldMult * mult));
   const bonusFrag = 2 + Math.floor(Math.random() * 4); // 2~5개
-
-  recordBestiaryKill({name:'황금 몬스터'}, goldDropFor(currentFloor, false) * s.goldMult);
 
   state.gold += bonusGold;
   state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + bonusGold;
   state.fragments = (state.fragments||0) + bonusFrag;
 
   floatText('✨+'+bonusGold.toLocaleString()+'📦', 'good');
-  log(`✨ 황금 몬스터를 처치했습니다! (+${bonusGold.toLocaleString()}📦, ◈ 유산 파편 +${bonusFrag})`, 'good');
-
-  const el = document.getElementById('goldenMonster');
-  if(el){
-    el.classList.remove('show');
-    el.classList.add('burst');
-    setTimeout(()=>{ el.classList.remove('burst'); el.style.display = 'none'; }, 300);
-  }
-  goldenActive = false;
-
-  if(typeof renderAll === 'function') renderAll();
+  log(`✨ 황금 몬스터 처치 보너스! +${bonusGold.toLocaleString()}📦, ◈ 유산 파편 +${bonusFrag}`, 'good');
 }
 
 document.getElementById('goldenMonster')?.addEventListener('click', clickGoldenMonster);
@@ -4847,6 +4914,8 @@ function renderMonster(){
   
   document.getElementById('monsterName').textContent = meta.name;
   document.getElementById('bossTag').style.display = state.isBoss ? 'block' : 'none';
+  const goldenTagEl = document.getElementById('goldenTag');
+  if(goldenTagEl) goldenTagEl.style.display = state.isGolden ? 'block' : 'none';
 
   // 현재 층에서 명중률 95%를 안정적으로 유지하려면 필요한 권장 명중 수치 표시.
   // (몬스터 기준 / 보스 기준을 함께 보여줘서, 보스전 대비 여유치까지 가늠할 수 있게 함)
@@ -4873,7 +4942,9 @@ function renderMonster(){
     progressEl.textContent = `무한의 탑(어려움) 진행 중`;
   } else {
     document.getElementById('floorBadge').textContent = 'FLOOR ' + state.floor;
-    if(state.isBoss){
+    if(state.isGolden){
+      progressEl.textContent = '✨ 황금 몬스터 처치 중! 서두르세요!';
+    } else if(state.isBoss){
       progressEl.textContent = '보스전 진행 중';
     } else {
       progressEl.textContent = `처치: ${state.killsOnFloor} / 5`;

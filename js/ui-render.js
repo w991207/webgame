@@ -11,6 +11,8 @@ function renderMonster(){
   
   document.getElementById('monsterName').textContent = meta.name;
   document.getElementById('bossTag').style.display = state.isBoss ? 'block' : 'none';
+  const goldenTagEl = document.getElementById('goldenTag');
+  if(goldenTagEl) goldenTagEl.style.display = state.isGolden ? 'block' : 'none';
 
   // 현재 층에서 명중률 95%를 안정적으로 유지하려면 필요한 권장 명중 수치 표시.
   // (몬스터 기준 / 보스 기준을 함께 보여줘서, 보스전 대비 여유치까지 가늠할 수 있게 함)
@@ -37,7 +39,9 @@ function renderMonster(){
     progressEl.textContent = `무한의 탑(어려움) 진행 중`;
   } else {
     document.getElementById('floorBadge').textContent = 'FLOOR ' + state.floor;
-    if(state.isBoss){
+    if(state.isGolden){
+      progressEl.textContent = '✨ 황금 몬스터 처치 중! 서두르세요!';
+    } else if(state.isBoss){
       progressEl.textContent = '보스전 진행 중';
     } else {
       progressEl.textContent = `처치: ${state.killsOnFloor} / 5`;

@@ -26,6 +26,7 @@ function defaultState(){
     monsterMaxHp: 0,
     monsterIndex: 0,
     isBoss: false,
+    isGolden: false,
     playerHp: 0,
     goldUpgrades: {atk:0, def:0, hp:0, goldGain:0, expGain:0, atkSpeed:0, critChance:0, critDamage:0, accuracy:0},
     soulUpgrades: {atkMult:0, goldMult:0, defMult:0, expMult:0, dropAdd:0, critDmgAdd:0, accuracyAdd:0},

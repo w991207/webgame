@@ -43,12 +43,16 @@ function applyCorridorTheme(){
 }
 
 // ---------- Monster generation ----------
-function monsterHpFor(floor, boss){
+function monsterHpFor(floor, boss, golden){
   if(state.mode === 'tower'){
-    return Math.round(50 * Math.pow(floor, 1.3));
+    let hp = Math.round(50 * Math.pow(floor, 1.3));
+    if(golden) hp *= GOLDEN_HP_MULT;
+    return Math.round(hp);
   }
   if(state.mode === 'towerHard'){
-    return Math.round(300 * Math.pow(floor, 1.5));
+    let hp = Math.round(300 * Math.pow(floor, 1.5));
+    if(golden) hp *= GOLDEN_HP_MULT;
+    return Math.round(hp);
   }
   let hp =
   Math.round(
@@ -56,38 +60,52 @@ function monsterHpFor(floor, boss){
   );
   if(boss)
     hp *= 6;
-  return Math.round(hp * normalTierMult(floor));
+  hp = Math.round(hp * normalTierMult(floor));
+  if(golden) hp *= GOLDEN_HP_MULT;
+  return Math.round(hp);
 }
-function monsterAtkFor(floor, boss){
+function monsterAtkFor(floor, boss, golden){
 
   if(state.mode === 'tower'){
-    return Math.round(
+    let atk = Math.round(
       10 + floor*8
     );
+    if(golden) atk *= GOLDEN_ATK_MULT;
+    return Math.round(atk);
   }
   if(state.mode === 'towerHard'){
-    return Math.round(40 + floor*25);
+    let atk = Math.round(40 + floor*25);
+    if(golden) atk *= GOLDEN_ATK_MULT;
+    return Math.round(atk);
   }
   let atk =
   8 + Math.pow(floor, 1.15) * 2.5;
   if(boss)
     atk *= 2.2;
-  return Math.round(atk * normalTierMult(floor));
+  atk = atk * normalTierMult(floor);
+  if(golden) atk *= GOLDEN_ATK_MULT;
+  return Math.round(atk);
 }
-function monsterDefFor(floor, boss){
+function monsterDefFor(floor, boss, golden){
   if(state.mode === 'tower'){
-    return Math.round(
+    let def = Math.round(
       floor*0.8
     );
+    if(golden) def *= GOLDEN_DEF_MULT;
+    return Math.round(def);
   }
   if(state.mode === 'towerHard'){
-    return Math.round(floor*3.5);
+    let def = Math.round(floor*3.5);
+    if(golden) def *= GOLDEN_DEF_MULT;
+    return Math.round(def);
   }
   let def =
   Math.pow(floor, 1.35) * 0.7;
   if(boss)
     def *= 1.8;
-  return Math.round(def * normalTierMult(floor));
+  def = def * normalTierMult(floor);
+  if(golden) def *= GOLDEN_DEF_MULT;
+  return Math.round(def);
 }
 
 // ---------- 회피/명중 (Evasion / Accuracy) ----------
@@ -168,6 +186,8 @@ function expDropFor(floor, boss){
 }
 
 function spawnMonster(){
+  state.isGolden = false;
+  if(typeof clearGoldenBattleTimer === 'function') clearGoldenBattleTimer();
   if(state.mode === 'tower'){
     if(state.towerCleared){
       state.isBoss = false;
@@ -204,6 +224,9 @@ function spawnMonster(){
 }
 
 function currentMonsterMeta(){
+  if(state.isGolden){
+    return {name:'황금 몬스터', emoji:'✨'};
+  }
   if(state.mode === 'tower'){
     if(state.towerCleared){
       return {name:'무한의 탑 정복 완료', emoji:'🏆'};
@@ -296,6 +319,7 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
 
   if(state.monsterHp <= 0){
     const boss = state.isBoss;
+    const golden = state.isGolden;
     const goldGain = Math.round(goldDropFor(currentFloor, boss) * s.goldMult);
     const expGain = Math.round(expDropFor(currentFloor, boss) * s.expMult);
     state.gold += goldGain;
@@ -316,6 +340,10 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
 
     if(typeof recordBestiaryKill === 'function'){
       recordBestiaryKill(currentMonsterMeta(), goldGain);
+    }
+
+    if(golden && typeof awardGoldenKillBonus === 'function'){
+      awardGoldenKillBonus(currentFloor, s);
     }
 
     tryLevelUp();
@@ -418,7 +446,7 @@ function playerAttackTick(){
     return;
   }
 
-  let dmgToMonster = Math.round(Math.max(1, s.atk - monsterDefFor(currentFloor, state.isBoss)));
+  let dmgToMonster = Math.round(Math.max(1, s.atk - monsterDefFor(currentFloor, state.isBoss, state.isGolden)));
   const isCrit = Math.random() * 100 < s.critChance;
   if(isCrit){
     dmgToMonster = Math.round(dmgToMonster * s.critDamageMult);
@@ -442,7 +470,7 @@ function monsterAttackTick(){
   }
 
   const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
-  const monAtk = monsterAtkFor(currentFloor, state.isBoss);
+  const monAtk = monsterAtkFor(currentFloor, state.isBoss, state.isGolden);
   const dmgToPlayer = Math.round(Math.max(1, monAtk - s.def));
   state.playerHp -= dmgToPlayer;
   floatText('-'+dmgToPlayer, 'dmgToPlayer');
