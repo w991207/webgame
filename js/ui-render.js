@@ -179,6 +179,7 @@ function renderAll(){
     if(wmOverlay && wmOverlay.style.display !== 'none') renderWorldMap();
   }
   if(typeof renderTerritoryPanel === 'function') renderTerritoryPanel();
+  if(typeof renderExpeditionPanel === 'function') renderExpeditionPanel();
 }
 
 

@@ -192,6 +192,15 @@ function defaultState(){
       slotCount: 3,
       lastCollect: {gold: Date.now(), fragment: Date.now(), soul: Date.now()},
     },
+
+    // ---------- 원정대 (Expedition) ----------
+    // 보유한 동료를 파견해 일정 시간 후 물자/유산 파편/혈청을 받아오는 콘텐츠.
+    // 동료는 소모되지 않고(레벨/전투 효과/동행 보너스 그대로 유지), 원정 중에도 계속 전투에서
+    // 활약한다 — 단지 "같은 동료를 동시에 여러 원정에 중복 파견"만 막는다.
+    // 슬롯(state.expeditionMaxSlots)만큼 동시에 파견 가능하며, 완료된 원정은 직접 "수령"해야
+    // 보상이 지급되고 해당 동료가 다시 파견 가능해진다.
+    expeditions: [], // {id, petKey, missionKey, startAt, endAt, petLvl}
+    expeditionMaxSlots: 3,
   };
 }
 

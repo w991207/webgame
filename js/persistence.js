@@ -65,6 +65,7 @@ function processImportedData(jsonStr){
     state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
     state.enhanceScrolls = Object.assign({rateUp:0, noDowngrade:0, noDestroy:0}, loaded.enhanceScrolls||{});
     state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});
+    state.expeditions = Array.isArray(loaded.expeditions) ? loaded.expeditions : [];
     abortStuckActivities('가져온 세이브에서');
 
     document.getElementById('modeNormalBtn').classList.toggle('active', state.mode==='normal');
@@ -181,6 +182,7 @@ async function loadState(){
       state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
       state.enhanceScrolls = Object.assign({rateUp:0, noDowngrade:0, noDestroy:0}, loaded.enhanceScrolls||{});
       state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});
+      state.expeditions = Array.isArray(loaded.expeditions) ? loaded.expeditions : [];
       abortStuckActivities('이전에');
       return true;
     }

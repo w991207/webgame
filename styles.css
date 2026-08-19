@@ -1028,6 +1028,13 @@
     display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;
   }
   .pet-shelter-empty{font-size:12px;color:var(--text-dim);padding:16px;text-align:center;}
+
+  .pet-dispatch-row{
+    display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;
+  }
+  .pet-dispatch-row .pet-feed-btn{
+    font-size:11px;padding:5px 10px;
+  }
   .pet-shelter-card{
     background:var(--bg-deep);border:1px solid var(--border);border-radius:10px;
     padding:12px 10px;text-align:center;
@@ -1586,3 +1593,70 @@ margin-top:4px;
   .killpass-tier-state{font-size:9.5px;color:var(--text-dim);margin-top:5px;}
   .killpass-tier-card.done .killpass-tier-state{color:var(--frag);}
   .killpass-tier-card.ready .killpass-tier-state{color:var(--gold);}
+
+  /* ---------- 원정대 미니맵 애니메이션 ---------- */
+  .exp-scene{
+    position:relative;height:52px;margin-top:8px;overflow:hidden;border-radius:8px;
+    border:1px solid var(--border);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.18)),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 2px, transparent 2px 28px);
+    background-color:var(--bg-deep);
+  }
+  .exp-scene.idle{opacity:.85;}
+  .exp-pet{
+    position:absolute;bottom:5px;left:3%;
+    animation: expPetPath 6s linear infinite;
+    z-index:2;
+  }
+  .exp-scene.idle .exp-pet{animation:none;left:82%;}
+  .exp-pet-body{
+    position:relative;display:inline-block;font-size:20px;line-height:1;
+    animation: expPetHop 6s linear infinite, expPetBob .32s ease-in-out infinite;
+  }
+  .exp-scene.idle .exp-pet-body{animation: expPetBob 1.1s ease-in-out infinite;}
+  .exp-pet-body img{height:22px;width:auto;image-rendering:pixelated;vertical-align:middle;}
+  .exp-monster{
+    position:absolute;bottom:6px;left:60%;font-size:17px;line-height:1;
+    animation: expMonsterPop 6s linear infinite;
+    z-index:1;
+  }
+  .exp-scene.idle .exp-monster{display:none;}
+  .exp-hit-spark{
+    position:absolute;bottom:22px;left:60%;font-size:14px;line-height:1;
+    animation: expHitSpark 6s linear infinite;
+    z-index:3;
+  }
+  .exp-scene.idle .exp-hit-spark{display:none;}
+  @keyframes expPetPath{
+    0%   {left:3%;}
+    36%  {left:57%;}
+    44%  {left:60%;}
+    58%  {left:63%;}
+    78%  {left:84%;}
+    100% {left:95%;}
+  }
+  @keyframes expPetHop{
+    0%,32%  {transform:translateY(0) rotate(0);}
+    39%     {transform:translateY(0) rotate(-16deg);}
+    45%     {transform:translateY(0) rotate(14deg);}
+    52%,60% {transform:translateY(0) rotate(0);}
+    72%     {transform:translateY(-16px) rotate(0);}
+    82%,100%{transform:translateY(0) rotate(0);}
+  }
+  @keyframes expPetBob{
+    0%,100%{top:0;}
+    50%{top:-2px;}
+  }
+  @keyframes expMonsterPop{
+    0%,34%  {opacity:0;transform:scale(.5);}
+    40%     {opacity:1;transform:scale(1);}
+    45%     {opacity:1;transform:scale(1.2);filter:brightness(2.2);}
+    52%     {opacity:1;transform:scale(.85);filter:brightness(1);}
+    58%,100%{opacity:0;transform:scale(.35);}
+  }
+  @keyframes expHitSpark{
+    0%,38%  {opacity:0;transform:translateY(0) scale(.6);}
+    45%     {opacity:1;transform:translateY(-8px) scale(1.3);}
+    54%,100%{opacity:0;transform:translateY(-14px) scale(.5);}
+  }

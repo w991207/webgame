@@ -130,6 +130,29 @@ function petIconHtml(p, sizePx){
   return p.icon;
 }
 
+// ---------- 원정대 (Expedition) ----------
+// 보유한 동료를 파견해 일정 시간 후 물자/유산 파편/혈청(+장기 원정은 강화석 확률)을 받아오는 콘텐츠.
+// rewardBase는 "그 임무를 완료했을 때, 레벨 1 동료 기준"의 최종 보상량(시간당이 아니라 1회 보상 총량).
+// 동료 레벨이 오를수록(펫 중복 소환) 보상도 함께 늘어난다 (js/expedition.js의 성장 계수 참고).
+const EXPEDITION_MISSIONS = [
+  {
+    key:'scout', name:'단거리 정찰', icon:'🔍', durationMs: 30*60*1000,
+    desc:'짧고 빠르게 다녀오는 정찰. 보상은 적지만 회전율이 좋습니다.',
+    rewardBase:{gold:150, fragment:1.2, soul:0.3},
+  },
+  {
+    key:'expedition', name:'중형 원정', icon:'🧭', durationMs: 3*3600*1000,
+    desc:'몇 시간 동안 멀리 다녀오는 원정. 균형 잡힌 보상을 받습니다.',
+    rewardBase:{gold:900, fragment:6, soul:1.6},
+  },
+  {
+    key:'longExpedition', name:'장기 원정', icon:'🏕️', durationMs: 8*3600*1000,
+    desc:'하루의 상당 시간을 투자하는 장기 원정. 가장 큰 보상과, 낮은 확률로 강화석도 얻어옵니다.',
+    rewardBase:{gold:2600, fragment:15, soul:4.2},
+    bonusEnhanceStoneChance:0.3, bonusEnhanceStoneRange:[1,2],
+  },
+];
+
 const GOLD_UPGRADES = [
   {key:'atk', name:'무기 정비', desc:'공격력 +2', baseCost:10, mult:1.15, effect:'+2 ATK'},
   {key:'def', name:'방어구 보강', desc:'방어력 +1', baseCost:10, mult:1.15, effect:'+1 DEF'},

@@ -41,6 +41,7 @@ BUNDLE1_FILES=(
   js/relics-pets.js
   js/killpass.js
   js/pet-shelter.js
+  js/expedition.js
   js/quests.js
   js/attendance.js
   js/persistence.js
