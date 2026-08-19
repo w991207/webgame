@@ -410,7 +410,7 @@ const PETS = [
     }
   },
   {
-    key:'jollyPet', name:'졸렬다이나믹', icon:'💥', interval:10,
+    key:'jollyPet', name:'졸렬다이나믹', icon:'💥',img:'image/pets/sausage-jolly.png', interval:10,
     companionStat:'spdPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${10}초마다 졸렬 어퍼컷! 공격력의 ${Math.round((0.35+lvl*0.022)*100)}% 추가 피해 (공격속도가 높을수록 강해짐, 동행 시 공격속도 증가)`,
     trigger:(lvl,s)=>{
