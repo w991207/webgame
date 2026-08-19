@@ -1413,7 +1413,7 @@ document.querySelectorAll('.local-subtab-btn').forEach(btn=>{
 //   frag:    0       (선택, 유산 파편. 음수도 가능)
 //   soul:    0       (선택, 혈청. 음수도 가능)
 //   claimed: false   (필수, 처음엔 항상 false로 생성)
-//   note:    "사유"  (선택, 관리자 참고용, 게임에는 표시 안 됨)
+//   note:    "사유"  (선택, 지급 사유. 유저에게 선물 팝업/로그에 그대로 표시됨)
 //
 // 클라이언트는 자기 UID로 된 claimed:false 문서를 찾으면 즉시 현재 세이브에 "더해서"(음수면 차감) 반영하고
 // claimed를 true로 바꿉니다. 로컬 state에 바로 가산하기 때문에, 그 이후 자동저장이 무엇을 덮어쓰든
@@ -1432,6 +1432,7 @@ async function checkGifts(){
     if(snapshot.empty) return;
 
     let totalGold = 0, totalFrag = 0, totalSoul = 0;
+    const notes = [];
     const batch = fbDb.batch();
 
     snapshot.forEach(doc=>{
@@ -1439,6 +1440,7 @@ async function checkGifts(){
       totalGold += Number(g.gold) || 0;
       totalFrag += Number(g.frag) || 0;
       totalSoul += Number(g.soul) || 0;
+      if(g.note) notes.push(String(g.note));
       batch.update(doc.ref, { claimed: true });
     });
 
@@ -1449,10 +1451,11 @@ async function checkGifts(){
     await batch.commit(); // claimed 표시를 실제로 반영 (실패해도 로컬엔 이미 지급된 상태)
 
     const parts = [];
+    if(notes.length) parts.push(`📝 ${notes.join(' · ')}`);
     if(totalGold !== 0) parts.push(`📦 물자 ${totalGold.toLocaleString()}`);
     if(totalFrag !== 0) parts.push(`◈ 유산 파편 ${totalFrag.toLocaleString()}`);
     if(totalSoul !== 0) parts.push(`🧪 혈청 ${totalSoul.toLocaleString()}`);
-    if(parts.length === 0) return; // 전부 0이면(claimed 표시만 필요했던 경우) 알림 없이 조용히 종료
+    if(parts.length === 0) return; // 전부 0이고 note도 없으면(claimed 표시만 필요했던 경우) 알림 없이 조용히 종료
     log(`🎁 관리자로부터 선물을 받았습니다! (${parts.join(' ')})`, 'good');
     showGiftModal(parts);
 
@@ -1474,7 +1477,7 @@ async function checkGifts(){
 //   frag:  0       (선택, 유산 파편)
 //   soul:  0       (선택, 혈청)
 //   raidTicket: 1  (선택, 레이드 티켓 — 최대치 3을 넘겨도 그대로 더해짐)
-//   note:  "사유"  (선택, 관리자 참고용, 게임에는 표시 안 됨)
+//   note:  "사유"  (선택, 지급 사유. 유저에게 선물 팝업/로그에 그대로 표시됨)
 // claimed 필드는 필요 없습니다 (유저별 수령 여부는 서버가 아니라 각자의 세이브에 저장되기 때문).
 // 이미 지급한 선물 문서를 지우거나 새로 하나 더 추가하면, 지운 건 더 이상 지급되지 않고
 // 새로 추가한 건 아직 못 받은 유저에게만 나갑니다.
@@ -1489,6 +1492,7 @@ async function checkGlobalGifts(){
 
     let totalGold = 0, totalFrag = 0, totalSoul = 0, totalRaidTicket = 0;
     let newlyClaimedCount = 0;
+    const notes = [];
 
     snapshot.forEach(doc=>{
       if(state.claimedGlobalGifts[doc.id]) return; // 이미 받은 선물
@@ -1497,6 +1501,7 @@ async function checkGlobalGifts(){
       totalFrag += Number(g.frag) || 0;
       totalSoul += Number(g.soul) || 0;
       totalRaidTicket += Number(g.raidTicket) || 0;
+      if(g.note) notes.push(String(g.note));
       state.claimedGlobalGifts[doc.id] = true;
       newlyClaimedCount++;
     });
@@ -1509,6 +1514,7 @@ async function checkGlobalGifts(){
     if(totalRaidTicket !== 0) state.raidTicket = Math.max(0, (state.raidTicket||0) + totalRaidTicket); // 최대치(3) 넘어도 그대로 지급
 
     const parts = [];
+    if(notes.length) parts.push(`📝 ${notes.join(' · ')}`);
     if(totalGold !== 0) parts.push(`📦 물자 ${totalGold.toLocaleString()}`);
     if(totalFrag !== 0) parts.push(`◈ 유산 파편 ${totalFrag.toLocaleString()}`);
     if(totalSoul !== 0) parts.push(`🧪 혈청 ${totalSoul.toLocaleString()}`);

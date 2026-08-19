@@ -137,6 +137,19 @@ const PETS = [
       log(`🐙 문어 소세지의 먹물 공격! -${dmg}`, 'good');
     }
   },
+  {
+    key:'woundedPet', name:'상처입은 소세지', icon:'🩹', img:'image/pets/sausage-wounded.png', interval:11,
+    companionStat:'critDmgAdd', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
+    descFn:lvl=>`${11}초마다 잃은 체력이 많을수록 더 강한 반격 피해 (기본 공격력의 ${Math.round((0.3+lvl*0.02)*100)}%, 체력 낮을수록 최대 2배)`,
+    trigger:(lvl,s)=>{
+      const missingHpPct = 1 - Math.max(0, state.playerHp) / s.maxHp;
+      const dmg = Math.max(1, Math.round(s.atk * (0.3 + lvl*0.02) * (1 + missingHpPct)));
+      state.monsterHp -= dmg;
+      if(state.monsterHp < 1) state.monsterHp = 1;
+      floatText('🩹-'+dmg, null);
+      log(`🩹 상처입은 소세지의 오기! -${dmg}`, 'good');
+    }
+  },
 ];
 
 // 펫 아이콘 표시용 헬퍼 — 전용 이미지(p.img)가 있으면 그 이미지를, 없으면 이모지(p.icon)를 사용.
