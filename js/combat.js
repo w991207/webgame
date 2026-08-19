@@ -11,6 +11,37 @@ function normalTierMult(floor){
   return Math.pow(NORMAL_TIER_MULT, tier);
 }
 
+// ---------- 1000층마다 순환하는 회랑 테마 ----------
+// 0단계(1~999층): 기본 석조 회랑 / 1단계(1000~1999층): 독/이끼 / 2단계(2000~2999층): 얼음/룬
+// 3단계(3000~3999층): 화염/용암, 이후 4000층부터는 다시 0단계로 돌아가 4개 테마가 계속 순환한다.
+const CORRIDOR_TIERS = [
+  {name:'', className:''},
+  {name:'☣️ 독의 회랑', className:'arch-tier-1'},
+  {name:'❄️ 서리의 회랑', className:'arch-tier-2'},
+  {name:'🔥 화염의 회랑', className:'arch-tier-3'},
+];
+function corridorTierFor(floor){
+  return Math.floor(floor / NORMAL_TIER_SIZE) % CORRIDOR_TIERS.length;
+}
+function applyCorridorTheme(){
+  const box = document.getElementById('arenaBox');
+  const badge = document.getElementById('floorTierBadge');
+  if(!box) return;
+  const tierIdx = (state.mode === 'normal') ? corridorTierFor(state.floor) : 0;
+  CORRIDOR_TIERS.forEach(t=>{ if(t.className) box.classList.remove(t.className); });
+  const tier = CORRIDOR_TIERS[tierIdx];
+  if(tier.className) box.classList.add(tier.className);
+  if(badge){
+    if(tierIdx === 0){
+      badge.style.display = 'none';
+    } else {
+      badge.style.display = 'inline-block';
+      badge.className = 'tier-badge tier-' + tierIdx;
+      badge.textContent = tier.name;
+    }
+  }
+}
+
 // ---------- Monster generation ----------
 function monsterHpFor(floor, boss){
   if(state.mode === 'tower'){

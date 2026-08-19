@@ -1,5 +1,6 @@
 // ---------- Rendering ----------
 function renderMonster(){
+  if(typeof applyCorridorTheme === 'function') applyCorridorTheme();
   const meta = currentMonsterMeta();
   const emojiEl = document.getElementById('monsterEmoji');
   if(meta.img){
