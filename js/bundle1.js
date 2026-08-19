@@ -3722,7 +3722,7 @@ setInterval(()=>{
 const GOLDEN_CHECK_INTERVAL_MS = 1000;      // 스폰 여부를 확인하는 주기
 const GOLDEN_SPAWN_CHANCE = 0.0025;         // 확인할 때마다 스폰될 확률 (평균 약 6~7분에 한 번꼴)
 const GOLDEN_MIN_GAP_MS = 90 * 1000;        // 스폰 사이 최소 간격 (연달아 뜨는 것 방지)
-const GOLDEN_LIFETIME_MS = 6000;            // 못 누르면 사라지기까지 시간
+const GOLDEN_LIFETIME_MS = 180000;          // 못 누르면 사라지기까지 시간 (화면을 계속 보고 있지 않는 유저 감안해 3분)
 const GOLDEN_GOLD_MULT_MIN = 20;            // 평소 처치 보상 대비 배율 (하한)
 const GOLDEN_GOLD_MULT_MAX = 45;            // 평소 처치 보상 대비 배율 (상한)
 
