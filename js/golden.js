@@ -64,6 +64,8 @@ function clickGoldenMonster(){
   const bonusGold = Math.max(1, Math.round(goldDropFor(currentFloor, false) * s.goldMult * mult));
   const bonusFrag = 2 + Math.floor(Math.random() * 4); // 2~5개
 
+  recordBestiaryKill({name:'황금 몬스터'}, goldDropFor(currentFloor, false) * s.goldMult);
+
   state.gold += bonusGold;
   state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + bonusGold;
   state.fragments = (state.fragments||0) + bonusFrag;

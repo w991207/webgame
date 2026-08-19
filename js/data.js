@@ -27,6 +27,10 @@ const TOWER_MONSTERS = [
   {name:'근원 변이체', emoji:'🐉'}
 ];
 
+const SPECIAL_MONSTERS = [
+  {name:'황금 몬스터', emoji:'✨'},
+];
+
 const RELICS = [
   {key:'hpRelic', name:'재생의 유산', icon:'💚', perLevel:2, descFn:v=>`변이체 처치 시 최대 체력의 ${v}% 회복`},
   {key:'atkRelic', name:'강타의 유산', icon:'🗡️', perLevel:3, descFn:v=>`공격력 +${v}%`},

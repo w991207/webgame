@@ -5,6 +5,7 @@ const BESTIARY_GROUPS = [
   {label:'폐허 - 일반 몬스터', list: MONSTERS},
   {label:'폐허 - 보스', list: BOSSES},
   {label:'무한의 탑', list: TOWER_MONSTERS},
+  {label:'특수', list: SPECIAL_MONSTERS},
 ];
 
 function bestiaryTotalCount(){
