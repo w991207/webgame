@@ -125,6 +125,18 @@ const PETS = [
       log(`🦎 독니 도마뱀의 맹독! -${dmg}`, 'good');
     }
   },
+  {
+    key:'octopusPet', name:'문어 소세지', icon:'🐙', img:'image/pets/sausage-octopus.png', interval:9,
+    companionStat:'accuracyAdd', companionValueFn:lvl=>Math.round(Math.min(40, 5+lvl*0.35)*10)/10,
+    descFn:lvl=>`${9}초마다 먹물을 뿌려 변이체 현재 체력의 ${Math.round((0.03+lvl*0.0016)*100)}% 피해 (동행 시 명중 증가)`,
+    trigger:(lvl,s)=>{
+      const dmg = Math.max(1, Math.round(state.monsterHp * (0.03+lvl*0.0016)));
+      state.monsterHp -= dmg;
+      if(state.monsterHp < 1) state.monsterHp = 1;
+      floatText('🐙-'+dmg, null);
+      log(`🐙 문어 소세지의 먹물 공격! -${dmg}`, 'good');
+    }
+  },
 ];
 
 // 펫 아이콘 표시용 헬퍼 — 전용 이미지(p.img)가 있으면 그 이미지를, 없으면 이모지(p.icon)를 사용.

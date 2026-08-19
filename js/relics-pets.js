@@ -62,7 +62,7 @@ document.getElementById('summonPetBtn').addEventListener('click', summonPet);
 // 기존 주기 발동 효과(petTick)는 동행 여부와 무관하게 보유한 모든 동료가 그대로 계속 작동하며,
 // 동행 보너스는 그 위에 추가로 붙는 별도 효과다. 레벨이 높을수록 동행 보너스도 커진다.
 function companionBonus(){
-  const b = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0};
+  const b = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
   if(!state.companionPet) return b;
   const p = PETS.find(x => x.key === state.companionPet);
   const lvl = state.pets && state.pets[state.companionPet];
@@ -74,8 +74,8 @@ function companionBonus(){
 function companionEffectText(p){
   const lvl = (state.pets && state.pets[p.key]) || 1;
   const value = p.companionValueFn(lvl);
-  const unitMap = {atkPct:'%', defPct:'%', hpPct:'%', goldPct:'%', expPct:'%', critAdd:'%p', critDmgAdd:'%p', dropAdd:'%p', spdPct:'%'};
-  const labelMap = {atkPct:'공격력', defPct:'방어력', hpPct:'최대 체력', goldPct:'물자 획득', expPct:'경험치 획득', critAdd:'치명타 확률', critDmgAdd:'치명타 피해', dropAdd:'파편 드랍 확률', spdPct:'공격 속도'};
+  const unitMap = {atkPct:'%', defPct:'%', hpPct:'%', goldPct:'%', expPct:'%', critAdd:'%p', critDmgAdd:'%p', dropAdd:'%p', spdPct:'%', accuracyAdd:''};
+  const labelMap = {atkPct:'공격력', defPct:'방어력', hpPct:'최대 체력', goldPct:'물자 획득', expPct:'경험치 획득', critAdd:'치명타 확률', critDmgAdd:'치명타 피해', dropAdd:'파편 드랍 확률', spdPct:'공격 속도', accuracyAdd:'명중률'};
   return `동행 시 ${labelMap[p.companionStat]} +${value}${unitMap[p.companionStat]}`;
 }
 
