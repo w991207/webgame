@@ -437,6 +437,29 @@ const TITLES = [
   {key:'title_killPassLegend', name:'살육의 정점', icon:'🏅', condText:'처치 패스 50단계 완주', check:s=>(s.killPassClaimed||0)>=50, stat:'critDmgAdd', value:15},
 ];
 
+// ---------- Costumes (코스튬) ----------
+// 상점(잡화상점 → 코스튬)에서 물자(gold)로 구매해 영구 보유하는 외형 아이템.
+// 칭호와 마찬가지로 "보유한 것 중 하나만 장착" 구조이며, 장착한 코스튬의 스탯 보너스만 적용된다.
+// img가 없거나 로드에 실패하면 전투화면에서 emoji로 자동 대체된다(index.html의 onerror 참고).
+// stat 하나만 갖는 칭호와 달리 코스튬은 여러 스탯을 소량씩 동시에 준다(stats 객체).
+const COSTUMES = [
+  {
+    key:'radiantKnight', name:'섬광의 기사 갑주', icon:'⚔️', img:'image/costumes/radiantKnight.png',
+    cost: 5000000000, desc:'빛나는 명검을 다루는 정예 기사의 갑주. 한 걸음마다 섬광이 인다.',
+    stats:{atkPct:5, defPct:5, hpPct:5},
+  },
+  {
+    key:'goldenMonarch', name:'황금 군주의 갑주', icon:'👑', img:'image/costumes/goldenMonarch.png',
+    cost: 10000000000, desc:'수많은 전장을 정복한 군주의 황금 갑주. 보석마다 정복의 역사가 새겨져 있다.',
+    stats:{atkPct:7, defPct:7, hpPct:7},
+  },
+  {
+    key:'goldenMyth', name:'황금 신화의 갑주', icon:'✨', img:'image/costumes/goldenMyth.png',
+    cost: 100000000000, desc:'전신이 순금으로 화한 신화 속 존재의 갑주. 존재 자체가 압도적인 부와 힘의 상징.',
+    stats:{atkPct:12, defPct:12, hpPct:12},
+  },
+];
+
 const SOUL_UPGRADES = [
   {key:'atkMult', name:'영혼의 검', desc:'공격력 영구 +15%', baseCost:3, mult:1.55},
   {key:'goldMult', name:'탐욕의 인장', desc:'물자 획득 영구 +20%', baseCost:3, mult:1.55, capStat:'goldPct'},
@@ -1183,6 +1206,121 @@ function renderTitles(){
   });
 }
 
+// ===== js/costumes.js =====
+// ---------- Costumes (코스튬) ----------
+// 잡화상점에서 물자로 구매해 영구 보유하는 외형 아이템. 보유한 것 중 하나만 장착 가능하며
+// (칭호와 동일한 "택 1" 구조), 장착한 코스튬의 스탯 보너스만 적용되고 전투화면 플레이어
+// 스프라이트도 해당 코스튬의 이미지로 바뀐다. 미장착(equippedCostume===null) 시 기본
+// knight.png를 사용한다.
+
+function costumeOwned(key){
+  return !!(state.ownedCostumes && state.ownedCostumes[key]);
+}
+
+function costumeBonus(){
+  const b = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
+  if(!state.equippedCostume) return b;
+  const c = COSTUMES.find(x => x.key === state.equippedCostume);
+  if(!c || !costumeOwned(c.key)) return b; // 비정상 상태(보유하지 않은 코스튬이 장착돼있음) 방지
+  Object.keys(c.stats || {}).forEach(k => { b[k] = (b[k]||0) + c.stats[k]; });
+  return b;
+}
+
+function costumeEffectText(c){
+  const unitMap = {atkPct:'%', defPct:'%', hpPct:'%', goldPct:'%', expPct:'%', critAdd:'%p', critDmgAdd:'%p', dropAdd:'%p', spdPct:'%', accuracyAdd:''};
+  const labelMap = {atkPct:'공격력', defPct:'방어력', hpPct:'최대 체력', goldPct:'물자 획득', expPct:'경험치 획득', critAdd:'치명타 확률', critDmgAdd:'치명타 피해', dropAdd:'파편 드랍 확률', spdPct:'공격 속도', accuracyAdd:'명중률'};
+  return Object.keys(c.stats || {}).map(k => `${labelMap[k]||k} +${c.stats[k]}${unitMap[k]||''}`).join(', ');
+}
+
+function buyCostume(key){
+  const c = COSTUMES.find(x => x.key === key);
+  if(!c) return;
+  if(costumeOwned(key)){ flashMessageSafe('이미 보유한 코스튬입니다.'); return; }
+  if(state.gold < c.cost){ flashMessageSafe('물자가 부족합니다.'); return; }
+
+  state.gold -= c.cost;
+  if(!state.ownedCostumes) state.ownedCostumes = {};
+  state.ownedCostumes[key] = true;
+  log(`👕 코스튬 구매: ${c.icon} ${c.name}`, 'good');
+  renderCostumeShop();
+  renderCostumeGrid();
+  renderAll();
+}
+
+function equipCostume(key){
+  if(key !== null && !costumeOwned(key)) return;
+  state.equippedCostume = (state.equippedCostume === key) ? null : key;
+  updatePlayerCostumeSprite();
+  renderCostumeGrid();
+  renderAll();
+}
+
+// 전투화면의 플레이어 스프라이트 <img> src를 현재 장착 코스튬 이미지로 교체.
+// 이미지가 없거나 로드 실패 시 index.html의 onerror가 이모지로 자동 대체한다.
+function updatePlayerCostumeSprite(){
+  const img = document.querySelector('#playerSprite .player-sprite-img');
+  const emojiEl = document.querySelector('#playerSprite .player-sprite-emoji');
+  if(!img) return;
+
+  const c = state.equippedCostume ? COSTUMES.find(x => x.key === state.equippedCostume) : null;
+  const src = (c && c.img) ? c.img : 'image/player/knight.png';
+  const emoji = (c && c.icon) ? c.icon : '🗡️';
+
+  img.style.display = '';
+  if(emojiEl){ emojiEl.style.display = 'none'; emojiEl.textContent = emoji; }
+  img.src = src;
+}
+
+// ---------- 상점 렌더 (잡화상점 → 코스튬) ----------
+function renderCostumeShop(){
+  const el = document.getElementById('costumeShop');
+  if(!el) return;
+
+  el.innerHTML = COSTUMES.map(c => {
+    const owned = costumeOwned(c.key);
+    const afford = state.gold >= c.cost;
+    return `
+      <div class="shop-item">
+        <div class="info">
+          <div class="name">${c.icon} ${c.name}${owned ? ' <span class="potion-active-tag">보유중</span>' : ''}</div>
+          <div class="desc">${c.desc} · ${costumeEffectText(c)}</div>
+        </div>
+        <button class="buy" data-key="${c.key}" ${(owned || !afford) ? 'disabled' : ''}>${owned ? '보유중' : c.cost.toLocaleString() + ' 📦 구매'}</button>
+      </div>`;
+  }).join('');
+
+  el.querySelectorAll('button[data-key]').forEach(btn => {
+    btn.addEventListener('click', () => buyCostume(btn.dataset.key));
+  });
+}
+
+// ---------- 성장 탭 코스튬 그리드 (칭호 그리드와 동일한 카드 UI 재사용) ----------
+function renderCostumeGrid(){
+  const grid = document.getElementById('costumeGrid');
+  if(!grid) return;
+  const ownedCount = COSTUMES.filter(c => costumeOwned(c.key)).length;
+  const countEl = document.getElementById('costumeOwnedCount');
+  if(countEl) countEl.textContent = `${ownedCount} / ${COSTUMES.length}`;
+
+  grid.innerHTML = '';
+  COSTUMES.forEach(c => {
+    const owned = costumeOwned(c.key);
+    const equipped = state.equippedCostume === c.key;
+    const card = document.createElement('div');
+    card.className = 'relic-card title-card' + (owned ? ' owned' : '') + (equipped ? ' equipped' : '');
+    card.innerHTML = `
+      <div class="rname"><span>${c.icon} ${c.name}</span>${equipped ? '<span class="title-equipped-tag">장착중</span>' : ''}</div>
+      <div class="rdesc">${costumeEffectText(c)}</div>
+      <div class="title-cond">${owned ? '✅ 보유중' : `🔒 ${c.cost.toLocaleString()} 📦 (잡화상점에서 구매)`}</div>
+      ${owned ? `<button class="title-equip-btn ${equipped ? 'unequip' : ''}" data-key="${c.key}">${equipped ? '해제' : '장착'}</button>` : ''}
+    `;
+    grid.appendChild(card);
+  });
+  grid.querySelectorAll('.title-equip-btn[data-key]').forEach(btn => {
+    btn.addEventListener('click', () => equipCostume(btn.dataset.key));
+  });
+}
+
 // ===== js/state.js =====
 // 세이브 데이터 버전. 이 값을 올리면 그보다 낮은 버전의 세이브(자동 로드 + 가져오기 모두)가
 // 전부 무효화되고 새 게임으로 시작됩니다. 밸런스 개편 등으로 전체 초기화가 필요할 때 사용.
@@ -1339,6 +1477,10 @@ function defaultState(){
     // ---------- Titles (칭호) ----------
     equippedTitle: null,
 
+    // ---------- Costumes (코스튬) ----------
+    ownedCostumes: {}, // 구매한 코스튬 key를 영구 기록 (환생해도 유지)
+    equippedCostume: null, // null이면 기본 갑주(knight.png) 착용 상태
+
         // ---------- Skills (직업 전용 스킬용 상태) ----------
     ironWillCharges: 0, // '불굴의 의지'(생존 전문가 전용 스킬)로 쌓아둔, 치명적인 일격 방지 충전 수
     // 불굴의 의지 충전이 유지되는 시간 제한 (decay) - 충전이 계속 쌓여서 죽지 못하는 문제 방지
@@ -1457,27 +1599,28 @@ function stats(){
   const eq = equipTotals();
   const mut = (typeof mutationBonus === 'function') ? mutationBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0};
   const tb = (typeof titleBonus === 'function') ? titleBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
+  const cob = (typeof costumeBonus === 'function') ? costumeBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
   const cb = (typeof companionBonus === 'function') ? companionBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0};
   const jb = (typeof jobBonus === 'function') ? jobBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
   const bf = (typeof buffBonus === 'function') ? buffBonus() : {atkPct:0, defPct:0, hpPct:0, critDmgAdd:0, accuracyAdd:0};
-  const atk = Math.round((b.atk + gu.atk*2) * (1 + su.atkMult*0.15) * (1 + re.atkRelic*0.03) * (1 + rg.raidWeapon*0.06) * (1 + eq.atkPct/100) * (1 + mut.atkPct/100) * (1 + tb.atkPct/100) * (1 + cb.atkPct/100) * (1 + jb.atkPct/100) * (1 + bf.atkPct/100));
-  const def = Math.round((b.def + gu.def*1) * (1 + su.defMult*0.15) * (1 + re.defRelic*0.03) * (1 + rg.raidArmor*0.06) * (1 + eq.defPct/100) * (1 + mut.defPct/100) * (1 + tb.defPct/100) * (1 + cb.defPct/100) * (1 + jb.defPct/100) * (1 + bf.defPct/100));
-  const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05) * (1 + eq.hpPct/100) * (1 + mut.hpPct/100) * (1 + tb.hpPct/100) * (1 + cb.hpPct/100) * (1 + jb.hpPct/100) * (1 + bf.hpPct/100));
+  const atk = Math.round((b.atk + gu.atk*2) * (1 + su.atkMult*0.15) * (1 + re.atkRelic*0.03) * (1 + rg.raidWeapon*0.06) * (1 + eq.atkPct/100) * (1 + mut.atkPct/100) * (1 + tb.atkPct/100) * (1 + cob.atkPct/100) * (1 + cb.atkPct/100) * (1 + jb.atkPct/100) * (1 + bf.atkPct/100));
+  const def = Math.round((b.def + gu.def*1) * (1 + su.defMult*0.15) * (1 + re.defRelic*0.03) * (1 + rg.raidArmor*0.06) * (1 + eq.defPct/100) * (1 + mut.defPct/100) * (1 + tb.defPct/100) * (1 + cob.defPct/100) * (1 + cb.defPct/100) * (1 + jb.defPct/100) * (1 + bf.defPct/100));
+  const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05) * (1 + eq.hpPct/100) * (1 + mut.hpPct/100) * (1 + tb.hpPct/100) * (1 + cob.hpPct/100) * (1 + cb.hpPct/100) * (1 + jb.hpPct/100) * (1 + bf.hpPct/100));
   // 물자/경험치 획득 배율은 5개 소스가 전부 곱연산으로 쌓이는 구조라, 상한이 없으면
   // "물자로 물자강화 구매 → 물자 획득 증가 → 더 많은 물자강화 구매"가 서로를 부풀리는
   // 피드백 루프가 걸려 눈덩이처럼 폭증할 수 있다. 최종값에 상한선을 걸어 원천 차단한다.
-  const goldMult = Math.min(GOLD_MULT_CAP, (1 + gu.goldGain*0.10) * (1 + su.goldMult*0.20) * (1 + re.goldRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.goldPct/100) * (1 + mut.goldPct/100) * (1 + tb.goldPct/100) * (1 + cb.goldPct/100) * (1 + jb.goldPct/100));
-  const expMult = Math.min(EXP_MULT_CAP, (1 + (gu.expGain||0)*0.10) * (1 + (su.expMult||0)*0.20) * (1 + re.expRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.expPct/100) * (1 + mut.expPct/100) * (1 + tb.expPct/100) * (1 + cb.expPct/100) * (1 + jb.expPct/100));
-  const spdMult = (1 + Math.min(gu.atkSpeed,50)*0.05) * (1 + re.spdRelic*0.03) * (1 + eq.spdPct/100) * (1 + mut.spdPct/100) * (1 + tb.spdPct/100) * (1 + cb.spdPct/100);
+  const goldMult = Math.min(GOLD_MULT_CAP, (1 + gu.goldGain*0.10) * (1 + su.goldMult*0.20) * (1 + re.goldRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.goldPct/100) * (1 + mut.goldPct/100) * (1 + tb.goldPct/100) * (1 + cob.goldPct/100) * (1 + cb.goldPct/100) * (1 + jb.goldPct/100));
+  const expMult = Math.min(EXP_MULT_CAP, (1 + (gu.expGain||0)*0.10) * (1 + (su.expMult||0)*0.20) * (1 + re.expRelic*0.04) * (1 + rg.raidRing*0.04) * (1 + eq.expPct/100) * (1 + mut.expPct/100) * (1 + tb.expPct/100) * (1 + cob.expPct/100) * (1 + cb.expPct/100) * (1 + jb.expPct/100));
+  const spdMult = (1 + Math.min(gu.atkSpeed,50)*0.05) * (1 + re.spdRelic*0.03) * (1 + eq.spdPct/100) * (1 + mut.spdPct/100) * (1 + tb.spdPct/100) * (1 + cob.spdPct/100) * (1 + cb.spdPct/100);
   const tickMs = Math.max(TICK_MS_MIN, Math.round(1000 / spdMult));
-  const dropChance = Math.min(DROP_CHANCE_CAP, 0.15 + re.dropRelic*0.015 + mut.dropAdd/100 + tb.dropAdd/100 + (su.dropAdd||0)*0.01 + cb.dropAdd/100 + jb.dropAdd/100);
-  const critChance = Math.min(100, (gu.critChance||0) * 1 + eq.critAdd + mut.critAdd + tb.critAdd + cb.critAdd + jb.critAdd); // 레벨당 1%, 최대 100%
-  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100 + (re.critDmgRelic||0)*0.02 + mut.critDmgAdd/100 + tb.critDmgAdd/100 + (su.critDmgAdd||0)*0.05 + cb.critDmgAdd/100 + jb.critDmgAdd/100 + bf.critDmgAdd/100; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배 (+유산+돌연변이+칭호+혈청+동행+전직+물약)
+  const dropChance = Math.min(DROP_CHANCE_CAP, 0.15 + re.dropRelic*0.015 + mut.dropAdd/100 + tb.dropAdd/100 + cob.dropAdd/100 + (su.dropAdd||0)*0.01 + cb.dropAdd/100 + jb.dropAdd/100);
+  const critChance = Math.min(100, (gu.critChance||0) * 1 + eq.critAdd + mut.critAdd + tb.critAdd + cob.critAdd + cb.critAdd + jb.critAdd); // 레벨당 1%, 최대 100%
+  const critDamageMult = 1.5 + (gu.critDamage||0) * 0.04 + eq.critDmgAdd/100 + (re.critDmgRelic||0)*0.02 + mut.critDmgAdd/100 + tb.critDmgAdd/100 + cob.critDmgAdd/100 + (su.critDmgAdd||0)*0.05 + cb.critDmgAdd/100 + jb.critDmgAdd/100 + bf.critDmgAdd/100; // 기본 1.5배 + 레벨당 4%, 최대 100레벨=5.5배 (+유산+돌연변이+칭호+코스튬+혈청+동행+전직+물약)
   // 명중(accuracy): '조준 훈련'(골드강화) + '심안의 룬'(혈청강화) 1레벨당 각각 +3 / +5 + 전직(저격수) 보너스
   // + 칭호(PvP 승수 마일스톤 등) 보너스.
   // 다른 강화들과 달리 상한 레벨이 없다 — 몬스터/보스의 회피(combat.js의 monsterEvasionFor)를
   // 상쇄하는 용도로만 쓰인다.
-  const accuracy = (gu.accuracy||0) * ACCURACY_PER_LEVEL + (su.accuracyAdd||0) * SOUL_ACCURACY_PER_LEVEL + jb.accuracyAdd + tb.accuracyAdd + bf.accuracyAdd;
+  const accuracy = (gu.accuracy||0) * ACCURACY_PER_LEVEL + (su.accuracyAdd||0) * SOUL_ACCURACY_PER_LEVEL + jb.accuracyAdd + tb.accuracyAdd + cob.accuracyAdd + bf.accuracyAdd;
   return {atk, def, maxHp, goldMult, expMult, tickMs, dropChance, critChance, critDamageMult, accuracy};
 }
 
@@ -4792,6 +4935,8 @@ function renderAll(){
   if(typeof renderEnhanceScrollShop === 'function') renderEnhanceScrollShop();
   if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
+  if(typeof renderCostumeGrid === 'function') renderCostumeGrid();
+  if(typeof renderCostumeShop === 'function') renderCostumeShop();
   if(typeof renderKillPassPanel === 'function') renderKillPassPanel();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
   if(typeof renderWorldMap === 'function'){
@@ -6118,6 +6263,7 @@ function processImportedData(jsonStr){
     state.htRewardsClaimed = loaded.htRewardsClaimed || {};
     state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
     state.unlockedTitles = loaded.unlockedTitles || {};
+    state.ownedCostumes = loaded.ownedCostumes || {};
     state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
     state.enhanceScrolls = Object.assign({rateUp:0, noDowngrade:0, noDestroy:0}, loaded.enhanceScrolls||{});
     state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});
@@ -6130,6 +6276,7 @@ function processImportedData(jsonStr){
     const s = stats();
     if(state.playerHp <= 0) state.playerHp = s.maxHp;
     spawnMonster();
+    if(typeof updatePlayerCostumeSprite === 'function') updatePlayerCostumeSprite();
     renderAll();
     saveState(false);
     log('세이브 데이터를 성공적으로 가져왔습니다.', 'good');
@@ -6232,6 +6379,7 @@ async function loadState(){
       state.htRewardsClaimed = loaded.htRewardsClaimed || {};
       state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
       state.unlockedTitles = loaded.unlockedTitles || {};
+      state.ownedCostumes = loaded.ownedCostumes || {};
       state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
       state.enhanceScrolls = Object.assign({rateUp:0, noDowngrade:0, noDestroy:0}, loaded.enhanceScrolls||{});
       state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});

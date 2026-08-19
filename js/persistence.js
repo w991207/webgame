@@ -61,6 +61,7 @@ function processImportedData(jsonStr){
     state.htRewardsClaimed = loaded.htRewardsClaimed || {};
     state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
     state.unlockedTitles = loaded.unlockedTitles || {};
+    state.ownedCostumes = loaded.ownedCostumes || {};
     state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
     state.enhanceScrolls = Object.assign({rateUp:0, noDowngrade:0, noDestroy:0}, loaded.enhanceScrolls||{});
     state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});
@@ -73,6 +74,7 @@ function processImportedData(jsonStr){
     const s = stats();
     if(state.playerHp <= 0) state.playerHp = s.maxHp;
     spawnMonster();
+    if(typeof updatePlayerCostumeSprite === 'function') updatePlayerCostumeSprite();
     renderAll();
     saveState(false);
     log('세이브 데이터를 성공적으로 가져왔습니다.', 'good');
@@ -175,6 +177,7 @@ async function loadState(){
       state.htRewardsClaimed = loaded.htRewardsClaimed || {};
       state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
       state.unlockedTitles = loaded.unlockedTitles || {};
+      state.ownedCostumes = loaded.ownedCostumes || {};
       state.rebirthHistory = Array.isArray(loaded.rebirthHistory) ? loaded.rebirthHistory : [];
       state.enhanceScrolls = Object.assign({rateUp:0, noDowngrade:0, noDestroy:0}, loaded.enhanceScrolls||{});
       state.attendance = Object.assign({day:0, lastClaim:0, total:0}, loaded.attendance||{});

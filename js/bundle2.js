@@ -1606,6 +1606,7 @@ async function init(){
   if(state.playerHp <= 0) state.playerHp = s.maxHp;
 
   const offlineResult = loaded ? computeOfflineProgress() : null;
+  if(typeof updatePlayerCostumeSprite === 'function') updatePlayerCostumeSprite();
   renderAll();
   if(offlineResult){
     showOfflineModal(offlineResult);

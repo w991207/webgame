@@ -169,6 +169,8 @@ function renderAll(){
   if(typeof renderEnhanceScrollShop === 'function') renderEnhanceScrollShop();
   if(typeof renderSkillTray === 'function') renderSkillTray();
   if(typeof renderTitles === 'function') renderTitles();
+  if(typeof renderCostumeGrid === 'function') renderCostumeGrid();
+  if(typeof renderCostumeShop === 'function') renderCostumeShop();
   if(typeof renderKillPassPanel === 'function') renderKillPassPanel();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
   if(typeof renderWorldMap === 'function'){

@@ -20,6 +20,7 @@ BUNDLE1_FILES=(
   js/mutation.js
   js/job.js
   js/titles.js
+  js/costumes.js
   js/state.js
   js/combat.js
   js/skills.js

@@ -215,6 +215,29 @@ const TITLES = [
   {key:'title_killPassLegend', name:'살육의 정점', icon:'🏅', condText:'처치 패스 50단계 완주', check:s=>(s.killPassClaimed||0)>=50, stat:'critDmgAdd', value:15},
 ];
 
+// ---------- Costumes (코스튬) ----------
+// 상점(잡화상점 → 코스튬)에서 물자(gold)로 구매해 영구 보유하는 외형 아이템.
+// 칭호와 마찬가지로 "보유한 것 중 하나만 장착" 구조이며, 장착한 코스튬의 스탯 보너스만 적용된다.
+// img가 없거나 로드에 실패하면 전투화면에서 emoji로 자동 대체된다(index.html의 onerror 참고).
+// stat 하나만 갖는 칭호와 달리 코스튬은 여러 스탯을 소량씩 동시에 준다(stats 객체).
+const COSTUMES = [
+  {
+    key:'radiantKnight', name:'섬광의 기사 갑주', icon:'⚔️', img:'image/costumes/radiantKnight.png',
+    cost: 5000000000, desc:'빛나는 명검을 다루는 정예 기사의 갑주. 한 걸음마다 섬광이 인다.',
+    stats:{atkPct:5, defPct:5, hpPct:5},
+  },
+  {
+    key:'goldenMonarch', name:'황금 군주의 갑주', icon:'👑', img:'image/costumes/goldenMonarch.png',
+    cost: 10000000000, desc:'수많은 전장을 정복한 군주의 황금 갑주. 보석마다 정복의 역사가 새겨져 있다.',
+    stats:{atkPct:7, defPct:7, hpPct:7},
+  },
+  {
+    key:'goldenMyth', name:'황금 신화의 갑주', icon:'✨', img:'image/costumes/goldenMyth.png',
+    cost: 100000000000, desc:'전신이 순금으로 화한 신화 속 존재의 갑주. 존재 자체가 압도적인 부와 힘의 상징.',
+    stats:{atkPct:12, defPct:12, hpPct:12},
+  },
+];
+
 const SOUL_UPGRADES = [
   {key:'atkMult', name:'영혼의 검', desc:'공격력 영구 +15%', baseCost:3, mult:1.55},
   {key:'goldMult', name:'탐욕의 인장', desc:'물자 획득 영구 +20%', baseCost:3, mult:1.55, capStat:'goldPct'},
