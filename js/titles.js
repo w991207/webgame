@@ -1,5 +1,6 @@
 // ---------- Titles (칭호) ----------
-// 조건을 달성하면 영구 해금되며, 해금된 칭호 중 하나만 장착 가능. 장착한 칭호의 효과만 적용됨.
+// 조건을 달성하면 영구 해금되며, 해금한 칭호는 전부 동시에 효과가 적용됨(보유효과).
+// state.equippedTitle은 닉네임 옆에 표시할 배지 하나를 고르는 순수 꾸미기 기능.
 
 // 닉네임 앞에 붙는 칭호 표시(아이콘 + 이름을 항상 텍스트로). 광장 접속자 목록/채팅/랭킹에서 공용으로 사용.
 // titleKey: presence/chat/rankings 문서에 저장된 state.equippedTitle 값 (없으면 null/undefined).
@@ -30,12 +31,14 @@ function checkTitleUnlocks(){
   });
 }
 
+// 해금한 칭호는 장착 여부와 무관하게 전부 효과가 동시에 적용된다 (보유효과).
+// state.equippedTitle은 이제 순수히 "닉네임 옆에 어떤 배지를 보여줄지"만 결정하는 표시용 값.
 function titleBonus(){
   const b = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
-  if(!state.equippedTitle) return b;
-  const t = TITLES.find(x=>x.key===state.equippedTitle);
-  if(!t || !titleUnlocked(t)) return b; // 조건을 더 이상 만족하지 못하면(비정상 상태) 효과 미적용
-  b[t.stat] += t.value;
+  TITLES.forEach(t=>{
+    if(!titleUnlocked(t)) return;
+    b[t.stat] += t.value;
+  });
   return b;
 }
 
@@ -71,10 +74,10 @@ function renderTitles(){
     const card = document.createElement('div');
     card.className = 'relic-card title-card' + (unlocked?' owned':'') + (equipped?' equipped':'');
     card.innerHTML = `
-      <div class="rname"><span>${t.icon} ${t.name}</span>${equipped?'<span class="title-equipped-tag">장착중</span>':''}</div>
-      <div class="rdesc">${titleEffectText(t)}</div>
-      <div class="title-cond">${unlocked ? '✅ 달성 완료' : `🔒 ${t.condText}`}</div>
-      ${unlocked ? `<button class="title-equip-btn ${equipped?'unequip':''}" data-key="${t.key}">${equipped?'해제':'장착'}</button>` : ''}
+      <div class="rname"><span>${t.icon} ${t.name}</span>${equipped?'<span class="title-equipped-tag">표시중</span>':''}</div>
+      <div class="rdesc">${titleEffectText(t)}${unlocked?' (적용됨)':''}</div>
+      <div class="title-cond">${unlocked ? '✅ 보유 중 — 효과 상시 적용' : `🔒 ${t.condText}`}</div>
+      ${unlocked ? `<button class="title-equip-btn ${equipped?'unequip':''}" data-key="${t.key}">${equipped?'표시 해제':'닉네임에 표시'}</button>` : ''}
     `;
     grid.appendChild(card);
   });

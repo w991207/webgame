@@ -459,8 +459,9 @@ const ACHIEVEMENTS = [
 ];
 
 // ---------- Titles (칭호) ----------
-// 특정 조건을 달성하면 영구적으로 해금되는 칭호. 해금된 칭호 중 하나만 장착할 수 있으며,
-// 장착한 칭호의 효과만 적용된다(보유만 해도 적용되는 유산/동료와 달리 "택 1" 구조).
+// 특정 조건을 달성하면 영구적으로 해금되는 칭호. 해금된 칭호는 유산/동료처럼 "보유만 해도"
+// 전부 동시에 효과가 적용된다. 장착(equippedTitle)은 닉네임 옆에 보여줄 배지 하나를 고르는
+// 순수 표시용 기능일 뿐, 더 이상 효과 적용 여부와는 무관하다.
 // check()는 ACHIEVEMENTS와 동일한 패턴으로 state를 받아 boolean을 반환.
 const TITLES = [
   {key:'title_survivor10', name:'새내기 생존자', icon:'🔰', condText:'최고 10층 도달', check:s=>s.highestFloor>=10, stat:'atkPct', value:2},
@@ -1175,7 +1176,8 @@ function renderJobMasteryPanel(){
 
 // ===== js/titles.js =====
 // ---------- Titles (칭호) ----------
-// 조건을 달성하면 영구 해금되며, 해금된 칭호 중 하나만 장착 가능. 장착한 칭호의 효과만 적용됨.
+// 조건을 달성하면 영구 해금되며, 해금한 칭호는 전부 동시에 효과가 적용됨(보유효과).
+// state.equippedTitle은 닉네임 옆에 표시할 배지 하나를 고르는 순수 꾸미기 기능.
 
 // 닉네임 앞에 붙는 칭호 표시(아이콘 + 이름을 항상 텍스트로). 광장 접속자 목록/채팅/랭킹에서 공용으로 사용.
 // titleKey: presence/chat/rankings 문서에 저장된 state.equippedTitle 값 (없으면 null/undefined).
@@ -1206,12 +1208,14 @@ function checkTitleUnlocks(){
   });
 }
 
+// 해금한 칭호는 장착 여부와 무관하게 전부 효과가 동시에 적용된다 (보유효과).
+// state.equippedTitle은 이제 순수히 "닉네임 옆에 어떤 배지를 보여줄지"만 결정하는 표시용 값.
 function titleBonus(){
   const b = {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
-  if(!state.equippedTitle) return b;
-  const t = TITLES.find(x=>x.key===state.equippedTitle);
-  if(!t || !titleUnlocked(t)) return b; // 조건을 더 이상 만족하지 못하면(비정상 상태) 효과 미적용
-  b[t.stat] += t.value;
+  TITLES.forEach(t=>{
+    if(!titleUnlocked(t)) return;
+    b[t.stat] += t.value;
+  });
   return b;
 }
 
@@ -1247,10 +1251,10 @@ function renderTitles(){
     const card = document.createElement('div');
     card.className = 'relic-card title-card' + (unlocked?' owned':'') + (equipped?' equipped':'');
     card.innerHTML = `
-      <div class="rname"><span>${t.icon} ${t.name}</span>${equipped?'<span class="title-equipped-tag">장착중</span>':''}</div>
-      <div class="rdesc">${titleEffectText(t)}</div>
-      <div class="title-cond">${unlocked ? '✅ 달성 완료' : `🔒 ${t.condText}`}</div>
-      ${unlocked ? `<button class="title-equip-btn ${equipped?'unequip':''}" data-key="${t.key}">${equipped?'해제':'장착'}</button>` : ''}
+      <div class="rname"><span>${t.icon} ${t.name}</span>${equipped?'<span class="title-equipped-tag">표시중</span>':''}</div>
+      <div class="rdesc">${titleEffectText(t)}${unlocked?' (적용됨)':''}</div>
+      <div class="title-cond">${unlocked ? '✅ 보유 중 — 효과 상시 적용' : `🔒 ${t.condText}`}</div>
+      ${unlocked ? `<button class="title-equip-btn ${equipped?'unequip':''}" data-key="${t.key}">${equipped?'표시 해제':'닉네임에 표시'}</button>` : ''}
     `;
     grid.appendChild(card);
   });
@@ -5786,6 +5790,9 @@ const PET_FEED_LINES = {
   owlPet:    ['🦉 정찰 부엉이가 눈을 크게 뜨고 쳐다봅니다.', '🦉 부엉- 하고 작게 웁니다.'],
   fairyPet:  ['🐁 탐지 쥐가 볼주머니에 간식을 쏙 넣습니다.', '🐁 꼬물꼬물 기뻐하며 한 바퀴 돕니다.'],
   wolfPet:   ['🐺 변이 늑대가 꼬리를 살랑입니다.', '🐺 낮게 그르릉거리지만 왠지 기분 좋아보여요.'],
+  lizardPet: ['🦎 독니 도마뱀이 혀를 날름거리며 간식을 낚아챕니다.', '🦎 만족스럽게 눈을 깜빡입니다.'],
+  octopusPet:['🐙 문어 소세지가 먹물 대신 기포를 뽀글뽀글 냅니다.', '🐙 다리(?)를 살랑이며 간식 주위를 맴돕니다.'],
+  woundedPet:['🩹 상처입은 소세지가 씩씩하게 간식을 받아먹습니다.', '🩹 살짝 절뚝이지만 꼬리는 힘차게 흔듭니다.'],
 };
 const PET_FEED_LINES_DEFAULT = ['냠냠, 맛있게 먹었습니다!'];
 

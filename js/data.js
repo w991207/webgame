@@ -237,8 +237,9 @@ const ACHIEVEMENTS = [
 ];
 
 // ---------- Titles (칭호) ----------
-// 특정 조건을 달성하면 영구적으로 해금되는 칭호. 해금된 칭호 중 하나만 장착할 수 있으며,
-// 장착한 칭호의 효과만 적용된다(보유만 해도 적용되는 유산/동료와 달리 "택 1" 구조).
+// 특정 조건을 달성하면 영구적으로 해금되는 칭호. 해금된 칭호는 유산/동료처럼 "보유만 해도"
+// 전부 동시에 효과가 적용된다. 장착(equippedTitle)은 닉네임 옆에 보여줄 배지 하나를 고르는
+// 순수 표시용 기능일 뿐, 더 이상 효과 적용 여부와는 무관하다.
 // check()는 ACHIEVEMENTS와 동일한 패턴으로 state를 받아 boolean을 반환.
 const TITLES = [
   {key:'title_survivor10', name:'새내기 생존자', icon:'🔰', condText:'최고 10층 도달', check:s=>s.highestFloor>=10, stat:'atkPct', value:2},

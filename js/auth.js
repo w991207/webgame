@@ -346,7 +346,7 @@ document.getElementById('logoutBtn')?.addEventListener('click', async () => {
   location.reload();
 });
 document.getElementById('accountGoToTitlesBtn')?.addEventListener('click', () => {
-  document.querySelector('.tab-nav-btn[data-tab="tab-growth"]')?.click();
+  document.querySelector('.tab-nav-btn[data-tab="tab-gear"]')?.click();
 });
 
 // ---------- 회원 탈퇴 ----------
