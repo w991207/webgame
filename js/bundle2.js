@@ -881,13 +881,20 @@ function renderPvpRecord(){
 // 해금 조건: 1인 레이드와 동일 (무한의 탑 100층 클리어)
 // 도전 방식: 개인당 4시간마다 입장 가능, 제한시간 1분(또는 쓰러질 때까지/보스가 죽을 때까지) 자동 전투
 // 보상: 내가 그 회차에 실제로 넣은 데미지량에 비례 (킬을 낸 사람에게는 추가 보너스)
+// 보스 최대 체력(WB_MAX_HP): 코드에 고정된 값. Firestore에는 저장되지만 클라이언트가 직접
+//         바꿀 수 없고(보안 규칙이 이 상수와 동일한 값만 허용), 매일 자정(KST) 리셋될 때마다
+//         이 상수 값으로 자동 덮어써진다. 체력을 바꾸고 싶으면 이 파일의 WB_MAX_HP와
+//         firestore.rules의 동일한 숫자를 함께 고쳐서 배포하면, 다음 날 리셋 때 자동 반영됨
+//         (Firestore 콘솔에서 수동으로 만질 필요 없음).
 // 보스 체력 초기화: 매일 자정(KST) - Firestore 보안 규칙이 서버 시간(request.time) 기준으로 검증하므로
 //         클라이언트 시계를 조작해도 실제 초기화 타이밍은 위조할 수 없음.
 //         (개인 도전 쿨타임 4시간은 보스 체력 초기화와는 별개로 독립적으로 동작함)
 //
 // ⚠️ 최초 1회, Firebase 콘솔에서 worldboss/state 문서를 직접 만들어야 합니다:
 //    컬렉션 'worldboss' > 문서 ID 'state' > 필드:
-//      - hp(숫자), maxHp(숫자, hp와 동일한 값), resetDate(숫자, 0)
+//      - hp(숫자, 아무 값이나 OK — 최초 접속 시 곧바로 WB_MAX_HP로 자동 교정됨)
+//      - maxHp(숫자, 아무 값이나 OK — 위와 동일하게 자동 교정됨)
+//      - resetDate(숫자, 0)
 //      - manualResetAt(숫자, 0) ← 전 유저 도전 기록 강제 초기화용 (아래 설명)
 //    (resetDate를 0으로 두면 접속한 유저가 처음 열었을 때 자동으로 오늘 날짜로 리셋되며 시작합니다)
 //
@@ -897,10 +904,11 @@ function renderPvpRecord(){
 //    (브라우저 콘솔에서 Date.now()를 입력하면 바로 그 값이 나옵니다)
 //    이 값보다 이전에 도전한 유저는 전부 즉시 재도전 가능해집니다 — 즉, 4시간 쿨타임과 무관하게
 //    "지금 이 순간부터 전원 재도전 가능"하게 만드는 스위치입니다.
-//    참고: 이 필드를 고쳐도 보스의 공유 체력(hp)은 그대로입니다. 체력까지 같이 리셋하고 싶다면
-//    hp 필드를 maxHp와 같은 값으로 함께 바꿔주세요.
+//    참고: 이 필드를 고쳐도 보스의 공유 체력(hp)은 그대로입니다. 체력까지 당장 리셋하고 싶다면
+//    hp 필드를 WB_MAX_HP와 같은 값으로 함께 바꿔주세요.
 
 const WORLD_BOSS_META = {name:'창세의 균주, 제로', emoji:'🧟'};
+const WB_MAX_HP = 5297343927422; // 월드보스 최대 체력 (매일 자정 리셋 시 이 값으로 자동 고정)
 const WB_ATK = 10000;
 const WB_DEF = 5000;
 const WB_TIME_LIMIT_MS = 60 * 1000; // 도전 1회당 제한시간 1분
@@ -957,7 +965,8 @@ async function ensureWorldBossFreshAndGet(){
     if((d.resetDate||0) < day){
       // 주의: manualResetAt은 여기서 절대 쓰지 않는다 (보안 규칙이 클라이언트의 hp/maxHp/resetDate
       // 변경만 허용하도록 diff 기반으로 검증하므로, 굳이 넣지 않아도 문서에 남아있던 값은 그대로 유지된다)
-      const freshWrite = {hp: d.maxHp, maxHp: d.maxHp, resetDate: day};
+      // maxHp는 더 이상 Firestore에 저장된 이전 값을 쓰지 않고, 코드에 고정된 WB_MAX_HP로 매번 교정한다.
+      const freshWrite = {hp: WB_MAX_HP, maxHp: WB_MAX_HP, resetDate: day};
       tx.update(ref, freshWrite);
       return {...freshWrite, manualResetAt: d.manualResetAt||0};
     }

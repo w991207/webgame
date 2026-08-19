@@ -31,8 +31,11 @@ service cloud.firestore {
 
     // ---------- 월드보스 ----------
     // 전 유저가 공유하는 보스 HP 하나를 함께 깎는 컨텐츠. 매일 자정(KST) 초기화.
+    // 최대 체력은 js/worldboss.js의 WB_MAX_HP 상수로 코드에 고정되어 있고, 아래 규칙도
+    // 그 값과 반드시 동일해야 함 (둘 중 하나만 바꾸면 리셋 시 거부됨 — 값을 바꿀 때 항상 같이 수정).
     // 최초 문서(worldboss/state)는 Firebase 콘솔에서 관리자가 직접 생성해야 함
-    // 예: { hp: 800000, maxHp: 800000, resetDate: 0, manualResetAt: 0 }  (전부 숫자/int64 타입)
+    // 예: { hp: 1, maxHp: 1, resetDate: 0, manualResetAt: 0 }  (전부 숫자/int64 타입 — 최초 접속 시
+    //      곧바로 WB_MAX_HP 값으로 자동 교정되므로 hp/maxHp의 초기값 자체는 의미 없음)
     // manualResetAt: 관리자가 전 유저 도전 기록을 강제 초기화할 때만 콘솔에서 직접 바꾸는 필드.
     //   클라이언트는 이 필드를 절대 쓰지 않으므로(affectedKeys에 없음) 문서에 존재해도
     //   아래 검증에 영향을 주지 않는다 (diff 방식이라 "실제로 바뀌는 필드"만 검사함).
@@ -41,14 +44,14 @@ service cloud.firestore {
       allow create: if false;
       allow update: if request.auth != null
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hp', 'maxHp', 'resetDate'])
-        && request.resource.data.maxHp == resource.data.maxHp
+        && request.resource.data.maxHp == 5297343927422
         && request.resource.data.hp >= 0
         && (
           // 케이스 A: 같은 날짜 안에서 데미지만큼만 hp를 깎는 정상적인 공격
           (
             request.resource.data.resetDate == resource.data.resetDate &&
             request.resource.data.hp <= resource.data.hp &&
-            resource.data.hp - request.resource.data.hp <=resource.data.maxHp
+            resource.data.hp - request.resource.data.hp <= request.resource.data.maxHp
           )
           ||
           // 케이스 B: 날짜값이 이전보다 커지는(=하루 지난) 리셋. hp는 반드시 만땅으로.
