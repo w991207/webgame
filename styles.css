@@ -335,15 +335,13 @@
   /* 실제 배경 아트가 없을 때를 대비한 대체용 던전 복도 느낌의 비네트는 위 radial-gradient가 담당 */
 
   /* ---------- 1000층마다 순환하는 회랑 테마 (기본→독/이끼→얼음/룬→화염/용암→반복) ----------
-     실제 배경 그림 파일을 새로 늘리지 않고, 기존 dungeon.png 위에 색상 틴트+필터를 얹어서
-     테마별 분위기를 낸다. .arch-main에 arch-tier-1/2/3 클래스가 붙으면 아래 규칙이 적용되고,
-     클래스가 없으면(0단계) 원래 기본 배경 그대로 유지된다. */
+     각 테마마다 실제 배경 이미지(image/background/dungeon_*.png)를 사용한다.
+     .arch-main에 arch-tier-1/2/3 클래스가 붙으면 아래 규칙이 적용되고,
+     클래스가 없으면(0단계) 원래 기본 배경(dungeon.png) 그대로 유지된다. */
   .arch-main.arch-tier-1{
     background:
-        linear-gradient(180deg, rgba(10,20,8,.28) 0%, rgba(10,20,8,.1) 40%, rgba(6,14,5,.7) 100%),
-        linear-gradient(0deg, rgba(60,200,90,.22), rgba(60,200,90,.22)),
-        url('image/background/dungeon.png') center 30%/cover no-repeat;
-    filter: hue-rotate(78deg) saturate(1.25) brightness(.95);
+        linear-gradient(180deg, rgba(10,10,6,.28) 0%, rgba(10,10,6,.1) 40%, rgba(8,8,5,.6) 100%),
+        url('image/background/dungeon_poison.png') center 30%/cover no-repeat;
   }
   .arch-main.arch-tier-1::before{
     background: radial-gradient(circle, rgba(90,220,120,.14), transparent 70%);
@@ -354,10 +352,8 @@
 
   .arch-main.arch-tier-2{
     background:
-        linear-gradient(180deg, rgba(6,14,24,.3) 0%, rgba(6,14,24,.1) 40%, rgba(4,10,18,.72) 100%),
-        linear-gradient(0deg, rgba(80,170,235,.22), rgba(80,170,235,.22)),
-        url('image/background/dungeon.png') center 30%/cover no-repeat;
-    filter: hue-rotate(180deg) saturate(1.1) brightness(1.02);
+        linear-gradient(180deg, rgba(10,10,6,.28) 0%, rgba(10,10,6,.1) 40%, rgba(8,8,5,.6) 100%),
+        url('image/background/dungeon_ice.png') center 30%/cover no-repeat;
   }
   .arch-main.arch-tier-2::before{
     background: radial-gradient(circle, rgba(110,190,255,.16), transparent 70%);
@@ -368,10 +364,8 @@
 
   .arch-main.arch-tier-3{
     background:
-        linear-gradient(180deg, rgba(24,8,6,.3) 0%, rgba(24,8,6,.12) 40%, rgba(16,5,4,.72) 100%),
-        linear-gradient(0deg, rgba(240,90,40,.24), rgba(240,90,40,.24)),
-        url('image/background/dungeon.png') center 30%/cover no-repeat;
-    filter: hue-rotate(-40deg) saturate(1.35) brightness(.98);
+        linear-gradient(180deg, rgba(10,10,6,.28) 0%, rgba(10,10,6,.1) 40%, rgba(8,8,5,.6) 100%),
+        url('image/background/dungeon_fire.png') center 30%/cover no-repeat;
   }
   .arch-main.arch-tier-3::before{
     background: radial-gradient(circle, rgba(255,110,50,.18), transparent 70%);
