@@ -187,6 +187,19 @@ const PETS = [
       log(`🟢 형광소세지가 형광빛을 뿜었습니다! -${dmg}`, 'good');
     }
   },
+  {
+    key:'jollyPet', name:'졸렬다이나믹', icon:'💥', interval:10,
+    companionStat:'spdPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
+    descFn:lvl=>`${10}초마다 졸렬 어퍼컷! 공격력의 ${Math.round((0.35+lvl*0.022)*100)}% 추가 피해 (공격속도가 높을수록 강해짐, 동행 시 공격속도 증가)`,
+    trigger:(lvl,s)=>{
+      const spdBoost = 1 + (s.spdPct||0)/100;
+      const dmg = Math.max(1, Math.round(s.atk * (0.35 + lvl*0.022) * spdBoost));
+      state.monsterHp -= dmg;
+      if(state.monsterHp < 1) state.monsterHp = 1;
+      floatText('💥-'+dmg, null);
+      log(`💥 졸렬다이나믹의 졸렬 어퍼컷! -${dmg}`, 'good');
+    }
+  },
 ];
 
 // 펫 아이콘 표시용 헬퍼 — 전용 이미지(p.img)가 있으면 그 이미지를, 없으면 이모지(p.icon)를 사용.
