@@ -58,29 +58,35 @@ const reward=ATTENDANCE_REWARDS[state.attendance.day];
 
 switch(reward.type){
 
-case "gold":
-
-state.gold+=reward.amount;
-
-break;
-
 case "soul":
 
 state.soul+=reward.amount;
 
 break;
 
-case "frag":
+case "mut":
 
-state.fragments+=reward.amount;
+gainMutationPoints(reward.amount);
 
 break;
 
-case "special":
+case "both":
 
-pullRelic();
+state.soul+=reward.amount;
 
-state.soul+=50;
+gainMutationPoints(reward.mut);
+
+break;
+
+case "relic":
+
+freePullRelic();
+
+break;
+
+case "pet":
+
+freeSummonPet();
 
 break;
 

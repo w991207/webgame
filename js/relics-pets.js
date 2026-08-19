@@ -3,17 +3,22 @@ function relicPullCost(){
   return Math.round(8 * Math.pow(1.035, state.totalRelicPulls));
 }
 
-function pullRelic(){
+function doRelicPull(noCost){
   const cost = relicPullCost();
-  if(state.fragments < cost) return;
-  state.fragments -= cost;
+  if(!noCost && state.fragments < cost) return false;
+  if(!noCost) state.fragments -= cost;
   state.totalRelicPulls++;
   const picked = RELICS[Math.floor(Math.random()*RELICS.length)];
   state.relics[picked.key]++;
   const newLvl = state.relics[picked.key];
   log(`유산 뽑기: ${picked.icon} ${picked.name} (Lv.${newLvl})`, 'good');
-  renderAll();
+  return true;
 }
+
+function pullRelic(){
+  if(doRelicPull(false)) renderAll();
+}
+function freePullRelic(){ doRelicPull(true); }
 document.getElementById('pullRelicBtn').addEventListener('click', pullRelic);
 
 function renderRelics(){
@@ -44,17 +49,22 @@ function petSummonCost(){
   return Math.round(12 * Math.pow(1.04, state.totalPetSummons));
 }
 
-function summonPet(){
+function doPetSummon(noCost){
   const cost = petSummonCost();
-  if(state.fragments < cost) return;
-  state.fragments -= cost;
+  if(!noCost && state.fragments < cost) return false;
+  if(!noCost) state.fragments -= cost;
   state.totalPetSummons++;
   const picked = PETS[Math.floor(Math.random()*PETS.length)];
   state.pets[picked.key] = (state.pets[picked.key]||0) + 1;
   const newLvl = state.pets[picked.key];
   log(`동료 소환: ${picked.icon} ${picked.name} (Lv.${newLvl})`, 'good');
-  renderAll();
+  return true;
 }
+
+function summonPet(){
+  if(doPetSummon(false)) renderAll();
+}
+function freeSummonPet(){ doPetSummon(true); }
 document.getElementById('summonPetBtn').addEventListener('click', summonPet);
 
 // ---------- 동행 (Companion) ----------

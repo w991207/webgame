@@ -413,11 +413,11 @@ const KILL_PASS_TIERS = (function(){
 })();
 
 const ATTENDANCE_REWARDS = [
-    { type:"gold", amount:5000,  text:"📦 물자 5,000" },
-    { type:"soul", amount:5,     text:"🧪 혈청 5" },
-    { type:"frag", amount:30,    text:"◈ 유산 파편 30" },
-    { type:"gold", amount:20000, text:"📦 물자 20,000" },
-    { type:"soul", amount:15,    text:"🧪 혈청 15" },
-    { type:"frag", amount:100,   text:"◈ 유산 파편 100" },
-    { type:"special", amount:1,  text:"🎁 랜덤 유산 무료 뽑기" }
+    { type:"soul", amount:15,  text:"🧪 혈청 15" },
+    { type:"mut", amount:60,   text:"🧬 적응 포인트 60" },
+    { type:"relic", amount:1,  text:"🎫 유물 뽑기 1회" },
+    { type:"soul", amount:40,  text:"🧪 혈청 40" },
+    { type:"mut", amount:120,  text:"🧬 적응 포인트 120" },
+    { type:"pet", amount:1,    text:"🐾 펫 소환 1회" },
+    { type:"both", amount:100, mut:240, text:"🧪 혈청 100 + 🧬 적응 포인트 240" }
 ];

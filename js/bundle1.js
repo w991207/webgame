@@ -635,13 +635,13 @@ const KILL_PASS_TIERS = (function(){
 })();
 
 const ATTENDANCE_REWARDS = [
-    { type:"gold", amount:5000,  text:"📦 물자 5,000" },
-    { type:"soul", amount:5,     text:"🧪 혈청 5" },
-    { type:"frag", amount:30,    text:"◈ 유산 파편 30" },
-    { type:"gold", amount:20000, text:"📦 물자 20,000" },
-    { type:"soul", amount:15,    text:"🧪 혈청 15" },
-    { type:"frag", amount:100,   text:"◈ 유산 파편 100" },
-    { type:"special", amount:1,  text:"🎁 랜덤 유산 무료 뽑기" }
+    { type:"soul", amount:15,  text:"🧪 혈청 15" },
+    { type:"mut", amount:60,   text:"🧬 적응 포인트 60" },
+    { type:"relic", amount:1,  text:"🎫 유물 뽑기 1회" },
+    { type:"soul", amount:40,  text:"🧪 혈청 40" },
+    { type:"mut", amount:120,  text:"🧬 적응 포인트 120" },
+    { type:"pet", amount:1,    text:"🐾 펫 소환 1회" },
+    { type:"both", amount:100, mut:240, text:"🧪 혈청 100 + 🧬 적응 포인트 240" }
 ];
 // ===== js/bestiary.js =====
 // ---------- 몬스터 도감 (Bestiary) ----------
@@ -5510,17 +5510,22 @@ function relicPullCost(){
   return Math.round(8 * Math.pow(1.035, state.totalRelicPulls));
 }
 
-function pullRelic(){
+function doRelicPull(noCost){
   const cost = relicPullCost();
-  if(state.fragments < cost) return;
-  state.fragments -= cost;
+  if(!noCost && state.fragments < cost) return false;
+  if(!noCost) state.fragments -= cost;
   state.totalRelicPulls++;
   const picked = RELICS[Math.floor(Math.random()*RELICS.length)];
   state.relics[picked.key]++;
   const newLvl = state.relics[picked.key];
   log(`유산 뽑기: ${picked.icon} ${picked.name} (Lv.${newLvl})`, 'good');
-  renderAll();
+  return true;
 }
+
+function pullRelic(){
+  if(doRelicPull(false)) renderAll();
+}
+function freePullRelic(){ doRelicPull(true); }
 document.getElementById('pullRelicBtn').addEventListener('click', pullRelic);
 
 function renderRelics(){
@@ -5551,17 +5556,22 @@ function petSummonCost(){
   return Math.round(12 * Math.pow(1.04, state.totalPetSummons));
 }
 
-function summonPet(){
+function doPetSummon(noCost){
   const cost = petSummonCost();
-  if(state.fragments < cost) return;
-  state.fragments -= cost;
+  if(!noCost && state.fragments < cost) return false;
+  if(!noCost) state.fragments -= cost;
   state.totalPetSummons++;
   const picked = PETS[Math.floor(Math.random()*PETS.length)];
   state.pets[picked.key] = (state.pets[picked.key]||0) + 1;
   const newLvl = state.pets[picked.key];
   log(`동료 소환: ${picked.icon} ${picked.name} (Lv.${newLvl})`, 'good');
-  renderAll();
+  return true;
 }
+
+function summonPet(){
+  if(doPetSummon(false)) renderAll();
+}
+function freeSummonPet(){ doPetSummon(true); }
 document.getElementById('summonPetBtn').addEventListener('click', summonPet);
 
 // ---------- 동행 (Companion) ----------
@@ -6623,29 +6633,35 @@ const reward=ATTENDANCE_REWARDS[state.attendance.day];
 
 switch(reward.type){
 
-case "gold":
-
-state.gold+=reward.amount;
-
-break;
-
 case "soul":
 
 state.soul+=reward.amount;
 
 break;
 
-case "frag":
+case "mut":
 
-state.fragments+=reward.amount;
+gainMutationPoints(reward.amount);
 
 break;
 
-case "special":
+case "both":
 
-pullRelic();
+state.soul+=reward.amount;
 
-state.soul+=50;
+gainMutationPoints(reward.mut);
+
+break;
+
+case "relic":
+
+freePullRelic();
+
+break;
+
+case "pet":
+
+freeSummonPet();
 
 break;
 
