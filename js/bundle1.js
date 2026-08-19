@@ -397,6 +397,18 @@ const PETS = [
       }
     }
   },
+  {
+    key:'glowPet', name:'형광소세지', icon:'🟢', img:'image/pets/sausage-glow.png', interval:10,
+    companionStat:'spdPct', companionValueFn:lvl=>Math.round(Math.min(30, 2+lvl*0.2)*10)/10,
+    descFn:lvl=>`${10}초마다 형광빛을 뿜어 공격력의 ${Math.round((0.32+lvl*0.02)*100)}%만큼 변이체에게 추가 피해`,
+    trigger:(lvl,s)=>{
+      const dmg = Math.max(1, Math.round(s.atk * (0.32 + lvl*0.02)));
+      state.monsterHp -= dmg;
+      if(state.monsterHp < 1) state.monsterHp = 1;
+      floatText('🟢-'+dmg, null);
+      log(`🟢 형광소세지가 형광빛을 뿜었습니다! -${dmg}`, 'good');
+    }
+  },
 ];
 
 // 펫 아이콘 표시용 헬퍼 — 전용 이미지(p.img)가 있으면 그 이미지를, 없으면 이모지(p.icon)를 사용.
@@ -5820,6 +5832,7 @@ const PET_FEED_LINES = {
   woundedPet:['🩹 상처입은 소세지가 씩씩하게 간식을 받아먹습니다.', '🩹 살짝 절뚝이지만 꼬리는 힘차게 흔듭니다.'],
   chiliChickenPet:['🌶️ 청양고추닭가슴살소세지가 매운 눈물을 찔끔 흘리면서도 잘 먹습니다.', '🌶️ 화이팅 포즈로 주먹을 불끈 쥡니다.'],
   breadPet:['🥖 빵소세지가 냠냠 배부르게 받아먹습니다.', '🥖 포만감에 스르륵 눈이 감깁니다.'],
+  glowPet:['🟢 형광소세지가 은은하게 빛나며 간식을 흡수합니다.', '🟢 몸 색깔이 한층 더 밝아졌습니다!'],
 };
 const PET_FEED_LINES_DEFAULT = ['냠냠, 맛있게 먹었습니다!'];
 

@@ -175,6 +175,18 @@ const PETS = [
       }
     }
   },
+  {
+    key:'glowPet', name:'형광소세지', icon:'🟢', img:'image/pets/sausage-glow.png', interval:10,
+    companionStat:'spdPct', companionValueFn:lvl=>Math.round(Math.min(30, 2+lvl*0.2)*10)/10,
+    descFn:lvl=>`${10}초마다 형광빛을 뿜어 공격력의 ${Math.round((0.32+lvl*0.02)*100)}%만큼 변이체에게 추가 피해`,
+    trigger:(lvl,s)=>{
+      const dmg = Math.max(1, Math.round(s.atk * (0.32 + lvl*0.02)));
+      state.monsterHp -= dmg;
+      if(state.monsterHp < 1) state.monsterHp = 1;
+      floatText('🟢-'+dmg, null);
+      log(`🟢 형광소세지가 형광빛을 뿜었습니다! -${dmg}`, 'good');
+    }
+  },
 ];
 
 // 펫 아이콘 표시용 헬퍼 — 전용 이미지(p.img)가 있으면 그 이미지를, 없으면 이모지(p.icon)를 사용.
