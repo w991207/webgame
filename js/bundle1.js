@@ -372,6 +372,31 @@ const PETS = [
       log(`🩹 상처입은 소세지의 오기! -${dmg}`, 'good');
     }
   },
+  {
+    key:'chiliChickenPet', name:'청양고추닭가슴살소세지', icon:'🌶️', img:'image/pets/sausage-chili.png', interval:10,
+    companionStat:'critAdd', companionValueFn:lvl=>Math.round(Math.min(18, 1+lvl*0.13)*10)/10,
+    descFn:lvl=>`${10}초마다 매운맛 스트레이트! 공격력의 ${Math.round((0.35+lvl*0.022)*100)}%만큼 변이체에게 추가 피해`,
+    trigger:(lvl,s)=>{
+      const dmg = Math.max(1, Math.round(s.atk * (0.35 + lvl*0.022)));
+      state.monsterHp -= dmg;
+      if(state.monsterHp < 1) state.monsterHp = 1;
+      floatText('🌶️-'+dmg, null);
+      log(`🌶️ 청양고추닭가슴살소세지의 매운맛 스트레이트! -${dmg}`, 'good');
+    }
+  },
+  {
+    key:'breadPet', name:'빵소세지', icon:'🥖', img:'image/pets/sausage-bread.png', interval:10,
+    companionStat:'hpPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
+    descFn:lvl=>`${10}초마다 최대 체력의 ${Math.round(lvl*1.8)}% 회복`,
+    trigger:(lvl,s)=>{
+      const heal = Math.round(s.maxHp * (0.018*lvl));
+      if(heal>0 && state.playerHp>0){
+        state.playerHp = Math.min(s.maxHp, state.playerHp+heal);
+        floatText('+'+heal, 'heal');
+        log(`🥖 빵소세지가 든든하게 배를 채워줬습니다! +${heal}`, 'good');
+      }
+    }
+  },
 ];
 
 // 펫 아이콘 표시용 헬퍼 — 전용 이미지(p.img)가 있으면 그 이미지를, 없으면 이모지(p.icon)를 사용.
@@ -5793,6 +5818,8 @@ const PET_FEED_LINES = {
   lizardPet: ['🦎 독니 도마뱀이 혀를 날름거리며 간식을 낚아챕니다.', '🦎 만족스럽게 눈을 깜빡입니다.'],
   octopusPet:['🐙 문어 소세지가 먹물 대신 기포를 뽀글뽀글 냅니다.', '🐙 다리(?)를 살랑이며 간식 주위를 맴돕니다.'],
   woundedPet:['🩹 상처입은 소세지가 씩씩하게 간식을 받아먹습니다.', '🩹 살짝 절뚝이지만 꼬리는 힘차게 흔듭니다.'],
+  chiliChickenPet:['🌶️ 청양고추닭가슴살소세지가 매운 눈물을 찔끔 흘리면서도 잘 먹습니다.', '🌶️ 화이팅 포즈로 주먹을 불끈 쥡니다.'],
+  breadPet:['🥖 빵소세지가 냠냠 배부르게 받아먹습니다.', '🥖 포만감에 스르륵 눈이 감깁니다.'],
 };
 const PET_FEED_LINES_DEFAULT = ['냠냠, 맛있게 먹었습니다!'];
 
