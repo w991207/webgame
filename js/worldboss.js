@@ -357,10 +357,13 @@ async function checkWorldBossDailyRewards(){
 }
 
 // ---------- 상태 조회 / 리더보드 (전투 중이 아닐 때 화면 표시용) ----------
+// 주의: 도전 버튼을 눌렀을 때만 리셋(ensureWorldBossFreshAndGet)이 실행되면,
+//    보스가 이미 죽어(wbHp<=0) 버튼이 비활성화된 날짜에는 리셋이 영원히 발동되지 않는
+//    결정적 결함이 있다. 그래서 여기 주기적 조회에서도 날짜가 바뀌면 자동으로 리셋한다.
 async function fetchWorldBossStatus(){
   try{
-    const snap = await fbDb.collection('worldboss').doc('state').get();
-    if(snap.exists) wbStatusCache = snap.data();
+    const fresh = await ensureWorldBossFreshAndGet();
+    if(fresh) wbStatusCache = fresh;
   }catch(e){
     console.warn('월드보스 상태 조회 실패', e);
   }

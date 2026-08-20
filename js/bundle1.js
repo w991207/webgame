@@ -1487,6 +1487,7 @@ function defaultState(){
     maxCritAnnounced: false,
     fragments: 0,
     totalRelicPulls: 0,
+    relicTicket: 0, // 🎫 유물 뽑기권 (파편 대신 1회 무료 뽑기 가능)
     relics: {hpRelic:0, atkRelic:0, defRelic:0, goldRelic:0, expRelic:0, dropRelic:0, spdRelic:0, critDmgRelic:0},
     pets: {dragonPet:0, jellyPet:0, crowPet:0, owlPet:0, fairyPet:0, wolfPet:0, lizardPet:0},
 
@@ -1495,6 +1496,7 @@ function defaultState(){
     petLastFed: {},   // key -> 마지막으로 먹이를 준 시각(ms), 하루 1회 제한에 사용
     companionPet: null, // 동행 중인 동료 키 (하나만 선택, 능력치 보너스 적용)
     totalPetSummons: 0,
+    petTicket: 0, // 🐾 펫 뽑기권 (파편 대신 1회 무료 소환 가능)
     mutation: {points:0, totalEarned:0, nodes:{}},
     skills: {},
     job: null,
@@ -5525,8 +5527,14 @@ function relicPullCost(){
 
 function doRelicPull(noCost){
   const cost = relicPullCost();
-  if(!noCost && state.fragments < cost) return false;
-  if(!noCost) state.fragments -= cost;
+  if(noCost){
+    // 무료 뽑기(출석 등) — 뽑기권도 소모하지 않는다
+  }else if((state.relicTicket||0) > 0){
+    state.relicTicket--; // 🎫 유물 뽑기권 1장 소모 (파편 없이)
+  }else{
+    if(state.fragments < cost) return false;
+    state.fragments -= cost;
+  }
   state.totalRelicPulls++;
   const picked = RELICS[Math.floor(Math.random()*RELICS.length)];
   state.relics[picked.key]++;
@@ -5546,7 +5554,9 @@ function renderRelics(){
   document.getElementById('fragDisplay').textContent = Math.floor(state.fragments).toLocaleString();
   document.getElementById('fragDisplay2').textContent = Math.floor(state.fragments).toLocaleString();
   document.getElementById('pullCostText').textContent = cost.toLocaleString();
-  document.getElementById('pullRelicBtn').disabled = state.fragments < cost;
+  const rtEl = document.getElementById('relicTicketText');
+  if(rtEl) rtEl.textContent = (state.relicTicket||0).toLocaleString();
+  document.getElementById('pullRelicBtn').disabled = (state.fragments < cost) && !((state.relicTicket||0) > 0);
 
   const grid = document.getElementById('relicGrid');
   grid.innerHTML = '';
@@ -5571,8 +5581,14 @@ function petSummonCost(){
 
 function doPetSummon(noCost){
   const cost = petSummonCost();
-  if(!noCost && state.fragments < cost) return false;
-  if(!noCost) state.fragments -= cost;
+  if(noCost){
+    // 무료 소환(출석 등) — 뽑기권도 소모하지 않는다
+  }else if((state.petTicket||0) > 0){
+    state.petTicket--; // 🐾 펫 뽑기권 1장 소모 (파편 없이)
+  }else{
+    if(state.fragments < cost) return false;
+    state.fragments -= cost;
+  }
   state.totalPetSummons++;
   const picked = PETS[Math.floor(Math.random()*PETS.length)];
   state.pets[picked.key] = (state.pets[picked.key]||0) + 1;
@@ -5636,7 +5652,9 @@ function renderPets(){
   const cost = petSummonCost();
   document.getElementById('fragDisplay3').textContent = Math.floor(state.fragments).toLocaleString();
   document.getElementById('petCostText').textContent = cost.toLocaleString();
-  document.getElementById('summonPetBtn').disabled = state.fragments < cost;
+  const ptEl = document.getElementById('petTicketText');
+  if(ptEl) ptEl.textContent = (state.petTicket||0).toLocaleString();
+  document.getElementById('summonPetBtn').disabled = (state.fragments < cost) && !((state.petTicket||0) > 0);
 
   const grid = document.getElementById('petGrid');
   grid.innerHTML = '';

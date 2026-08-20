@@ -5,8 +5,14 @@ function relicPullCost(){
 
 function doRelicPull(noCost){
   const cost = relicPullCost();
-  if(!noCost && state.fragments < cost) return false;
-  if(!noCost) state.fragments -= cost;
+  if(noCost){
+    // 무료 뽑기(출석 등) — 뽑기권도 소모하지 않는다
+  }else if((state.relicTicket||0) > 0){
+    state.relicTicket--; // 🎫 유물 뽑기권 1장 소모 (파편 없이)
+  }else{
+    if(state.fragments < cost) return false;
+    state.fragments -= cost;
+  }
   state.totalRelicPulls++;
   const picked = RELICS[Math.floor(Math.random()*RELICS.length)];
   state.relics[picked.key]++;
@@ -26,7 +32,9 @@ function renderRelics(){
   document.getElementById('fragDisplay').textContent = Math.floor(state.fragments).toLocaleString();
   document.getElementById('fragDisplay2').textContent = Math.floor(state.fragments).toLocaleString();
   document.getElementById('pullCostText').textContent = cost.toLocaleString();
-  document.getElementById('pullRelicBtn').disabled = state.fragments < cost;
+  const rtEl = document.getElementById('relicTicketText');
+  if(rtEl) rtEl.textContent = (state.relicTicket||0).toLocaleString();
+  document.getElementById('pullRelicBtn').disabled = (state.fragments < cost) && !((state.relicTicket||0) > 0);
 
   const grid = document.getElementById('relicGrid');
   grid.innerHTML = '';
@@ -51,8 +59,14 @@ function petSummonCost(){
 
 function doPetSummon(noCost){
   const cost = petSummonCost();
-  if(!noCost && state.fragments < cost) return false;
-  if(!noCost) state.fragments -= cost;
+  if(noCost){
+    // 무료 소환(출석 등) — 뽑기권도 소모하지 않는다
+  }else if((state.petTicket||0) > 0){
+    state.petTicket--; // 🐾 펫 뽑기권 1장 소모 (파편 없이)
+  }else{
+    if(state.fragments < cost) return false;
+    state.fragments -= cost;
+  }
   state.totalPetSummons++;
   const picked = PETS[Math.floor(Math.random()*PETS.length)];
   state.pets[picked.key] = (state.pets[picked.key]||0) + 1;
@@ -116,7 +130,9 @@ function renderPets(){
   const cost = petSummonCost();
   document.getElementById('fragDisplay3').textContent = Math.floor(state.fragments).toLocaleString();
   document.getElementById('petCostText').textContent = cost.toLocaleString();
-  document.getElementById('summonPetBtn').disabled = state.fragments < cost;
+  const ptEl = document.getElementById('petTicketText');
+  if(ptEl) ptEl.textContent = (state.petTicket||0).toLocaleString();
+  document.getElementById('summonPetBtn').disabled = (state.fragments < cost) && !((state.petTicket||0) > 0);
 
   const grid = document.getElementById('petGrid');
   grid.innerHTML = '';

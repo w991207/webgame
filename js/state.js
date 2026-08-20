@@ -56,6 +56,7 @@ function defaultState(){
     maxCritAnnounced: false,
     fragments: 0,
     totalRelicPulls: 0,
+    relicTicket: 0, // 🎫 유물 뽑기권 (파편 대신 1회 무료 뽑기 가능)
     relics: {hpRelic:0, atkRelic:0, defRelic:0, goldRelic:0, expRelic:0, dropRelic:0, spdRelic:0, critDmgRelic:0},
     pets: {dragonPet:0, jellyPet:0, crowPet:0, owlPet:0, fairyPet:0, wolfPet:0, lizardPet:0},
 
@@ -64,6 +65,7 @@ function defaultState(){
     petLastFed: {},   // key -> 마지막으로 먹이를 준 시각(ms), 하루 1회 제한에 사용
     companionPet: null, // 동행 중인 동료 키 (하나만 선택, 능력치 보너스 적용)
     totalPetSummons: 0,
+    petTicket: 0, // 🐾 펫 뽑기권 (파편 대신 1회 무료 소환 가능)
     mutation: {points:0, totalEarned:0, nodes:{}},
     skills: {},
     job: null,
