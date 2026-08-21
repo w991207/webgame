@@ -5,7 +5,7 @@
 
 const TRAINING_DUNGEON_TICKET_MAX = 3;
 const TRAINING_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const TRAINING_DUNGEON_MAX_FLOOR = 20;
+const TRAINING_DUNGEON_MAX_FLOOR = 50;
 
 const TRAINING_DUNGEON_META = {name:'수련 인형', emoji:'🥋'};
 
@@ -121,13 +121,11 @@ function resolveTrainingDungeonVictory(){
   tryLevelUp();
   log(`🏆 [수련 구역] ${state.tdFloor}층 클리어! +${expGain.toLocaleString()}EXP`, 'good');
 
-  if(state.tdFloor >= TRAINING_DUNGEON_MAX_FLOOR){
-    if(!state.tdCleared){
-      state.tdCleared = true;
+  if(state.tdFloor < TRAINING_DUNGEON_MAX_FLOOR){
+    state.tdFloor++;
+    if(state.tdFloor >= TRAINING_DUNGEON_MAX_FLOOR){
       log(`🥋 수련 구역을 모두 정복했습니다! 이제부터는 ${TRAINING_DUNGEON_MAX_FLOOR}층을 반복해서 도전할 수 있습니다.`, 'good');
     }
-  } else {
-    state.tdFloor++;
   }
   endTrainingDungeon();
 }
@@ -153,7 +151,7 @@ function renderTrainingDungeonPanel(){
 
   const floorEl = document.getElementById('tdFloorText');
   if(!floorEl) return;
-  floorEl.textContent = state.tdCleared
+  floorEl.textContent = state.tdFloor >= TRAINING_DUNGEON_MAX_FLOOR
     ? `${TRAINING_DUNGEON_MAX_FLOOR}/${TRAINING_DUNGEON_MAX_FLOOR} (정복 완료 · 반복 도전 가능)`
     : `${state.tdFloor}/${TRAINING_DUNGEON_MAX_FLOOR}`;
   document.getElementById('tdNextReward').textContent = tdExpFor(state.tdFloor).toLocaleString();

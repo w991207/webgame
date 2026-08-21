@@ -1550,7 +1550,6 @@ function defaultState(){
     fdMonsterHp: 0,
     fdMonsterMaxHp: 0,
     fdPlayerHp: 0,
-    fdCleared: false,
 
     // ---------- Training Dungeon (수련 구역, 경험치 보상) ----------
     tdFloor: 1,
@@ -1560,7 +1559,6 @@ function defaultState(){
     tdMonsterHp: 0,
     tdMonsterMaxHp: 0,
     tdPlayerHp: 0,
-    tdCleared: false,
 
     // ---------- Equipment (물자 뽑기 장비 시스템) ----------
     equipment: {weapon:null, armor:null, accessory:null},
@@ -3963,7 +3961,7 @@ document.getElementById('goldenMonster')?.addEventListener('click', clickGoldenM
 
 const GOLD_DUNGEON_TICKET_MAX = 3;
 const GOLD_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const GOLD_DUNGEON_MAX_FLOOR = 20;
+const GOLD_DUNGEON_MAX_FLOOR = 50;
 
 const GOLD_DUNGEON_META = {name:'물자 창고 경비병', emoji:'📦'};
 
@@ -4081,13 +4079,12 @@ function resolveGoldDungeonVictory(){
   state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + goldGain;
   log(`🏆 [물자 구역] ${state.gdFloor}층 클리어! +${goldGain.toLocaleString()}📦`, 'good');
 
-  if(state.gdFloor >= GOLD_DUNGEON_MAX_FLOOR){
-    if(!state.gdCleared){
+  if(state.gdFloor < GOLD_DUNGEON_MAX_FLOOR){
+    state.gdFloor++;
+    if(state.gdFloor >= GOLD_DUNGEON_MAX_FLOOR){
       state.gdCleared = true;
       log(`📦 물자 구역을 모두 정복했습니다! 이제부터는 ${GOLD_DUNGEON_MAX_FLOOR}층을 반복해서 도전할 수 있습니다.`, 'good');
     }
-  } else {
-    state.gdFloor++;
   }
   endGoldDungeon();
 }
@@ -4112,7 +4109,7 @@ document.getElementById('gdEnterBtn').addEventListener('click', enterGoldDungeon
 function renderGoldDungeonPanel(){
   refreshGoldDungeonTickets();
 
-  document.getElementById('gdFloorText').textContent = state.gdCleared
+  document.getElementById('gdFloorText').textContent = state.gdFloor >= GOLD_DUNGEON_MAX_FLOOR
     ? `${GOLD_DUNGEON_MAX_FLOOR}/${GOLD_DUNGEON_MAX_FLOOR} (정복 완료 · 반복 도전 가능)`
     : `${state.gdFloor}/${GOLD_DUNGEON_MAX_FLOOR}`;
   document.getElementById('gdNextReward').textContent = gdGoldFor(state.gdFloor).toLocaleString();
@@ -4163,7 +4160,7 @@ setInterval(()=>{
 
 const RELIC_DUNGEON_TICKET_MAX = 3;
 const RELIC_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const RELIC_DUNGEON_MAX_FLOOR = 20;
+const RELIC_DUNGEON_MAX_FLOOR = 50;
 
 const RELIC_DUNGEON_META = {name:'유산 수호자', emoji:'🗿'};
 
@@ -4279,13 +4276,12 @@ function resolveRelicDungeonVictory(){
   state.fragments = (state.fragments||0) + fragGain;
   log(`🏆 [유산 구역] ${state.rdFloor}층 클리어! +${fragGain.toLocaleString()}◈`, 'good');
 
-  if(state.rdFloor >= RELIC_DUNGEON_MAX_FLOOR){
-    if(!state.rdCleared){
+  if(state.rdFloor < RELIC_DUNGEON_MAX_FLOOR){
+    state.rdFloor++;
+    if(state.rdFloor >= RELIC_DUNGEON_MAX_FLOOR){
       state.rdCleared = true;
       log(`🗿 유산 구역을 모두 정복했습니다! 이제부터는 ${RELIC_DUNGEON_MAX_FLOOR}층을 반복해서 도전할 수 있습니다.`, 'good');
     }
-  } else {
-    state.rdFloor++;
   }
   endRelicDungeon();
 }
@@ -4309,7 +4305,7 @@ document.getElementById('rdEnterBtn').addEventListener('click', enterRelicDungeo
 function renderRelicDungeonPanel(){
   refreshRelicDungeonTickets();
 
-  document.getElementById('rdFloorText').textContent = state.rdCleared
+  document.getElementById('rdFloorText').textContent = state.rdFloor >= RELIC_DUNGEON_MAX_FLOOR
     ? `${RELIC_DUNGEON_MAX_FLOOR}/${RELIC_DUNGEON_MAX_FLOOR} (정복 완료 · 반복 도전 가능)`
     : `${state.rdFloor}/${RELIC_DUNGEON_MAX_FLOOR}`;
   document.getElementById('rdNextReward').textContent = rdFragFor(state.rdFloor).toLocaleString();
@@ -4359,7 +4355,7 @@ setInterval(()=>{
 
 const FORGE_DUNGEON_TICKET_MAX = 3;
 const FORGE_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const FORGE_DUNGEON_MAX_FLOOR = 20;
+const FORGE_DUNGEON_MAX_FLOOR = 50;
 
 const FORGE_DUNGEON_META = {name:'단조로의 파수꾼', emoji:'🔥'};
 
@@ -4475,13 +4471,11 @@ function resolveForgeDungeonVictory(){
   state.totalEnhanceStonesEarned = (state.totalEnhanceStonesEarned||0) + stoneGain;
   log(`🏆 [단조 구역] ${state.fdFloor}층 클리어! +${stoneGain.toLocaleString()}🔩`, 'good');
 
-  if(state.fdFloor >= FORGE_DUNGEON_MAX_FLOOR){
-    if(!state.fdCleared){
-      state.fdCleared = true;
+  if(state.fdFloor < FORGE_DUNGEON_MAX_FLOOR){
+    state.fdFloor++;
+    if(state.fdFloor >= FORGE_DUNGEON_MAX_FLOOR){
       log(`🔥 단조 구역을 모두 정복했습니다! 이제부터는 ${FORGE_DUNGEON_MAX_FLOOR}층을 반복해서 도전할 수 있습니다.`, 'good');
     }
-  } else {
-    state.fdFloor++;
   }
   endForgeDungeon();
 }
@@ -4507,7 +4501,7 @@ function renderForgeDungeonPanel(){
 
   const floorEl = document.getElementById('fdFloorText');
   if(!floorEl) return;
-  floorEl.textContent = state.fdCleared
+  floorEl.textContent = state.fdFloor >= FORGE_DUNGEON_MAX_FLOOR
     ? `${FORGE_DUNGEON_MAX_FLOOR}/${FORGE_DUNGEON_MAX_FLOOR} (정복 완료 · 반복 도전 가능)`
     : `${state.fdFloor}/${FORGE_DUNGEON_MAX_FLOOR}`;
   document.getElementById('fdNextReward').textContent = fdStoneFor(state.fdFloor).toLocaleString();
@@ -4556,7 +4550,7 @@ setInterval(()=>{
 
 const TRAINING_DUNGEON_TICKET_MAX = 3;
 const TRAINING_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const TRAINING_DUNGEON_MAX_FLOOR = 20;
+const TRAINING_DUNGEON_MAX_FLOOR = 50;
 
 const TRAINING_DUNGEON_META = {name:'수련 인형', emoji:'🥋'};
 
@@ -4672,13 +4666,11 @@ function resolveTrainingDungeonVictory(){
   tryLevelUp();
   log(`🏆 [수련 구역] ${state.tdFloor}층 클리어! +${expGain.toLocaleString()}EXP`, 'good');
 
-  if(state.tdFloor >= TRAINING_DUNGEON_MAX_FLOOR){
-    if(!state.tdCleared){
-      state.tdCleared = true;
+  if(state.tdFloor < TRAINING_DUNGEON_MAX_FLOOR){
+    state.tdFloor++;
+    if(state.tdFloor >= TRAINING_DUNGEON_MAX_FLOOR){
       log(`🥋 수련 구역을 모두 정복했습니다! 이제부터는 ${TRAINING_DUNGEON_MAX_FLOOR}층을 반복해서 도전할 수 있습니다.`, 'good');
     }
-  } else {
-    state.tdFloor++;
   }
   endTrainingDungeon();
 }
@@ -4704,7 +4696,7 @@ function renderTrainingDungeonPanel(){
 
   const floorEl = document.getElementById('tdFloorText');
   if(!floorEl) return;
-  floorEl.textContent = state.tdCleared
+  floorEl.textContent = state.tdFloor >= TRAINING_DUNGEON_MAX_FLOOR
     ? `${TRAINING_DUNGEON_MAX_FLOOR}/${TRAINING_DUNGEON_MAX_FLOOR} (정복 완료 · 반복 도전 가능)`
     : `${state.tdFloor}/${TRAINING_DUNGEON_MAX_FLOOR}`;
   document.getElementById('tdNextReward').textContent = tdExpFor(state.tdFloor).toLocaleString();

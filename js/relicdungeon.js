@@ -6,7 +6,7 @@
 
 const RELIC_DUNGEON_TICKET_MAX = 3;
 const RELIC_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const RELIC_DUNGEON_MAX_FLOOR = 20;
+const RELIC_DUNGEON_MAX_FLOOR = 50;
 
 const RELIC_DUNGEON_META = {name:'유산 수호자', emoji:'🗿'};
 
@@ -122,13 +122,12 @@ function resolveRelicDungeonVictory(){
   state.fragments = (state.fragments||0) + fragGain;
   log(`🏆 [유산 구역] ${state.rdFloor}층 클리어! +${fragGain.toLocaleString()}◈`, 'good');
 
-  if(state.rdFloor >= RELIC_DUNGEON_MAX_FLOOR){
-    if(!state.rdCleared){
+  if(state.rdFloor < RELIC_DUNGEON_MAX_FLOOR){
+    state.rdFloor++;
+    if(state.rdFloor >= RELIC_DUNGEON_MAX_FLOOR){
       state.rdCleared = true;
       log(`🗿 유산 구역을 모두 정복했습니다! 이제부터는 ${RELIC_DUNGEON_MAX_FLOOR}층을 반복해서 도전할 수 있습니다.`, 'good');
     }
-  } else {
-    state.rdFloor++;
   }
   endRelicDungeon();
 }
@@ -152,7 +151,7 @@ document.getElementById('rdEnterBtn').addEventListener('click', enterRelicDungeo
 function renderRelicDungeonPanel(){
   refreshRelicDungeonTickets();
 
-  document.getElementById('rdFloorText').textContent = state.rdCleared
+  document.getElementById('rdFloorText').textContent = state.rdFloor >= RELIC_DUNGEON_MAX_FLOOR
     ? `${RELIC_DUNGEON_MAX_FLOOR}/${RELIC_DUNGEON_MAX_FLOOR} (정복 완료 · 반복 도전 가능)`
     : `${state.rdFloor}/${RELIC_DUNGEON_MAX_FLOOR}`;
   document.getElementById('rdNextReward').textContent = rdFragFor(state.rdFloor).toLocaleString();

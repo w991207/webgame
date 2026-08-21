@@ -6,7 +6,7 @@
 
 const GOLD_DUNGEON_TICKET_MAX = 3;
 const GOLD_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const GOLD_DUNGEON_MAX_FLOOR = 20;
+const GOLD_DUNGEON_MAX_FLOOR = 50;
 
 const GOLD_DUNGEON_META = {name:'물자 창고 경비병', emoji:'📦'};
 
@@ -124,13 +124,12 @@ function resolveGoldDungeonVictory(){
   state.lifetimeGoldEarned = (state.lifetimeGoldEarned||0) + goldGain;
   log(`🏆 [물자 구역] ${state.gdFloor}층 클리어! +${goldGain.toLocaleString()}📦`, 'good');
 
-  if(state.gdFloor >= GOLD_DUNGEON_MAX_FLOOR){
-    if(!state.gdCleared){
+  if(state.gdFloor < GOLD_DUNGEON_MAX_FLOOR){
+    state.gdFloor++;
+    if(state.gdFloor >= GOLD_DUNGEON_MAX_FLOOR){
       state.gdCleared = true;
       log(`📦 물자 구역을 모두 정복했습니다! 이제부터는 ${GOLD_DUNGEON_MAX_FLOOR}층을 반복해서 도전할 수 있습니다.`, 'good');
     }
-  } else {
-    state.gdFloor++;
   }
   endGoldDungeon();
 }
@@ -155,7 +154,7 @@ document.getElementById('gdEnterBtn').addEventListener('click', enterGoldDungeon
 function renderGoldDungeonPanel(){
   refreshGoldDungeonTickets();
 
-  document.getElementById('gdFloorText').textContent = state.gdCleared
+  document.getElementById('gdFloorText').textContent = state.gdFloor >= GOLD_DUNGEON_MAX_FLOOR
     ? `${GOLD_DUNGEON_MAX_FLOOR}/${GOLD_DUNGEON_MAX_FLOOR} (정복 완료 · 반복 도전 가능)`
     : `${state.gdFloor}/${GOLD_DUNGEON_MAX_FLOOR}`;
   document.getElementById('gdNextReward').textContent = gdGoldFor(state.gdFloor).toLocaleString();

@@ -6,7 +6,7 @@
 
 const FORGE_DUNGEON_TICKET_MAX = 3;
 const FORGE_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const FORGE_DUNGEON_MAX_FLOOR = 20;
+const FORGE_DUNGEON_MAX_FLOOR = 50;
 
 const FORGE_DUNGEON_META = {name:'단조로의 파수꾼', emoji:'🔥'};
 
@@ -122,13 +122,11 @@ function resolveForgeDungeonVictory(){
   state.totalEnhanceStonesEarned = (state.totalEnhanceStonesEarned||0) + stoneGain;
   log(`🏆 [단조 구역] ${state.fdFloor}층 클리어! +${stoneGain.toLocaleString()}🔩`, 'good');
 
-  if(state.fdFloor >= FORGE_DUNGEON_MAX_FLOOR){
-    if(!state.fdCleared){
-      state.fdCleared = true;
+  if(state.fdFloor < FORGE_DUNGEON_MAX_FLOOR){
+    state.fdFloor++;
+    if(state.fdFloor >= FORGE_DUNGEON_MAX_FLOOR){
       log(`🔥 단조 구역을 모두 정복했습니다! 이제부터는 ${FORGE_DUNGEON_MAX_FLOOR}층을 반복해서 도전할 수 있습니다.`, 'good');
     }
-  } else {
-    state.fdFloor++;
   }
   endForgeDungeon();
 }
@@ -154,7 +152,7 @@ function renderForgeDungeonPanel(){
 
   const floorEl = document.getElementById('fdFloorText');
   if(!floorEl) return;
-  floorEl.textContent = state.fdCleared
+  floorEl.textContent = state.fdFloor >= FORGE_DUNGEON_MAX_FLOOR
     ? `${FORGE_DUNGEON_MAX_FLOOR}/${FORGE_DUNGEON_MAX_FLOOR} (정복 완료 · 반복 도전 가능)`
     : `${state.fdFloor}/${FORGE_DUNGEON_MAX_FLOOR}`;
   document.getElementById('fdNextReward').textContent = fdStoneFor(state.fdFloor).toLocaleString();

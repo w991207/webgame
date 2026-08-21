@@ -119,7 +119,6 @@ function defaultState(){
     fdMonsterHp: 0,
     fdMonsterMaxHp: 0,
     fdPlayerHp: 0,
-    fdCleared: false,
 
     // ---------- Training Dungeon (수련 구역, 경험치 보상) ----------
     tdFloor: 1,
@@ -129,7 +128,6 @@ function defaultState(){
     tdMonsterHp: 0,
     tdMonsterMaxHp: 0,
     tdPlayerHp: 0,
-    tdCleared: false,
 
     // ---------- Equipment (물자 뽑기 장비 시스템) ----------
     equipment: {weapon:null, armor:null, accessory:null},
