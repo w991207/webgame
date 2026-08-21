@@ -149,7 +149,7 @@
   #board-controls button:disabled, #board-controls2 button:disabled{ background:#665a48; color:#9a8c73; cursor:not-allowed; }
   #board-controls button.secondary, #board-controls2 button.secondary{ background:var(--panel2); color:var(--text); border:1px solid var(--accent); }
   #board-controls button.danger, #board-controls2 button.danger{ background:#8a2b2b; color:var(--text); border:1px solid var(--accent2); }
-  #board-controls2 button.active-toggle{ background:var(--accent2); color:var(--text); border-color:var(--accent2); }
+  #board-controls button.active-toggle, #board-controls2 button.active-toggle{ background:var(--accent2); color:var(--text); border-color:var(--accent2); }
 
   #chain-hint{ margin-top:10px; font-size:11px; color:var(--sub); text-align:center; line-height:1.5; }
 
@@ -442,6 +442,7 @@
       <div id="board-controls2">
         <button id="btn-auto-recruit" class="secondary">⚡ 최강 편성</button>
         <button id="btn-upgrade-spawn" class="secondary">쿨타임 강화 (💰30)</button>
+        <button id="btn-screen-shake" class="secondary">화면흔들림: ON</button>
       </div>
       <div id="chain-hint">
         재료를 같은 재료 위로 <b>드래그</b>하면 합성됩니다.<br>
@@ -759,6 +760,7 @@ function defaultState(){
     lastSpawnAt: Date.now(),
     lastTickAt: Date.now(),
     autoMergeOn: false,
+    screenShakeOn: true,
     lastAutoMergeAt: Date.now(),
     spawnLevel: 1,
     log: [],
@@ -853,6 +855,7 @@ function load(){
   try{
     state = JSON.parse(raw);
     if(typeof state.autoMergeOn !== 'boolean') state.autoMergeOn = false;
+    if(typeof state.screenShakeOn !== 'boolean') state.screenShakeOn = true;
     if(typeof state.spawnLevel !== 'number') state.spawnLevel = 1;
     if(typeof state.lastAutoMergeAt !== 'number') state.lastAutoMergeAt = Date.now();
     if(!state.relics) state.relics = {};
@@ -940,6 +943,12 @@ function performOneMerge(){
 function toggleAutoMerge(){
   state.autoMergeOn = !state.autoMergeOn;
   if(state.autoMergeOn) state.lastAutoMergeAt = Date.now();
+  updateStatusbar();
+  save();
+}
+
+function toggleScreenShake(){
+  state.screenShakeOn = !state.screenShakeOn;
   updateStatusbar();
   save();
 }
@@ -1142,6 +1151,7 @@ function spawnMergeParticles(cellEl, count){
 }
 
 function triggerScreenShake(){
+  if(!state.screenShakeOn) return;
   document.body.classList.remove('screen-shake');
   void document.body.offsetWidth;
   document.body.classList.add('screen-shake');
@@ -2041,6 +2051,10 @@ function updateStatusbar(){
   autoMergeBtn.textContent = '자동머지: ' + (state.autoMergeOn ? 'ON' : 'OFF');
   autoMergeBtn.classList.toggle('active-toggle', state.autoMergeOn);
 
+  const screenShakeBtn = document.getElementById('btn-screen-shake');
+  screenShakeBtn.textContent = '화면흔들림: ' + (state.screenShakeOn ? 'ON' : 'OFF');
+  screenShakeBtn.classList.toggle('active-toggle', state.screenShakeOn);
+
   const autoRecruitBtn = document.getElementById('btn-auto-recruit');
   autoRecruitBtn.disabled = (state.party.length===0 && state.board.every(c=>!c));
 
@@ -2228,6 +2242,7 @@ document.getElementById('btn-spawn').addEventListener('click', ()=>{
 });
 
 document.getElementById('btn-auto-merge').addEventListener('click', toggleAutoMerge);
+document.getElementById('btn-screen-shake').addEventListener('click', toggleScreenShake);
 document.getElementById('btn-auto-recruit').addEventListener('click', optimizeParty);
 document.getElementById('btn-upgrade-spawn').addEventListener('click', upgradeSpawnSpeed);
 
