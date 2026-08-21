@@ -130,9 +130,17 @@
     margin:20px 0 16px;padding-bottom:12px;border-bottom:1px solid var(--border);
   }
   .tab-nav-btn{
+    position:relative;
     background:var(--panel);border:1px solid var(--border);color:var(--text-dim);
     font-family:'Black Han Sans',sans-serif;font-weight:700;font-size:14px;
     padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .2s;
+  }
+  /* 탭 알림 배지 — 확인할 게 있는 탭에 숫자 표시 */
+  .tab-badge{
+    position:absolute;top:-6px;right:-6px;
+    min-width:16px;height:16px;padding:0 4px;border-radius:9px;
+    background:var(--hp);color:#fff;font-size:10px;line-height:16px;text-align:center;
+    font-weight:700;box-shadow:0 0 6px rgba(255,80,80,.6);
   }
   .tab-nav-btn:hover{border-color:var(--gold);color:var(--text);}
   .tab-nav-btn.active{

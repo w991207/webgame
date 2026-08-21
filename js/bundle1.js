@@ -5168,6 +5168,48 @@ function renderAll(){
   }
   if(typeof renderTerritoryPanel === 'function') renderTerritoryPanel();
   if(typeof renderExpeditionPanel === 'function') renderExpeditionPanel();
+  updateTabBadges();
+}
+
+// ---------- 탭 알림 배지 ----------
+// 영지/구역 탭 버튼에, 미리 처리할 게 있으면 숫자 배지를 표시한다 (renderAll 1초 주기로 갱신).
+function updateTabBadges(){
+  // 영지: 수확 가능한 재화가 쌓였으면(물자·파편·혈청 3종 각각) 배지.
+  //   단, 항상 켜지지 않도록 "저장 상한(가득 참)에 도달한 종류"만 카운트한다.
+  let terr = 0;
+  if(typeof territoryPending === 'function' && typeof territoryCapAmount === 'function'){
+    ['gold','fragment','soul'].forEach(type=>{
+      const pending = Math.floor(territoryPending(type));
+      const cap = Math.floor(territoryCapAmount(type));
+      if(cap > 0 && pending >= cap) terr++; // 가득 찬 재화만
+    });
+  }
+  if(Array.isArray(state.expeditions)){
+    terr += state.expeditions.filter(e => Date.now() >= (e.endAt || 0)).length;
+  }
+  setTabBadge('tabNotifyTerritory', terr);
+
+  // 구역: 티켓이 하나라도 있는 게 아니라, "최대치로 가득 찬 구역"이 하나라도 있으면 배지.
+  //   (티켓은 시간이 지나면 계속 차기 때문에 "있다"로 걸면 사실상 항상 켜지므로, 충전이 막힌 가득 상태만 알려준다)
+  const fullTickets = [
+    (state.gdTicket||0) >= (typeof GOLD_DUNGEON_TICKET_MAX !== 'undefined' ? GOLD_DUNGEON_TICKET_MAX : 3),
+    (state.rdTicket||0) >= (typeof RELIC_DUNGEON_TICKET_MAX !== 'undefined' ? RELIC_DUNGEON_TICKET_MAX : 3),
+    (state.fdTicket||0) >= (typeof FORGE_DUNGEON_TICKET_MAX !== 'undefined' ? FORGE_DUNGEON_TICKET_MAX : 3),
+    (state.tdTicket||0) >= (typeof TRAINING_DUNGEON_TICKET_MAX !== 'undefined' ? TRAINING_DUNGEON_TICKET_MAX : 3),
+  ].filter(Boolean).length;
+  setTabBadge('tabNotifyDungeon', fullTickets);
+}
+
+function setTabBadge(id, count){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(count > 0){
+    el.textContent = count > 99 ? '99+' : String(count);
+    el.style.display = 'inline-flex';
+  } else {
+    el.textContent = '';
+    el.style.display = 'none';
+  }
 }
 
 
