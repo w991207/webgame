@@ -1,0 +1,2227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>푸드 파이터즈 (선술집 리모델링 판)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/quiple/galmuri@1.0/dist/galmuri.css">
+<style>
+  :root{
+    --bg:#2b2118;
+    --panel:#3a2c1e;
+    --panel2:#463522;
+    --accent:#ff9f43;
+    --accent2:#ff6b6b;
+    --text:#f5e9d8;
+    --sub:#c9b79c;
+    --hp:#4caf50;
+    --hp-bg:#5a3d2b;
+    --tank:#6fae4a;
+    --dealer:#e0574c;
+    --healer:#4ea1e0;
+    --boss:#ffd23f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Segoe UI',Apple SD Gothic Neo,sans-serif;
+    background:var(--bg); color:var(--text);
+    display:flex; justify-content:center;
+  }
+  #app{ width:100%; max-width:480px; min-height:100vh; display:flex; flex-direction:column; position:relative; }
+
+  #statusbar{
+    background:var(--panel2); padding:10px 14px;
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:13px; border-bottom:2px solid #000a;
+    position:sticky; top:0; z-index:5;
+  }
+  #statusbar .stat{ display:flex; flex-direction:column; align-items:center; gap:2px;}
+  #statusbar .stat b{ font-size:14px; color:var(--accent);}
+  #mini-hp-wrap{flex:1; margin:0 10px;}
+  #mini-hp-bar{ height:8px; background:var(--hp-bg); border-radius:4px; overflow:hidden;}
+  #mini-hp-fill{ height:100%; background:var(--hp); width:100%; transition:width .3s;}
+
+  #tabs{ display:flex; background:var(--panel); }
+  .tab-btn{
+    flex:1; padding:10px 4px; text-align:center; background:none; border:none;
+    color:var(--sub); font-size:13px; font-weight:bold; cursor:pointer;
+    border-bottom:3px solid transparent;
+  }
+  .tab-btn.active{ color:var(--accent); border-bottom:3px solid var(--accent); }
+
+  #content{ flex:1; padding:16px; }
+  .screen{ display:none; }
+  .screen.active{ display:block; }
+
+  #line-legend{ display:flex; gap:6px; margin-bottom:10px; font-size:11px; flex-wrap:wrap; justify-content:space-between; }
+  .legend-chip{ display:flex; align-items:center; gap:4px; padding:4px 8px; border-radius:20px; background:var(--panel2); }
+  .legend-dot{ width:8px; height:8px; border-radius:50%; }
+
+  #board{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:6px;
+    background:var(--panel); padding:10px; border-radius:12px;
+  }
+  .cell{
+    aspect-ratio:1; background:var(--panel2); border-radius:8px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-size:20px; cursor:pointer; user-select:none; -webkit-user-select:none; position:relative;
+    border:2px solid transparent; transition:transform .12s, border-color .15s, box-shadow .15s;
+    touch-action:none;
+  }
+  .cell.selected{ border-color:var(--accent); transform:scale(1.05); }
+  .cell.sell-mode{ border-color:var(--accent2); }
+  .cell .tier-label{ font-size:8px; color:var(--sub); position:absolute; bottom:2px;}
+  .cell .line-dot{ position:absolute; top:3px; right:3px; width:6px; height:6px; border-radius:50%; }
+
+  .cell.cell-dragging{ opacity:.28; transform:scale(.85); }
+  .cell.drop-valid{ border-color:#4caf50; box-shadow:0 0 0 3px #4caf5077; transform:scale(1.1); z-index:2; }
+  .cell.drop-invalid{ border-color:var(--accent2); animation:shakeX .25s; }
+  @keyframes shakeX{
+    0%,100%{ transform:translateX(0); }
+    25%{ transform:translateX(-4px); }
+    75%{ transform:translateX(4px); }
+  }
+  @keyframes cellSpawnPop{
+    0%{ transform:scale(0) rotate(-10deg); opacity:0; }
+    65%{ transform:scale(1.18) rotate(3deg); opacity:1; }
+    100%{ transform:scale(1) rotate(0); }
+  }
+  .cell.anim-spawn{ animation:cellSpawnPop .38s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes cellMergePop{
+    0%{ transform:scale(1.4); filter:brightness(2); }
+    50%{ transform:scale(.92); }
+    100%{ transform:scale(1); filter:brightness(1); }
+  }
+  .cell.anim-merge{ animation:cellMergePop .32s ease-out; }
+  @keyframes cellComboPop{
+    0%{ transform:scale(1.6) rotate(0deg); filter:brightness(2.5) drop-shadow(0 0 8px #ffd23f); }
+    40%{ transform:scale(0.85) rotate(-6deg); }
+    70%{ transform:scale(1.12) rotate(4deg); }
+    100%{ transform:scale(1) rotate(0); filter:brightness(1); }
+  }
+  .cell.anim-combo{ animation:cellComboPop .5s ease-out; border-color:var(--boss) !important; box-shadow:0 0 10px #ffd23f99; }
+  .cell.anim-move{ animation:cellSpawnPop .2s ease-out; }
+  .cell.anim-sell{ transform:scale(0) rotate(25deg) !important; opacity:0 !important; transition:all .2s ease-in; }
+  .drag-ghost{
+    position:fixed; pointer-events:none; z-index:999; font-size:32px;
+    transform:translate(-50%,-50%) scale(1.35);
+    filter:drop-shadow(0 6px 8px #0009);
+  }
+
+  #board-controls{ display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:12px; }
+  #board-controls2{ display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-top:6px; }
+  #board-controls button, #board-controls2 button{
+    padding:10px 4px; border:none; border-radius:8px; font-size:12px;
+    background:var(--accent); color:#2b2118; font-weight:bold; cursor:pointer;
+  }
+  #board-controls button:disabled, #board-controls2 button:disabled{ background:#665a48; color:#9a8c73; cursor:not-allowed; }
+  #board-controls button.secondary, #board-controls2 button.secondary{ background:var(--panel2); color:var(--text); border:1px solid var(--accent); }
+  #board-controls button.danger, #board-controls2 button.danger{ background:#8a2b2b; color:var(--text); border:1px solid var(--accent2); }
+  #board-controls2 button.active-toggle{ background:var(--accent2); color:var(--text); border-color:var(--accent2); }
+
+  #chain-hint{ margin-top:10px; font-size:11px; color:var(--sub); text-align:center; line-height:1.5; }
+
+  #battle-scene{
+    background:var(--panel); border-radius:12px; padding:20px; text-align:center;
+    position:relative; overflow:hidden;
+  }
+  #battle-scene.boss-bg{ background:linear-gradient(180deg, #4a2e1a, var(--panel)); box-shadow: inset 0 0 30px #ffd23f55; }
+  #stage-label{ color:var(--accent); font-weight:bold; margin-bottom:10px; }
+  #stage-label.boss-label{ color:var(--boss); }
+  #monster-emoji{ font-size:60px; display:inline-block; position:relative; }
+  #monster-emoji.hit-flash{ animation:hitflash .25s; }
+  @keyframes hitflash{ 0%{filter:brightness(2.5);transform:scale(0.92);} 100%{filter:brightness(1);transform:scale(1);} }
+  #monster-name{ font-weight:bold; margin-top:6px; }
+  #monster-name .boss-tag{ color:var(--boss); }
+  .hpbar{ height:14px; background:var(--hp-bg); border-radius:7px; overflow:hidden; margin:8px 0; position:relative; }
+  .hpbar-fill{ height:100%; background:var(--accent2); transition:width .2s; }
+  #float-layer{ position:absolute; inset:0; pointer-events:none; }
+  .float-text{
+    position:absolute; left:50%; top:55%; transform:translateX(-50%);
+    font-weight:bold; font-size:15px; animation:floatup .8s ease-out forwards;
+    white-space:nowrap; z-index:10;
+  }
+  .float-dmg{ color:#ff6b6b; text-shadow: 1px 1px 2px #000; }
+  .float-heal{ color:#6bffb0; text-shadow: 1px 1px 2px #000; }
+  .float-skill{ color:#ffd23f; font-size:16px; text-shadow: 1px 1px 2px #000; }
+  @keyframes floatup{
+    0%{ opacity:1; transform:translate(-50%,0); }
+    100%{ opacity:0; transform:translate(-50%,-40px); }
+  }
+
+  #party-list{ margin-top:16px; display:flex; flex-direction:column; gap:8px; }
+  .party-card{
+    background:var(--panel2); border-radius:8px; padding:10px 30px 10px 12px;
+    display:flex; align-items:center; gap:10px; border-left:4px solid var(--accent);
+    position:relative;
+  }
+  .remove-unit-btn{
+    position:absolute; top:6px; right:6px; background:none; border:none;
+    color:var(--sub); font-size:14px; cursor:pointer; padding:2px 6px; line-height:1;
+  }
+  .remove-unit-btn:hover{ color:var(--accent2); }
+  .party-card .emoji{ font-size:28px; }
+  .party-card .info{ flex:1; text-align:left; font-size:12px; line-height:1.5; }
+  .party-card .info b{ color:var(--accent); }
+  .role-badge{ font-size:10px; padding:2px 6px; border-radius:10px; color:#1a1208; font-weight:bold; margin-left:4px; }
+  .skill-meter{ height:4px; background:#222; border-radius:2px; margin-top:4px; overflow:hidden; }
+  .skill-fill{ height:100%; background:var(--boss); width:0%; transition:width .2s; }
+  .empty-slot{ background:none; border:2px dashed #5a4a35; color:#5a4a35; text-align:center; padding:14px; border-radius:8px; font-size:12px; }
+
+  #log{
+    margin-top:12px; background:#1e1611; border-radius:8px; padding:8px 10px;
+    font-size:11px; color:var(--sub); height:70px; overflow-y:auto;
+  }
+
+  .quest-card {
+    background: var(--panel2); border-radius: 10px; padding: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-left: 4px solid var(--accent); margin-bottom: 10px;
+  }
+  .quest-info { text-align: left; font-size: 13px; line-height:1.4; }
+  .quest-info b { color: var(--accent); }
+  .quest-btn {
+    padding: 8px 12px; border: none; border-radius: 6px;
+    background: var(--accent); color: #2b2118; font-weight: bold; cursor: pointer;
+  }
+  .quest-btn:disabled { background: #665a48; color: #9a8c73; cursor: not-allowed; }
+
+  .modal{
+    position:fixed; inset:0; background:rgba(0,0,0,0.8);
+    display:none; justify-content:center; align-items:center; z-index:100;
+  }
+  .modal.active{ display:flex; }
+  .modal-box{
+    background:var(--panel2); border:2px solid var(--accent); border-radius:12px;
+    padding:20px; width:80%; max-width:320px; text-align:center;
+  }
+  .modal-box h3{ color:var(--accent); margin-top:0; }
+  .modal-box button{
+    margin-top:14px; padding:8px 16px; background:var(--accent); border:none;
+    border-radius:6px; font-weight:bold; cursor:pointer;
+  }
+
+  #relic-list{ display:flex; flex-direction:column; gap:10px; }
+  .relic-card{
+    background:var(--panel2); border-radius:10px; padding:12px; display:flex; gap:10px;
+    align-items:center; border-left:4px solid #7a6a4f;
+  }
+  .relic-card.owned{ border-left-color:var(--accent); }
+  .relic-card .r-emoji{ font-size:30px; width:36px; text-align:center; }
+  .relic-card .r-info{ flex:1; font-size:12px; line-height:1.5; }
+  .relic-card .r-info b{ color:var(--accent); }
+  .relic-card .r-info .r-level{ color:var(--sub); font-size:11px; }
+  .relic-card button{
+    padding:8px 10px; border:none; border-radius:6px; font-size:11px; font-weight:bold;
+    background:var(--accent); color:#2b2118; cursor:pointer; white-space:nowrap;
+  }
+  .relic-card button:disabled{ background:#665a48; color:#9a8c73; cursor:not-allowed; }
+
+  .relic-choice-list{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .relic-choice-item{
+    background:var(--panel); border:2px solid #7a6a4f; border-radius:10px; padding:10px;
+    display:flex; align-items:center; gap:10px; cursor:pointer; text-align:left;
+  }
+  .relic-choice-item:active{ border-color:var(--accent); }
+  .relic-choice-item .r-emoji{ font-size:26px; }
+  .relic-choice-item .r-info{ font-size:11px; color:var(--sub); line-height:1.4; flex:1; }
+  .relic-choice-item .r-info b{ color:var(--accent); font-size:13px; }
+
+  .dex-section{ margin-bottom:18px; }
+  .dex-section-title{ font-size:13px; font-weight:bold; margin-bottom:8px; padding-left:4px; border-left:4px solid var(--accent); }
+  .dex-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .dex-card{
+    background:var(--panel2); border-radius:10px; padding:10px 6px; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:4px; min-height:70px; justify-content:center;
+  }
+  .dex-card .d-emoji{ font-size:26px; }
+  .dex-card.locked .d-emoji{ filter:grayscale(1) brightness(0.4); }
+  .dex-card .d-name{ font-size:10px; color:var(--sub); line-height:1.3; }
+  .dex-card.locked .d-name{ color:#5a4a35; }
+  .dex-card.final{ border:1px solid var(--boss); }
+
+  /* 타이쿤 스타일 매장 (왕갈비집 대부자 참고) */
+  .tv-ticker{
+    background:#1c0a04; color:#ffd23f; font-family:'Galmuri11', monospace; font-size:11px;
+    padding:5px 0; border-radius:8px; margin-bottom:10px; overflow:hidden; white-space:nowrap;
+    border:2px solid #e0a800;
+  }
+  .tv-ticker span{ display:inline-block; padding-left:100%; animation:tvScroll 14s linear infinite; }
+  @keyframes tvScroll{ 0%{transform:translateX(0);} 100%{transform:translateX(-100%);} }
+
+  .tv-floor-wrap{ margin-bottom:6px; }
+  .tv-floor{
+    position:relative; width:100%; aspect-ratio:4/3;
+    background:
+      repeating-linear-gradient(0deg, #c99a5b 0 16px, #b5824a 16px 32px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.05) 0 16px, transparent 16px 32px);
+    border:5px solid #1c0a04; border-radius:12px;
+    box-shadow:5px 5px 0 rgba(0,0,0,0.4), inset 0 0 20px rgba(0,0,0,0.35);
+    overflow:hidden;
+  }
+  .tv-door{
+    position:absolute; left:5%; top:50%; transform:translate(-50%,-50%);
+    font-size:24px; z-index:4; filter:drop-shadow(2px 2px 0 rgba(0,0,0,0.4));
+  }
+  .tv-table{
+    position:absolute; transform:translate(-50%,-50%); z-index:2;
+    width:16%; aspect-ratio:1/1;
+    display:flex; align-items:center; justify-content:center;
+    filter:drop-shadow(2px 4px 0 rgba(0,0,0,0.4));
+  }
+  .tv-table svg{ width:100%; height:100%; overflow:visible; }
+  .tv-table .tv-table-lock{
+    position:absolute; font-size:16px; filter:drop-shadow(1px 2px 0 rgba(0,0,0,0.6));
+  }
+  .tv-table.locked{ opacity:.35; }
+  .tv-table.locked svg{ filter:grayscale(60%); }
+  .tv-stool{
+    position:absolute; transform:translate(-50%,-50%); z-index:2.5;
+    width:9%; aspect-ratio:1/1;
+    display:flex; align-items:center; justify-content:center;
+    filter:drop-shadow(1px 3px 0 rgba(0,0,0,0.4));
+  }
+  .tv-stool svg{ width:100%; height:100%; overflow:visible; }
+  .tv-stool.locked{ opacity:.35; }
+  .tv-stool.locked svg{ filter:grayscale(60%); }
+  .tv-furniture{
+    position:absolute; transform:translate(-50%,-50%); z-index:1;
+    font-size:22px; cursor:grab; user-select:none; touch-action:none;
+    filter:drop-shadow(1px 3px 0 rgba(0,0,0,0.5));
+  }
+  .tv-furniture:active{ cursor:grabbing; }
+  .tv-customer{
+    position:absolute; transform:translate(-50%,-50%);
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    z-index:3; transition:left .9s ease, top .9s ease, opacity .5s ease;
+    cursor:pointer;
+  }
+  .tv-customer .tc-emoji{ font-size:24px; filter:drop-shadow(2px 2px 0 rgba(0,0,0,0.4)); }
+  .tv-customer .tc-emoji svg{ width:26px; height:26px; display:block; }
+  .tv-customer.vip .tc-emoji{ font-size:26px; }
+  .tv-customer.vip .tc-emoji svg{ width:30px; height:30px; }
+  .tv-customer .tc-bubble{
+    background:#fff6df; color:#1c0a04; font-size:9px; font-weight:bold; padding:3px 6px; border-radius:7px;
+    white-space:nowrap; max-width:90px; overflow:hidden; text-overflow:ellipsis; position:relative;
+    border:2px solid #452008;
+  }
+  .tv-customer .tc-bubble::after{
+    content:''; position:absolute; bottom:-5px; left:50%; transform:translateX(-50%);
+    border:5px solid transparent; border-top-color:#452008;
+  }
+  .tv-customer.vip .tc-bubble{ border-color:#ff6bd6; color:#ff2fb0; }
+  .tv-customer.ready .tc-emoji{ animation:tcBounce .6s ease-in-out infinite; }
+  @keyframes tcBounce{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);} }
+  .tv-customer.waiting{ opacity:.55; }
+  .tv-float{
+    position:absolute; transform:translate(-50%,-50%);
+    font-family:'Galmuri11', monospace; color:#ffd23f; font-size:14px;
+    text-shadow:2px 2px 0 #000; z-index:5; pointer-events:none; white-space:nowrap;
+    animation:tvFloatUp 1s ease-out forwards;
+  }
+  .tv-float.vip{ color:#ff6bd6; font-size:16px; }
+  @keyframes tvFloatUp{
+    0%{ transform:translate(-50%,-50%); opacity:1; }
+    100%{ transform:translate(-50%,-160%); opacity:0; }
+  }
+
+  .empty-customer{ font-size:11px; color:var(--sub); padding:10px; text-align:center; width:100%; }
+
+  .tv-inventory{
+    background:#201a17; border:2px solid #4a382a; border-radius:8px;
+    padding:8px 10px; margin-bottom:10px;
+  }
+  .tv-inventory-title{ font-size:11px; color:var(--sub); margin-bottom:6px; display:flex; justify-content:space-between; }
+  .tv-inventory-title b{ color:#f0c987; }
+  .tv-inventory-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tv-chip{
+    display:flex; align-items:center; gap:4px;
+    background:#2b2018; border:1px solid #4a382a; border-radius:14px;
+    padding:3px 9px 3px 6px; font-size:11px; color:#e2d7c5;
+  }
+  .tv-chip .tv-chip-emoji{ font-size:13px; }
+  .tv-chip .tv-chip-count{ color:#f0c987; font-weight:bold; }
+  .tv-inventory-empty{ font-size:10.5px; color:var(--sub); padding:2px 0; }
+
+  /* 선술집 목재 프레임 패널 & 버튼 (에셋 키트 참고) */
+  .tavern-panel{
+    background-color:#2b2018; border:4px solid #5c4028; outline:2px solid #1a120b;
+    border-radius:8px; box-shadow:inset 0 0 15px rgba(0,0,0,0.8), 0 5px 15px rgba(0,0,0,0.5);
+    color:#f3e5ab; padding:14px; margin-top:14px;
+  }
+  .tavern-panel h4{ margin:0 0 10px 0; color:#f3e5ab; }
+  .tavern-btn{
+    background:linear-gradient(to bottom, #f5b041, #d68910);
+    border:2px solid #5d4037; color:#2c1d11; font-weight:bold;
+    padding:8px 14px; border-radius:5px; cursor:pointer;
+    box-shadow:0 4px 0 #3e2723; font-size:11px; white-space:nowrap;
+  }
+  .tavern-btn:hover{ background:linear-gradient(to bottom, #f7dc6f, #f5b041); }
+  .tavern-btn:disabled{ background:#555; color:#999; cursor:not-allowed; box-shadow:none; }
+  .tavern-item{
+    display:flex; align-items:center; gap:12px; background:#201a17;
+    border:1px solid #3d3027; border-radius:6px; padding:8px 10px; margin-bottom:8px;
+  }
+  .tavern-item .ti-icon{ width:36px; height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+  .tavern-item .ti-icon svg{ width:32px; height:32px; }
+  .tavern-item .ti-info{ flex:1; min-width:0; font-size:11px; color:#cbbba4; }
+  .tavern-item .ti-info b{ color:#f0c987; font-size:12.5px; }
+
+  .tv-furniture svg{ width:30px; height:30px; display:block; filter:drop-shadow(1px 3px 0 rgba(0,0,0,0.5)); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="statusbar">
+    <div class="stat">💰<b id="gold-val">0</b></div>
+    <div id="mini-hp-wrap">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--sub);">
+        <span id="mini-stage">스테이지 1</span><span id="mini-hp-text">-</span>
+      </div>
+      <div id="mini-hp-bar"><div id="mini-hp-fill"></div></div>
+    </div>
+    <div class="stat">👥<b id="party-count">0/5</b></div>
+  </div>
+
+  <div id="tabs">
+    <button class="tab-btn active" data-tab="board">🥚 머지</button>
+    <button class="tab-btn" data-tab="battle">⚔️ 전투</button>
+    <button class="tab-btn" data-tab="tavern">🍺 선술집</button>
+    <button class="tab-btn" data-tab="relics">🏺 유물</button>
+    <button class="tab-btn" data-tab="dex">📖 도감</button>
+  </div>
+
+  <div id="content">
+    <div id="screen-board" class="screen active">
+      <div id="line-legend">
+        <div class="legend-chip"><span class="legend-dot" style="background:var(--tank)"></span>밥 (탱)</div>
+        <div class="legend-chip"><span class="legend-dot" style="background:var(--dealer)"></span>면 (딜)</div>
+        <div class="legend-chip"><span class="legend-dot" style="background:var(--healer)"></span>국 (힐)</div>
+      </div>
+      <div id="board"></div>
+      <div id="board-controls">
+        <button id="btn-spawn">소환</button>
+        <button id="btn-auto-merge" class="secondary">자동머지: OFF</button>
+        <button id="btn-recruit" class="secondary" disabled>유닛 편성</button>
+        <button id="btn-sell-mode" class="danger">재료 판매</button>
+      </div>
+      <div id="board-controls2">
+        <button id="btn-auto-recruit" class="secondary">⚡ 최강 편성</button>
+        <button id="btn-upgrade-spawn" class="secondary">쿨타임 강화 (💰30)</button>
+      </div>
+      <div id="chain-hint">
+        재료를 같은 재료 위로 <b>드래그</b>하면 합성됩니다.<br>
+        자동머지를 켜두면 알아서 합성되며, 선술집에서 재료 납품 시 대량 골드를 얻습니다.
+      </div>
+      <button id="btn-party-reset" style="width:100%;margin-top:12px;padding:8px;border-radius:8px;background:var(--panel2);color:var(--text);border:1px solid var(--accent2);cursor:pointer;font-size:11px;">파티 초기화</button>
+    </div>
+
+    <div id="screen-battle" class="screen">
+      <div id="battle-scene">
+        <div id="float-layer"></div>
+        <div id="stage-label">스테이지 1</div>
+        <div id="monster-emoji">👾</div>
+        <div id="monster-name">슬라임</div>
+        <div class="hpbar"><div class="hpbar-fill" id="monster-hp-fill"></div></div>
+        <div id="monster-hp-text" style="font-size:12px;color:var(--sub);"></div>
+      </div>
+      <div id="party-list"></div>
+      <div id="log"></div>
+    </div>
+
+    <div id="screen-tavern" class="screen"></div>
+
+    <div id="screen-relics" class="screen">
+      <div id="relic-list"></div>
+    </div>
+
+    <div id="screen-dex" class="screen">
+      <div id="dex-list"></div>
+    </div>
+  </div>
+
+  <div id="offline-modal" class="modal">
+    <div class="modal-box">
+      <h3>💤 오프라인 방치 보상</h3>
+      <p id="offline-desc" style="font-size:13px; line-height:1.5; color:var(--sub);"></p>
+      <button id="btn-offline-claim">보상 수령</button>
+    </div>
+  </div>
+
+  <div id="relic-choice-modal" class="modal">
+    <div class="modal-box">
+      <h3>👑 보스 처치 보상</h3>
+      <p style="font-size:12px; color:var(--sub);">유물 하나를 선택하세요</p>
+      <div class="relic-choice-list" id="relic-choice-list"></div>
+    </div>
+  </div>
+
+  <div id="party-swap-modal" class="modal">
+    <div class="modal-box">
+      <h3>👥 파티가 가득 찼습니다</h3>
+      <p id="swap-desc" style="font-size:12px; color:var(--sub);"></p>
+      <div class="relic-choice-list" id="swap-list"></div>
+      <button id="btn-swap-cancel" style="background:var(--panel2); border:1px solid var(--accent2); color:var(--text);">💰 골드로 전환 (40)</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===================== 설정 ===================== */
+const BOARD_SIZE = 6;
+const PARTY_MAX = 5;
+const SAVE_KEY = 'food_merge_rpg_save_v4';
+const TICK_MS = 1000;
+const BASE_SPAWN_INTERVAL_MS = 3500;
+const MIN_SPAWN_INTERVAL_MS = 800;
+const SPAWN_LEVEL_STEP_MS = 150;
+const OFFLINE_MAX_TICKS = 7200;
+const BOSS_INTERVAL = 10;
+const AUTO_MERGE_INTERVAL_MS = 1400;
+const COMBO_BASE_CHANCE = 0.15;
+
+const LINES = {
+  rice: {
+    role:'tank', roleLabel:'탱커', color:'var(--tank)', skillName:'도발 장막', skillFreq:4,
+    chain: [
+      {name:'쌀',emoji:'🍚'}, {name:'주먹밥',emoji:'🍙'}, {name:'유부초밥',emoji:'🍥'},
+      {name:'도시락',emoji:'🍱'}, {name:'비빔밥',emoji:'🥗'}
+    ],
+    final:{name:'비빔밥 전사', emoji:'🥋', baseAtk:12, baseHp:220, baseDef:12, baseHeal:0}
+  },
+  noodle: {
+    role:'dealer', roleLabel:'딜러', color:'var(--dealer)', skillName:'면발 난무', skillFreq:3,
+    chain: [
+      {name:'면발',emoji:'🍝'}, {name:'우동',emoji:'🍲'}, {name:'짬뽕',emoji:'🌶️'},
+      {name:'볶음면',emoji:'🍛'}, {name:'라면',emoji:'🍜'}
+    ],
+    final:{name:'라면 전사', emoji:'🔥', baseAtk:52, baseHp:90, baseDef:0, baseHeal:0}
+  },
+  soup: {
+    role:'healer', roleLabel:'힐러', color:'var(--healer)', skillName:'성수 배포', skillFreq:5,
+    chain: [
+      {name:'된장',emoji:'🫘'}, {name:'된장국',emoji:'🥣'}, {name:'미역국',emoji:'🍵'},
+      {name:'삼계탕',emoji:'🍲'}, {name:'보양식',emoji:'🍯'}
+    ],
+    final:{name:'보양식 힐러', emoji:'💧', baseAtk:8, baseHp:130, baseDef:2, baseHeal:16}
+  }
+};
+const LINE_KEYS = Object.keys(LINES);
+
+const MONSTER_POOL = [
+  {name:'슬라임', emoji:'👾'}, {name:'들쥐', emoji:'🐀'}, {name:'까마귀', emoji:'🐦‍⬛'},
+  {name:'좀비', emoji:'🧟'}, {name:'고블린', emoji:'👺'}, {name:'오크', emoji:'👹'},
+  {name:'트롤', emoji:'🗿'}, {name:'유령', emoji:'👻'}, {name:'박쥐 무리', emoji:'🦇'},
+  {name:'드래곤 새끼', emoji:'🐉'}
+];
+const BOSS_POOL = [
+  {name:'미식가 오우거', emoji:'👑'}, {name:'식탐의 마왕', emoji:'😈'}, {name:'거대 슬라임 킹', emoji:'🟣'}
+];
+const CUSTOMER_TYPES = ['drunk','hooded','mercenary'];
+const CUSTOMER_SVGS = {
+  drunk: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="22" r="10" fill="#E0AC69"/>
+    <path d="M20 20C20 12 44 12 44 20Z" fill="#6D4C41"/>
+    <path d="M28 22L30 20" stroke="#3E2723" stroke-width="1.5"/>
+    <path d="M34 20L36 22" stroke="#3E2723" stroke-width="1.5"/>
+    <circle cx="26" cy="24" r="2.5" fill="#E57373" fill-opacity="0.6"/>
+    <circle cx="38" cy="24" r="2.5" fill="#E57373" fill-opacity="0.6"/>
+    <path d="M20 32C20 32 24 30 32 30C40 30 44 32 44 32V54H20V32Z" fill="#3E2723"/>
+    <rect x="40" y="38" width="10" height="12" rx="1" fill="#F5B041" stroke="#3E2723" stroke-width="1.5"/>
+    <rect x="39" y="36" width="12" height="3" fill="#FFF8E1"/>
+  </svg>`,
+  hooded: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <path d="M18 54L22 26L32 14L42 26L46 54H18Z" fill="#1C2833"/>
+    <path d="M22 26L32 18L42 26L32 34L22 26Z" fill="#2C3E50"/>
+    <circle cx="28" cy="26" r="1.5" fill="#F4D03F"/>
+    <circle cx="36" cy="26" r="1.5" fill="#F4D03F"/>
+    <path d="M16 38C16 38 24 34 32 34C40 34 48 38 48 38V54H16V38Z" fill="#17202A"/>
+  </svg>`,
+  mercenary: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="22" r="10" fill="#B0BEC5" stroke="#37474F" stroke-width="2"/>
+    <path d="M24 22H40" stroke="#37474F" stroke-width="2"/>
+    <path d="M32 12V24" stroke="#37474F" stroke-width="2"/>
+    <path d="M18 32H46V54H18V32Z" fill="#78909C" stroke="#37474F" stroke-width="2"/>
+    <rect x="18" y="44" width="28" height="4" fill="#5D4037"/>
+    <rect x="29" y="43" width="6" height="6" fill="#FFD54F" stroke="#3E2723"/>
+  </svg>`,
+  vip: `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="32" cy="22" r="10" fill="#E0AC69" stroke="#D4AF37" stroke-width="1.5"/>
+    <path d="M20 18L26 24L32 15L38 24L44 18L41 26H23L20 18Z" fill="#D4AF37"/>
+    <path d="M20 32C20 32 24 30 32 30C40 30 44 32 44 32V54H20V32Z" fill="#212121"/>
+    <path d="M20 32C20 32 24 30 32 30C40 30 44 32 44 32V36H20V32Z" fill="#D4AF37"/>
+  </svg>`
+};
+const CUSTOMER_LABELS = { drunk:'취한 모험가', hooded:'의문의 손님', mercenary:'용병', vip:'VIP' };
+function customerAvatarHtml(q){
+  const key = q.isVip ? 'vip' : q.customer;
+  return CUSTOMER_SVGS[key] || q.customer; // 구버전 저장 데이터(이모지) 대비 fallback
+}
+
+/* ===================== 유물 ===================== */
+const MAX_RELIC_LEVEL = 5;
+const RELICS_DEF = {
+  pan:    { name:'황금 프라이팬', emoji:'🍳', desc:'전체 공격력', effect:'atk',        perLevel:0.08, fmt:v=>`+${Math.round(v*100)}%` },
+  chop:   { name:'명장의 젓가락', emoji:'🥢', desc:'머지 시 추가 재료 생성 확률', effect:'mergeBonus', perLevel:0.05, fmt:v=>`${Math.round(v*100)}%` },
+  bowl:   { name:'무한 밥그릇', emoji:'🍚', desc:'소환 비용 감소', effect:'spawnCost',  perLevel:0.06, fmt:v=>`-${Math.round(v*100)}%` },
+  fire:   { name:'불맛의 비법', emoji:'🌶️', desc:'딜러 스킬 피해 증가', effect:'dealerSkill', perLevel:0.15, fmt:v=>`+${Math.round(v*100)}%` },
+  broth:  { name:'신선한 국물', emoji:'🍯', desc:'힐량 증가', effect:'heal',       perLevel:0.10, fmt:v=>`+${Math.round(v*100)}%` },
+  board:  { name:'튼튼한 도마', emoji:'🪵', desc:'전체 HP 증가', effect:'hp',        perLevel:0.08, fmt:v=>`+${Math.round(v*100)}%` },
+  knife:  { name:'미식가의 칼', emoji:'🔪', desc:'치명타 확률 (피해 1.5배)', effect:'crit', perLevel:0.04, fmt:v=>`${Math.round(v*100)}%` },
+  pot:    { name:'황금 냄비', emoji:'🍲', desc:'오프라인 보상 증가', effect:'offline', perLevel:0.12, fmt:v=>`+${Math.round(v*100)}%` }
+};
+const RELIC_KEYS = Object.keys(RELICS_DEF);
+
+function relicLevel(id){ return (state.relics && state.relics[id]) || 0; }
+function relicUpgradeCost(id){ return 60 * (relicLevel(id) + 1); }
+function relicEffectValue(id){ return relicLevel(id) * RELICS_DEF[id].perLevel; }
+
+function relicEffects(){
+  const themeBonus = TAVERN_THEMES[state.tavernTheme || 'default'].bonusAtk;
+  const repBonus = (state.reputationLevel || 0) * 0.05;
+
+  return {
+    atkMult: (1 + relicEffectValue('pan') + themeBonus + repBonus),
+    healMult: 1 + relicEffectValue('broth'),
+    hpMult: 1 + relicEffectValue('board') + ((state.facilities && state.facilities.inn) ? state.facilities.inn * 0.1 : 0) + repBonus,
+    dealerSkillMult: relicEffectValue('fire'),
+    critChance: relicEffectValue('knife'),
+    spawnCostMult: 1 - relicEffectValue('bowl'),
+    mergeBonusChance: relicEffectValue('chop'),
+    offlineMult: 1 + relicEffectValue('pot')
+  };
+}
+
+function spawnCost(){
+  return Math.max(2, Math.round(10 * relicEffects().spawnCostMult));
+}
+
+function upgradeRelic(id){
+  const cost = relicUpgradeCost(id);
+  if(relicLevel(id) >= MAX_RELIC_LEVEL) return false;
+  if(state.gold < cost) return false;
+  state.gold -= cost;
+  state.relics[id] = relicLevel(id) + 1;
+  recalcPartyStats();
+  return true;
+}
+
+function generateRelicChoices(){
+  const candidates = RELIC_KEYS.filter(id=>relicLevel(id) < MAX_RELIC_LEVEL);
+  const pool = (candidates.length>0 ? candidates : RELIC_KEYS).slice();
+  const picks = [];
+  while(picks.length < 3 && pool.length > 0){
+    const i = Math.floor(Math.random()*pool.length);
+    picks.push(pool.splice(i,1)[0]);
+  }
+  return picks;
+}
+
+/* ===================== 상태 ===================== */
+let state = null;
+let sellMode = false;
+let boardAnimHints = { spawn:new Set(), merge:new Set(), moveIn:new Set(), combo:new Set() };
+
+const TAVERN_THEMES = {
+  default: { name: '기본 선술집', cost: 0, color: 'var(--panel)', bonusAtk: 0, desc: '평범한 분위기의 선술집입니다.' },
+  golden:  { name: '✨ 황금 선술집', cost: 5000, color: 'linear-gradient(180deg, #4a3b1a, #2b2118)', bonusAtk: 0.15, desc: '화려한 금빛 장식! 전체 공격력 +15%' },
+  magic:   { name: '🔮 마법 연구소', cost: 20000, color: 'linear-gradient(180deg, #2b1a4a, #1a182b)', bonusAtk: 0.35, desc: '신비로운 아우라! 전체 공격력 +35%' }
+};
+const THEME_BUILDING_EMOJI = { default:'🍺', golden:'🏆', magic:'🔮' };
+const TV_TABLE_POS = [
+  {x:28,y:24},{x:55,y:20},{x:82,y:24},
+  {x:28,y:52},{x:55,y:52},{x:82,y:52},
+  {x:28,y:80},{x:55,y:84},{x:82,y:80}
+];
+const TV_DOOR_POS = {x:6, y:52};
+function tablesUnlocked(){
+  const boardLvl = (state.facilities && state.facilities.board) || 0;
+  const n = 3 + boardLvl + Math.floor((state.tavernLevel-1)/3);
+  return Math.min(TV_TABLE_POS.length, n);
+}
+const TV_TABLE_SVG = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="22" width="48" height="10" rx="2" fill="#8D6E63" stroke="#3E2723" stroke-width="2"/>
+  <line x1="8" y1="27" x2="56" y2="27" stroke="#5D4037" stroke-width="1.5"/>
+  <rect x="14" y="32" width="6" height="22" fill="#5D4037" stroke="#3E2723" stroke-width="1.5"/>
+  <rect x="44" y="32" width="6" height="22" fill="#5D4037" stroke="#3E2723" stroke-width="1.5"/>
+  <rect x="20" y="44" width="24" height="4" fill="#3E2723"/>
+</svg>`;
+const TV_STOOL_SVG = `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="32" cy="24" rx="18" ry="6" fill="#8D6E63" stroke="#3E2723" stroke-width="2"/>
+  <ellipse cx="32" cy="23" rx="14" ry="4" fill="#A1887F"/>
+  <path d="M18 27L14 52" stroke="#5D4037" stroke-width="3" stroke-linecap="round"/>
+  <path d="M26 29L24 52" stroke="#3E2723" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M38 29L40 52" stroke="#3E2723" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M46 27L50 52" stroke="#5D4037" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="32" cy="40" rx="13" ry="4" stroke="#3E2723" stroke-width="2" fill="none"/>
+</svg>`;
+// 손님이 실제로 앉는 위치: 테이블보다 살짝 아래(화면 앞쪽)로 스툴 위에 앉은 것처럼 보이게 함
+function tvSeatPos(pos){ return {x:pos.x, y:pos.y+7}; }
+
+const FURNITURE_CATALOG = [
+  { id:'plant',    name:'화분',     emoji:'🪴', baseCost:120, maxCount:3 },
+  { id:'lantern',  name:'조명 랜턴', emoji:'🏮', baseCost:150, maxCount:3 },
+  { id:'painting', name:'액자',     emoji:'🖼️', baseCost:180, maxCount:2 },
+  { id:'fishtank', name:'어항',     emoji:'🐠', baseCost:200, maxCount:2 },
+  { id:'clock',    name:'괘종시계', emoji:'🕰️', baseCost:220, maxCount:1 },
+  { id:'candle',   name:'촛대',     emoji:'🕯️', baseCost:90,  maxCount:4 },
+  { id:'beermug', name:'대형 맥주잔', baseCost:160, maxCount:2,
+    svg:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <path d="M18 20H42V52C42 54.2091 40.2091 56 38 56H22C19.7909 56 18 54.2091 18 52V20Z" fill="#F5B041" stroke="#5D4037" stroke-width="3"/>
+      <path d="M16 20C16 16.6863 18.6863 14 22 14C23.6569 14 25.1569 14.6716 26.2426 15.7574C27.3284 14.6716 28.8284 14 30.4853 14C32.1421 14 33.6421 14.6716 34.7279 15.7574C35.8137 14.6716 37.3137 14 38.9706 14C42.2843 14 44.9706 16.6863 44.9706 20H16Z" fill="#FFF8E1" stroke="#5D4037" stroke-width="2"/>
+      <path d="M42 26H47C49.2091 26 51 27.7909 51 30V42C51 44.2091 49.2091 46 47 46H42" stroke="#5D4037" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M23 26V48" stroke="#Ffdf80" stroke-width="2" stroke-linecap="round"/>
+    </svg>` },
+  { id:'barrel', name:'오크통', baseCost:170, maxCount:3,
+    svg:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <path d="M16 14C16 14 24 10 32 10C40 10 48 14 48 14V50C48 50 40 54 32 54C24 54 16 50 16 50V14Z" fill="#8D6E63" stroke="#3E2723" stroke-width="3"/>
+      <path d="M14.5 22C20 20 28 19 32 19C36 19 44 20 49.5 22" stroke="#424242" stroke-width="3" fill="none"/>
+      <path d="M14.5 42C20 40 28 39 32 39C36 39 44 40 49.5 42" stroke="#424242" stroke-width="3" fill="none"/>
+      <path d="M24 12V52" stroke="#5D4037" stroke-width="2"/>
+      <path d="M32 10V54" stroke="#5D4037" stroke-width="2"/>
+      <path d="M40 12V52" stroke="#5D4037" stroke-width="2"/>
+      <circle cx="32" cy="31" r="3" fill="#D4AF37"/>
+      <path d="M32 31V36" stroke="#D4AF37" stroke-width="2"/>
+    </svg>` },
+  { id:'walltorch', name:'벽걸이 촛대 조명', baseCost:140, maxCount:3,
+    svg:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <path d="M18 36H28V46H18V36Z" fill="#3E2723" stroke="#1B0000" stroke-width="2"/>
+      <path d="M28 40C36 40 40 34 40 26H46" stroke="#3E2723" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <path d="M40 26H52V29H40V26Z" fill="#5D4037"/>
+      <rect x="43" y="16" width="6" height="10" fill="#FFF8E1" stroke="#D7CCC8"/>
+      <circle cx="46" cy="10" r="8" fill="#FF9800" fill-opacity="0.3"/>
+      <path d="M46 5C46 5 43 9 43 11C43 12.6569 44.3431 14 46 14C47.6569 14 49 12.6569 49 11C49 9 46 5 46 5Z" fill="#FFEB3B"/>
+    </svg>` },
+  { id:'sign', name:'목재 돌출 간판', baseCost:200, maxCount:1,
+    svg:`<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 12H50" stroke="#212121" stroke-width="4" stroke-linecap="round"/>
+      <path d="M10 12V40" stroke="#212121" stroke-width="3"/>
+      <path d="M10 24L22 12" stroke="#212121" stroke-width="3"/>
+      <line x1="22" y1="12" x2="22" y2="20" stroke="#616161" stroke-width="2"/>
+      <line x1="42" y1="12" x2="42" y2="20" stroke="#616161" stroke-width="2"/>
+      <rect x="16" y="20" width="32" height="28" rx="3" fill="#6D4C41" stroke="#3E2723" stroke-width="2"/>
+      <path d="M28 30H36V40H28V30Z" fill="#F5B041"/>
+      <path d="M26 30C26 28 38 28 38 30" stroke="#FFF8E1" stroke-width="2" fill="none"/>
+    </svg>` }
+];
+
+const TAVERN_FACILITIES = {
+  brewhouse: { name: '맥주 주조소', emoji: '🍺', baseCost: 150, maxLvl: 5, desc: '주기적으로 자동 골드 생산', effectText: lvl => `초당 💰${lvl * 2} 골드 생산` },
+  inn:       { name: '용사의 객실', emoji: '🛋️', baseCost: 200, maxLvl: 5, desc: '전투 파티 최대 HP 증가', effectText: lvl => `파티 HP +${lvl * 10}%` },
+  board:     { name: '의뢰 게시판', emoji: '📜', baseCost: 300, maxLvl: 3, desc: '매장 테이블 좌석 수 증가', effectText: lvl => `테이블 +${lvl}석` },
+  kitchen:   { name: '대형 주방',   emoji: '🍽️', baseCost: 250, maxLvl: 5, desc: '퀘스트 납품 보상 골드 증가', effectText: lvl => `납품 골드 +${lvl * 15}%` }
+};
+
+function defaultState(){
+  return {
+    gold: 100,
+    board: new Array(BOARD_SIZE*BOARD_SIZE).fill(null),
+    party: [],
+    stage: 1,
+    monster: makeMonster(1),
+    partyHp: 0,
+    partyMaxHp: 0,
+    lastSpawnAt: Date.now(),
+    lastTickAt: Date.now(),
+    autoMergeOn: false,
+    lastAutoMergeAt: Date.now(),
+    spawnLevel: 1,
+    log: [],
+    relics: {},
+    pendingRelicChoice: null,
+    pendingPartySwap: null,
+    discovered: {},
+    quests: [],
+    tavernLevel: 1,
+    tavernExp: 0,
+    facilities: { brewhouse: 0, inn: 0, board: 0, kitchen: 0 },
+    tavernTheme: 'default',
+    unlockedThemes: ['default'],
+    reputationLevel: 0,
+    furniture: []
+  };
+}
+
+function spawnUpgradeCost(){
+  return Math.round(30 * Math.pow(1.35, state.spawnLevel - 1));
+}
+function currentSpawnInterval(){
+  return Math.max(MIN_SPAWN_INTERVAL_MS, BASE_SPAWN_INTERVAL_MS - (state.spawnLevel-1)*SPAWN_LEVEL_STEP_MS);
+}
+function upgradeSpawnSpeed(){
+  if(currentSpawnInterval() <= MIN_SPAWN_INTERVAL_MS) return;
+  const cost = spawnUpgradeCost();
+  if(state.gold < cost) return;
+  state.gold -= cost;
+  state.spawnLevel += 1;
+  addLog(`⏱️ 소환 쿨타임 강화! 현재 ${(currentSpawnInterval()/1000).toFixed(1)}초`);
+  updateStatusbar();
+  save();
+}
+
+function makeMonster(stage){
+  const isBoss = stage % BOSS_INTERVAL === 0;
+  const baseHp = 45 * Math.pow(1.16, stage-1);
+  const baseAtk = 5 * Math.pow(1.09, stage-1);
+  let hp, atk, name, emoji;
+  if(isBoss){
+    const b = BOSS_POOL[Math.floor(stage/BOSS_INTERVAL - 1) % BOSS_POOL.length];
+    hp = Math.round(baseHp * 3.5);
+    atk = Math.round(baseAtk * 1.8);
+    name = b.name; emoji = b.emoji;
+  } else {
+    const m = MONSTER_POOL[Math.min(MONSTER_POOL.length-1, Math.floor((stage-1)/3) % MONSTER_POOL.length)];
+    hp = Math.round(baseHp);
+    atk = Math.round(baseAtk);
+    name = m.name; emoji = m.emoji;
+  }
+  return { name, emoji, hp, maxHp:hp, atk, isBoss };
+}
+
+function totalTiers(line){ return LINES[line].chain.length + 1; }
+function markDiscovered(line, tierIdx){
+  state.discovered[`${line}:${tierIdx}`] = true;
+}
+function tierInfo(line, tierIdx){
+  const chain = LINES[line].chain;
+  return tierIdx < chain.length ? chain[tierIdx] : LINES[line].final;
+}
+function tierMultiplier(line, tierIdx){
+  return (tierIdx+1) / totalTiers(line);
+}
+function unitStatsAt(line, tierIdx, level){
+  const f = LINES[line].final;
+  const mult = tierMultiplier(line, tierIdx) * (1 + (level-1)*0.4);
+  return {
+    atk: Math.max(1, Math.round(f.baseAtk*mult)),
+    maxhp: Math.max(5, Math.round(f.baseHp*mult)),
+    def: Math.round(f.baseDef*mult),
+    heal: Math.round(f.baseHeal*mult)
+  };
+}
+
+function recalcPartyStats(){
+  const base = state.party.reduce((s,u)=>s+u.maxhp,0) || 0;
+  state.partyMaxHp = Math.round(base * relicEffects().hpMult);
+  if(state.partyHp > state.partyMaxHp) state.partyHp = state.partyMaxHp;
+}
+
+/* ===================== 저장/로드 ===================== */
+function save(){
+  state.lastTickAt = Date.now();
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+}
+
+function load(){
+  const raw = localStorage.getItem(SAVE_KEY);
+  if(!raw){ state = defaultState(); recalcPartyStats(); state.partyHp = state.partyMaxHp; return; }
+  try{
+    state = JSON.parse(raw);
+    if(typeof state.autoMergeOn !== 'boolean') state.autoMergeOn = false;
+    if(typeof state.spawnLevel !== 'number') state.spawnLevel = 1;
+    if(typeof state.lastAutoMergeAt !== 'number') state.lastAutoMergeAt = Date.now();
+    if(!state.relics) state.relics = {};
+    if(state.pendingPartySwap === undefined) state.pendingPartySwap = null;
+    if(!state.discovered) state.discovered = {};
+    if(state.pendingRelicChoice === undefined) state.pendingRelicChoice = null;
+    if(!state.quests) state.quests = [];
+    if(!state.furniture) state.furniture = [];
+    state.quests = state.quests.filter(q => typeof q.tableIndex === 'number');
+    if(typeof state.tavernLevel !== 'number') state.tavernLevel = 1;
+    if(typeof state.tavernExp !== 'number') state.tavernExp = 0;
+    if(!state.facilities) state.facilities = { brewhouse: 0, inn: 0, board: 0, kitchen: 0 };
+    if(!state.tavernTheme) state.tavernTheme = 'default';
+    if(!state.unlockedThemes) state.unlockedThemes = ['default'];
+    if(typeof state.reputationLevel !== 'number') state.reputationLevel = 0;
+
+    const elapsedMs = Date.now() - (state.lastTickAt || Date.now());
+    let ticks = Math.floor(elapsedMs / TICK_MS);
+    ticks = Math.min(ticks, OFFLINE_MAX_TICKS);
+    
+    if(ticks > 10){
+      let startGold = state.gold;
+      for(let i=0; i<ticks; i++){ battleTick(false); }
+      let earnedGold = Math.round((state.gold - startGold) * relicEffects().offlineMult);
+      state.gold = startGold + earnedGold;
+      
+      const modal = document.getElementById('offline-modal');
+      const desc = document.getElementById('offline-desc');
+      desc.innerHTML = `자리를 비운 <b>${Math.floor(ticks/60)}분 ${ticks%60}초</b> 동안<br>전투를 통해 💰<b>${earnedGold} 골드</b>를 획득했습니다!`;
+      modal.classList.add('active');
+    }
+    const spawnCount = Math.min(12, Math.floor(elapsedMs / currentSpawnInterval()));
+    for(let i=0;i<spawnCount;i++){ trySpawnIngredient(); }
+    if(state.autoMergeOn) performAllMerges();
+  }catch(e){
+    state = defaultState();
+  }
+  recalcPartyStats();
+}
+
+/* ===================== 보드 로직 ===================== */
+let selectedIdx = null;
+
+function trySpawnIngredient(){
+  const emptyIdxs = state.board.map((v,i)=>v===null?i:-1).filter(i=>i>=0);
+  if(emptyIdxs.length===0) return false;
+  const idx = emptyIdxs[Math.floor(Math.random()*emptyIdxs.length)];
+  const line = LINE_KEYS[Math.floor(Math.random()*LINE_KEYS.length)];
+  state.board[idx] = { line, tier: 0 };
+  markDiscovered(line, 0);
+  boardAnimHints.spawn.add(idx);
+  return true;
+}
+
+function performAllMerges(){
+  let mergedAny = false;
+  for(let i=0; i<state.board.length; i++){
+    if(!state.board[i]) continue;
+    for(let j=i+1; j<state.board.length; j++){
+      if(!state.board[j]) continue;
+      if(state.board[i].line === state.board[j].line && state.board[i].tier === state.board[j].tier){
+        mergeCells(i, j);
+        mergedAny = true;
+        break;
+      }
+    }
+  }
+  return mergedAny;
+}
+
+function performOneMerge(){
+  for(let i=0; i<state.board.length; i++){
+    if(!state.board[i]) continue;
+    for(let j=i+1; j<state.board.length; j++){
+      if(!state.board[j]) continue;
+      if(state.board[i].line === state.board[j].line && state.board[i].tier === state.board[j].tier){
+        mergeCells(i, j);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function toggleAutoMerge(){
+  state.autoMergeOn = !state.autoMergeOn;
+  if(state.autoMergeOn) state.lastAutoMergeAt = Date.now();
+  updateStatusbar();
+  save();
+}
+
+function unitPowerScore(stats){
+  return stats.atk + stats.maxhp*0.3 + stats.def*4 + stats.heal*4;
+}
+
+function optimizeParty(){
+  const candidates = state.party.map((u,i)=>({
+    origin:'party', partyIdx:i, line:u.line, tier:u.tier, level:u.level,
+    stats:{atk:u.atk,maxhp:u.maxhp,def:u.def,heal:u.heal},
+    score: unitPowerScore({atk:u.atk,maxhp:u.maxhp,def:u.def,heal:u.heal})
+  }));
+  const partyCombos = new Set(state.party.map(u=>`${u.line}:${u.tier}`));
+
+  const boardCombos = new Map();
+  state.board.forEach((cell, idx)=>{
+    if(!cell) return;
+    const key = `${cell.line}:${cell.tier}`;
+    if(partyCombos.has(key)) return;
+    if(!boardCombos.has(key)) boardCombos.set(key, idx);
+  });
+  boardCombos.forEach((boardIdx, key)=>{
+    const [line, tierStr] = key.split(':');
+    const tier = parseInt(tierStr);
+    const stats = unitStatsAt(line, tier, 1);
+    candidates.push({ origin:'board', boardIdx, line, tier, level:1, stats, score: unitPowerScore(stats) });
+  });
+
+  if(candidates.length === 0){
+    addLog('⚡ 편성할 수 있는 재료나 유닛이 없습니다.');
+    return;
+  }
+
+  candidates.sort((a,b)=>b.score-a.score);
+  const chosen = candidates.slice(0, PARTY_MAX);
+  const chosenPartyIdxs = new Set(chosen.filter(c=>c.origin==='party').map(c=>c.partyIdx));
+  const chosenBoard = chosen.filter(c=>c.origin==='board');
+
+  const releasedUnits = [];
+  state.party.forEach((u,i)=>{ if(!chosenPartyIdxs.has(i)) releasedUnits.push(u); });
+  chosenBoard.forEach(c=>{ state.board[c.boardIdx] = null; });
+
+  let released = 0, releasedGold = 0;
+  releasedUnits.forEach(u=>{
+    const chainLen = LINES[u.line].chain.length;
+    const boardTier = Math.min(u.tier, chainLen-1);
+    const emptyIdxs = state.board.map((v,i)=>v===null?i:-1).filter(i=>i>=0);
+    if(emptyIdxs.length>0){
+      const idx = emptyIdxs[Math.floor(Math.random()*emptyIdxs.length)];
+      state.board[idx] = { line:u.line, tier:boardTier };
+      boardAnimHints.spawn.add(idx);
+      released++;
+    } else {
+      const refund = (boardTier+1)*5;
+      state.gold += refund;
+      releasedGold += refund;
+    }
+  });
+
+  state.party = chosen.map(c=>{
+    if(c.origin==='board') markDiscovered(c.line, c.tier);
+    return { line:c.line, tier:c.tier, level:c.level, skillCharge:0, ...c.stats };
+  });
+  recalcPartyStats();
+  state.partyHp = state.partyMaxHp;
+
+  let msg = `⚡ 최강 편성 완료! (${state.party.length}/${PARTY_MAX})`;
+  if(released>0) msg += ` · 보드 복귀 ${released}`;
+  if(releasedGold>0) msg += ` · 💰${releasedGold} 전환`;
+  addLog(msg);
+  renderAll();
+  save();
+}
+
+function removeUnitFromParty(partyIdx){
+  const u = state.party[partyIdx];
+  if(!u) return;
+  const chainLen = LINES[u.line].chain.length;
+  const boardTier = Math.min(u.tier, chainLen-1);
+  const emptyIdxs = state.board.map((v,i)=>v===null?i:-1).filter(i=>i>=0);
+  if(emptyIdxs.length===0){
+    addLog(`⚠️ 보드에 빈 칸이 없어 ${tierInfo(u.line,u.tier).name}을(를) 뺄 수 없습니다.`);
+    renderBattle();
+    return;
+  }
+  const idx = emptyIdxs[Math.floor(Math.random()*emptyIdxs.length)];
+  state.board[idx] = { line:u.line, tier:boardTier };
+  boardAnimHints.spawn.add(idx);
+  const name = tierInfo(u.line,u.tier).name;
+  state.party.splice(partyIdx,1);
+  recalcPartyStats();
+  if(state.partyHp > state.partyMaxHp) state.partyHp = state.partyMaxHp;
+  addLog(`↩️ ${name}을(를) 파티에서 빼서 보드로 되돌렸습니다.`);
+  renderBattle();
+  renderBoard();
+  updateRecruitButton();
+  updateStatusbar();
+  save();
+}
+
+function handleSellTap(idx){
+  const cell = state.board[idx];
+  if(!cell) return;
+  const refund = (cell.tier + 1) * 5;
+  const cellEl = document.querySelector(`.cell[data-idx="${idx}"]`);
+  const finish = ()=>{
+    state.gold += refund;
+    state.board[idx] = null;
+    addLog(`🗑️ 재료를 판매하여 💰${refund} 골드를 얻었습니다.`);
+    renderBoard();
+    updateStatusbar();
+    save();
+  };
+  if(cellEl){
+    cellEl.classList.add('anim-sell');
+    setTimeout(finish, 190);
+  } else {
+    finish();
+  }
+}
+
+function handleCellTap(idx){
+  const cell = state.board[idx];
+
+  if(!cell){ selectedIdx=null; renderBoard(); updateRecruitButton(); return; }
+
+  if(selectedIdx===null){
+    selectedIdx = idx;
+    renderBoard();
+    updateRecruitButton();
+    return;
+  }
+
+  if(selectedIdx===idx){ selectedIdx=null; renderBoard(); updateRecruitButton(); return; }
+
+  const a = state.board[selectedIdx];
+  const b = state.board[idx];
+  if(a && b && a.line===b.line && a.tier===b.tier){
+    mergeCells(selectedIdx, idx);
+  }
+  selectedIdx = null;
+  renderBoard();
+  updateRecruitButton();
+  updateStatusbar();
+  save();
+}
+
+function mergeCells(fromIdx, toIdx){
+  const line = state.board[fromIdx].line;
+  const tier = state.board[fromIdx].tier;
+  const chain = LINES[line].chain;
+  state.board[fromIdx] = null;
+
+  let newTier = tier + 1;
+  let isCombo = false;
+  const comboChance = COMBO_BASE_CHANCE + relicEffects().mergeBonusChance;
+  if(newTier < chain.length && Math.random() < comboChance){
+    newTier += 1;
+    isCombo = true;
+  }
+
+  if(newTier >= chain.length){
+    state.board[toIdx] = null;
+    createUnit(line, chain.length);
+    if(isCombo) addLog(`🔥 콤보! 단계를 건너뛰고 바로 완성되었습니다!`);
+  } else {
+    state.board[toIdx] = { line, tier: newTier };
+    markDiscovered(line, newTier);
+    boardAnimHints.merge.add(toIdx);
+    if(isCombo) boardAnimHints.combo.add(toIdx);
+    const info = chain[newTier];
+    addLog(`${isCombo?'🔥 콤보! ':'✨ '}${info.emoji} ${info.name}(으)로 합성 성공!${isCombo?' (2단계 상승)':''}`);
+    if(!isCombo && Math.random() < relicEffects().mergeBonusChance){
+      if(trySpawnIngredient()) addLog(`🥢 명장의 젓가락 효과로 재료가 추가 생성되었습니다!`);
+    }
+  }
+}
+
+/* ===================== 드래그 인터랙션 ===================== */
+let dragState = null;
+
+function onPointerDown(e, idx){
+  const cell = state.board[idx];
+  if(sellMode){
+    if(cell) handleSellTap(idx);
+    return;
+  }
+  if(!cell){ selectedIdx=null; renderBoard(); updateRecruitButton(); return; }
+
+  dragState = {
+    sourceIdx: idx,
+    startX: e.clientX, startY: e.clientY,
+    moved: false,
+    ghostEl: null,
+    lastTargetIdx: null
+  };
+  document.addEventListener('pointermove', onPointerMove);
+  document.addEventListener('pointerup', onPointerUp);
+  document.addEventListener('pointercancel', onPointerCancel);
+}
+
+function createGhost(cell, x, y){
+  const info = cell.tier < LINES[cell.line].chain.length ? LINES[cell.line].chain[cell.tier] : LINES[cell.line].final;
+  const ghost = document.createElement('div');
+  ghost.className = 'drag-ghost';
+  ghost.textContent = info.emoji;
+  ghost.style.left = x+'px';
+  ghost.style.top = y+'px';
+  document.body.appendChild(ghost);
+  return ghost;
+}
+
+function clearDropHighlight(){
+  document.querySelectorAll('.cell.drop-valid,.cell.drop-invalid').forEach(el=>el.classList.remove('drop-valid','drop-invalid'));
+}
+
+function onPointerMove(e){
+  if(!dragState) return;
+  const dx = e.clientX - dragState.startX;
+  const dy = e.clientY - dragState.startY;
+
+  if(!dragState.moved && Math.hypot(dx,dy) > 8){
+    dragState.moved = true;
+    const cell = state.board[dragState.sourceIdx];
+    dragState.ghostEl = createGhost(cell, e.clientX, e.clientY);
+    const sourceEl = document.querySelector(`.cell[data-idx="${dragState.sourceIdx}"]`);
+    if(sourceEl) sourceEl.classList.add('cell-dragging');
+  }
+
+  if(dragState.moved && dragState.ghostEl){
+    dragState.ghostEl.style.left = e.clientX+'px';
+    dragState.ghostEl.style.top = e.clientY+'px';
+
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const cellEl = el ? el.closest('.cell') : null;
+    const targetIdx = cellEl ? parseInt(cellEl.dataset.idx) : null;
+
+    if(targetIdx !== dragState.lastTargetIdx){
+      clearDropHighlight();
+      dragState.lastTargetIdx = targetIdx;
+      if(targetIdx !== null && targetIdx !== dragState.sourceIdx){
+        const targetCellEl = document.querySelector(`.cell[data-idx="${targetIdx}"]`);
+        const a = state.board[dragState.sourceIdx];
+        const b = state.board[targetIdx];
+        const valid = !b || (a.line===b.line && a.tier===b.tier);
+        if(targetCellEl) targetCellEl.classList.add(valid ? 'drop-valid' : 'drop-invalid');
+      }
+    }
+  }
+}
+
+function endDrag(){
+  document.removeEventListener('pointermove', onPointerMove);
+  document.removeEventListener('pointerup', onPointerUp);
+  document.removeEventListener('pointercancel', onPointerCancel);
+  if(dragState && dragState.ghostEl) dragState.ghostEl.remove();
+  clearDropHighlight();
+  if(dragState){
+    const sourceEl = document.querySelector(`.cell[data-idx="${dragState.sourceIdx}"]`);
+    if(sourceEl) sourceEl.classList.remove('cell-dragging');
+  }
+}
+
+function onPointerCancel(){
+  endDrag();
+  dragState = null;
+}
+
+function onPointerUp(e){
+  if(!dragState) return;
+  const { sourceIdx, moved } = dragState;
+  endDrag();
+
+  if(!moved){
+    dragState = null;
+    handleCellTap(sourceIdx);
+    return;
+  }
+
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const cellEl = el ? el.closest('.cell') : null;
+  const targetIdx = cellEl ? parseInt(cellEl.dataset.idx) : null;
+  dragState = null;
+
+  if(targetIdx === null || targetIdx === sourceIdx) return;
+
+  const a = state.board[sourceIdx];
+  const b = state.board[targetIdx];
+  if(!a) return;
+
+  if(!b){
+    state.board[targetIdx] = a;
+    state.board[sourceIdx] = null;
+    boardAnimHints.moveIn.add(targetIdx);
+    selectedIdx = null;
+    renderBoard();
+    updateRecruitButton();
+    save();
+    return;
+  }
+
+  if(a.line===b.line && a.tier===b.tier){
+    mergeCells(sourceIdx, targetIdx);
+    selectedIdx = null;
+    renderBoard();
+    updateRecruitButton();
+    updateStatusbar();
+    save();
+  }
+}
+
+function createUnit(lineKey, tierIdx){
+  const info = tierInfo(lineKey, tierIdx);
+  markDiscovered(lineKey, tierIdx);
+  const existing = state.party.find(u=>u.line===lineKey && u.tier===tierIdx);
+  if(existing){
+    existing.level += 1;
+    Object.assign(existing, unitStatsAt(lineKey, tierIdx, existing.level));
+    addLog(`⬆️ ${info.emoji} ${info.name} 레벨업! (Lv.${existing.level})`);
+    recalcPartyStats();
+    return;
+  }
+  if(state.party.length < PARTY_MAX){
+    const stats = unitStatsAt(lineKey, tierIdx, 1);
+    state.party.push({ line:lineKey, tier:tierIdx, level:1, skillCharge:0, ...stats });
+    recalcPartyStats();
+    state.partyHp = state.partyMaxHp;
+    addLog(`⚔️ ${info.emoji} ${info.name}이(가) 파티에 합류했습니다!`);
+  } else if(!state.pendingPartySwap){
+    state.pendingPartySwap = { line:lineKey, tier:tierIdx };
+    addLog(`👀 파티가 가득 찼습니다. ${info.emoji} ${info.name} 교체 여부를 선택하세요.`);
+  } else {
+    const bonus = 40;
+    state.gold += bonus;
+    addLog(`파티 가득 참(대기중): 💰${bonus} 골드로 대체 보상되었습니다.`);
+  }
+}
+
+function updateRecruitButton(){
+  document.getElementById('btn-recruit').disabled = (selectedIdx===null || !state.board[selectedIdx]);
+}
+
+/* ===================== 전투 시스템 ===================== */
+function addLog(msg){
+  state.log.unshift(msg);
+  if(state.log.length>30) state.log.length=30;
+}
+
+let pendingFx = [];
+
+function battleTick(doRender){
+  if(state.facilities && state.facilities.brewhouse > 0){
+    state.gold += state.facilities.brewhouse * 2;
+  }
+
+  if(state.party.length===0) return;
+
+  const relics = relicEffects();
+  let totalAtk = 0;
+  let totalHeal = 0;
+  let didCrit = false;
+
+  state.party.forEach(u=>{
+    let uAtk = u.atk;
+    u.skillCharge = (u.skillCharge || 0) + 1;
+    const lineDef = LINES[u.line];
+
+    if(u.skillCharge >= lineDef.skillFreq){
+      u.skillCharge = 0;
+      if(u.line === 'noodle'){
+        uAtk *= (2 + relics.dealerSkillMult);
+        if(doRender) pendingFx.push({type:'skill', value:`⚡${lineDef.skillName}`, target:'monster'});
+      } else if(u.line === 'soup'){
+        totalHeal += u.heal * 2;
+        if(doRender) pendingFx.push({type:'skill', value:`✨${lineDef.skillName}`, target:'party'});
+      } else if(u.line === 'rice'){
+        uAtk = Math.round(uAtk * 1.5);
+        if(doRender) pendingFx.push({type:'skill', value:`🛡️${lineDef.skillName}`, target:'party'});
+      }
+    }
+
+    totalAtk += uAtk;
+    totalHeal += u.heal;
+  });
+
+  totalAtk = totalAtk * relics.atkMult;
+  if(Math.random() < relics.critChance){
+    totalAtk = totalAtk * 1.5;
+    didCrit = true;
+  }
+  totalAtk = Math.round(totalAtk);
+  totalHeal = Math.round(totalHeal * relics.healMult);
+
+  state.monster.hp -= totalAtk;
+  if(doRender){
+    pendingFx.push({type:'dmg', value:totalAtk, target:'monster'});
+    if(didCrit) pendingFx.push({type:'skill', value:'💥치명타!', target:'monster'});
+  }
+
+  if(state.monster.hp <= 0){
+    const rewardBase = 6 + state.stage*3;
+    let reward = state.monster.isBoss ? rewardBase*5 : rewardBase;
+    const wasBoss = state.monster.isBoss;
+    if(!doRender) reward = Math.round(reward * relics.offlineMult);
+    state.gold += reward;
+    state.stage += 1;
+    state.monster = makeMonster(state.stage);
+    if(doRender) addLog(`${wasBoss?'👑 보스':'몬스터'} 처치! 💰${reward} 획득 ➔ Stage ${state.stage}`);
+    if(Math.random() < 0.4) trySpawnIngredient();
+
+    if(wasBoss){
+      if(doRender){
+        state.pendingRelicChoice = generateRelicChoices();
+      } else {
+        const choices = generateRelicChoices();
+        if(choices.length>0) upgradeRelic(choices[Math.floor(Math.random()*choices.length)]);
+      }
+    }
+  } else {
+    const partyDefVal = state.party.reduce((s,u)=>s+u.def, 0);
+    const dmgToParty = Math.max(1, state.monster.atk - partyDefVal);
+    state.partyHp -= dmgToParty;
+    if(doRender) pendingFx.push({type:'dmg', value:dmgToParty, target:'party'});
+
+    if(totalHeal > 0 && state.partyHp > 0){
+      const before = state.partyHp;
+      state.partyHp = Math.min(state.partyMaxHp, state.partyHp + totalHeal);
+      const healed = state.partyHp - before;
+      if(healed > 0 && doRender) pendingFx.push({type:'heal', value:healed, target:'party'});
+    }
+
+    if(state.partyHp <= 0){
+      state.partyHp = state.partyMaxHp;
+      if(doRender) addLog(`💥 전멸했습니다! 체력을 복구하고 계속 도전합니다.`);
+    }
+  }
+}
+
+/* ===================== 선술집 시스템 ===================== */
+function generateQuests(){
+  if(!state.quests) state.quests = [];
+  const maxQuests = tablesUnlocked();
+
+  while(state.quests.length < maxQuests){
+    const usedTables = new Set(state.quests.map(q=>q.tableIndex));
+    let tableIndex = -1;
+    for(let i=0; i<maxQuests; i++){ if(!usedTables.has(i)){ tableIndex = i; break; } }
+    if(tableIndex === -1) break;
+
+    const line = LINE_KEYS[Math.floor(Math.random() * LINE_KEYS.length)];
+    const chain = LINES[line].chain;
+    
+    const maxTierPossible = Math.min(chain.length - 1, 1 + Math.floor(state.tavernLevel / 2));
+    const tier = Math.floor(Math.random() * (maxTierPossible + 1));
+    
+    const baseReward = (tier + 1) * 40;
+    const levelBonus = 1 + (state.tavernLevel - 1) * 0.15;
+    const kitchenBonus = 1 + ((state.facilities && state.facilities.kitchen) ? state.facilities.kitchen * 0.15 : 0);
+    const reward = Math.round((baseReward + Math.floor(Math.random() * 20)) * levelBonus * kitchenBonus);
+    
+    const isVip = Math.random() < 0.15;
+
+    state.quests.push({ 
+      id: Date.now() + Math.random(), 
+      line, 
+      tier, 
+      reward: isVip ? reward * 2 : reward,
+      isVip: isVip,
+      customer: isVip ? 'vip' : CUSTOMER_TYPES[Math.floor(Math.random()*CUSTOMER_TYPES.length)],
+      tableIndex
+    });
+  }
+  // 좌석 수가 줄어드는 경우(테마 변경 등은 없지만 방어적으로) 초과분 정리
+  if(state.quests.length > maxQuests){
+    state.quests = state.quests.slice(0, maxQuests);
+  }
+}
+
+const seenQuestIds = new Set();
+
+function renderFloor(){
+  const floorEl = document.getElementById('tv-floor');
+  if(!floorEl) return;
+
+  const unlocked = tablesUnlocked();
+
+  // 문은 유지하고 나머지 요소만 다시 그림
+  floorEl.querySelectorAll('.tv-table, .tv-stool, .tv-customer, .tv-furniture').forEach(el=>el.remove());
+
+  (state.furniture || []).forEach(item=>{
+    const cat = FURNITURE_CATALOG.find(f=>f.id===item.catId);
+    if(!cat) return;
+    const el = document.createElement('div');
+    el.className = 'tv-furniture';
+    el.style.left = item.x + '%';
+    el.style.top = item.y + '%';
+    el.innerHTML = cat.svg ? cat.svg : cat.emoji;
+    floorEl.appendChild(el);
+    bindFurnitureDrag(el, item);
+  });
+
+  TV_TABLE_POS.forEach((pos, i)=>{
+    const locked = i >= unlocked;
+    const el = document.createElement('div');
+    el.className = 'tv-table' + (locked ? ' locked' : '');
+    el.style.left = pos.x + '%';
+    el.style.top = pos.y + '%';
+    el.innerHTML = TV_TABLE_SVG + (locked ? '<span class="tv-table-lock">🔒</span>' : '');
+    floorEl.appendChild(el);
+
+    const seat = tvSeatPos(pos);
+    const stoolEl = document.createElement('div');
+    stoolEl.className = 'tv-stool' + (locked ? ' locked' : '');
+    stoolEl.style.left = seat.x + '%';
+    stoolEl.style.top = seat.y + '%';
+    stoolEl.innerHTML = TV_STOOL_SVG;
+    floorEl.appendChild(stoolEl);
+  });
+
+  state.quests.forEach(q=>{
+    if(q.tableIndex === undefined || q.tableIndex === null || q.tableIndex >= unlocked) return;
+    const info = tierInfo(q.line, q.tier);
+    const boardIdx = state.board.findIndex(c => c && c.line === q.line && c.tier === q.tier);
+    const hasItem = boardIdx !== -1;
+    const target = tvSeatPos(TV_TABLE_POS[q.tableIndex]);
+    const isNew = !seenQuestIds.has(q.id);
+    seenQuestIds.add(q.id);
+
+    const el = document.createElement('div');
+    el.dataset.qid = q.id;
+    el.className = 'tv-customer' + (q.isVip ? ' vip' : '') + (hasItem ? ' ready' : ' waiting');
+    el.innerHTML = `
+      <div class="tc-bubble">${info.emoji} ${info.name}</div>
+      <div class="tc-emoji">${customerAvatarHtml(q)}</div>
+    `;
+
+    if(isNew){
+      el.style.left = TV_DOOR_POS.x + '%';
+      el.style.top = TV_DOOR_POS.y + '%';
+      el.style.opacity = '0';
+      floorEl.appendChild(el);
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{
+        el.style.left = target.x + '%';
+        el.style.top = target.y + '%';
+        el.style.opacity = '1';
+      }));
+    } else {
+      el.style.left = target.x + '%';
+      el.style.top = target.y + '%';
+      el.style.opacity = '1';
+      floorEl.appendChild(el);
+    }
+
+    el.addEventListener('click', ()=> serveCustomer(q, el, target));
+  });
+}
+
+function findFreeFurnitureSpot(){
+  const unlocked = tablesUnlocked();
+  const occupied = [TV_DOOR_POS, ...TV_TABLE_POS.slice(0, unlocked), ...(state.furniture||[])];
+  const MIN_DIST = 13; // % 단위 최소 이격 거리
+
+  for(let attempt=0; attempt<40; attempt++){
+    const x = 12 + Math.random()*76;
+    const y = 12 + Math.random()*76;
+    const tooClose = occupied.some(p => Math.hypot(p.x - x, p.y - y) < MIN_DIST);
+    if(!tooClose) return { x, y };
+  }
+  // 40번 시도해도 못 찾으면 가장자리 쪽에 대충 배치
+  return { x: 90, y: 10 + Math.random()*80 };
+}
+
+function bindFurnitureDrag(el, item){
+  el.addEventListener('pointerdown', (e)=>{
+    e.preventDefault();
+    const floorEl = document.getElementById('tv-floor');
+    if(!floorEl) return;
+    const rect = floorEl.getBoundingClientRect();
+    el.setPointerCapture && el.setPointerCapture(e.pointerId);
+
+    const onMove = (ev)=>{
+      let px = ((ev.clientX - rect.left) / rect.width) * 100;
+      let py = ((ev.clientY - rect.top) / rect.height) * 100;
+      px = Math.max(4, Math.min(96, px));
+      py = Math.max(8, Math.min(92, py));
+      el.style.left = px + '%';
+      el.style.top = py + '%';
+      item.x = px;
+      item.y = py;
+    };
+    const onUp = ()=>{
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      save();
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  });
+}
+
+function syncCustomerReadiness(){
+  const floorEl = document.getElementById('tv-floor');
+  if(!floorEl) return;
+  state.quests.forEach(q=>{
+    const el = floorEl.querySelector(`.tv-customer[data-qid="${q.id}"]`);
+    if(!el) return;
+    const hasItem = state.board.some(c => c && c.line === q.line && c.tier === q.tier);
+    el.classList.toggle('ready', hasItem);
+    el.classList.toggle('waiting', !hasItem);
+  });
+}
+
+function spawnTvFloat(pos, text, isVip){
+  const floorEl = document.getElementById('tv-floor');
+  if(!floorEl) return;
+  const el = document.createElement('div');
+  el.className = 'tv-float' + (isVip ? ' vip' : '');
+  el.style.left = pos.x + '%';
+  el.style.top = pos.y + '%';
+  el.textContent = text;
+  floorEl.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+}
+
+function serveCustomer(q, el, tablePos){
+  const idx = state.board.findIndex(c => c && c.line === q.line && c.tier === q.tier);
+  if(idx === -1) return;
+  const info = tierInfo(q.line, q.tier);
+
+  state.board[idx] = null;
+  state.gold += q.reward;
+  state.tavernExp += (q.tier + 1) * 20;
+  spawnTvFloat(tablePos, `+💰${q.reward}`, q.isVip);
+
+  const nextExp = state.tavernLevel * 100;
+  if(state.tavernExp >= nextExp){
+    state.tavernExp -= nextExp;
+    state.tavernLevel += 1;
+    addLog(`🍺 선술집 레벨이 ${state.tavernLevel}(으)로 상승했습니다!`);
+  }
+  addLog(`🍽️ ${CUSTOMER_LABELS[q.isVip ? 'vip' : q.customer] || '손님'}에게 ${info.name} 서빙 완료! 💰${q.reward} 골드 획득`);
+
+  // 손님이 문 쪽으로 걸어나가며 퇴장
+  el.style.left = TV_DOOR_POS.x + '%';
+  el.style.top = TV_DOOR_POS.y + '%';
+  el.style.opacity = '0';
+
+  const freedTable = q.tableIndex;
+  state.quests = state.quests.filter(item => item.id !== q.id);
+  seenQuestIds.delete(q.id);
+
+  setTimeout(()=>{
+    generateQuests(); // 빈 테이블에 새 손님 배정
+    renderAll();
+    save();
+  }, 650);
+
+  renderBoard();
+  updateRecruitButton();
+  updateStatusbar();
+  save();
+}
+
+function reputationCost(){
+  return Math.round(1000 * Math.pow(1.8, state.reputationLevel || 0));
+}
+
+function boardInventoryHtml(){
+  const counts = {}; // key: `${line}-${tier}` -> {emoji,name,count,line,tier}
+  (state.board || []).forEach(cell=>{
+    if(!cell) return;
+    const key = `${cell.line}-${cell.tier}`;
+    if(!counts[key]){
+      const info = tierInfo(cell.line, cell.tier);
+      counts[key] = { emoji: info.emoji, name: info.name, count: 0, line: cell.line, tier: cell.tier };
+    }
+    counts[key].count++;
+  });
+  const items = Object.values(counts).sort((a,b)=>{
+    const li = LINE_KEYS.indexOf(a.line) - LINE_KEYS.indexOf(b.line);
+    return li !== 0 ? li : a.tier - b.tier;
+  });
+  if(items.length === 0){
+    return `<div class="tv-inventory-empty">보드에 재료가 없어요. 머지 화면에서 재료를 만들어보세요!</div>`;
+  }
+  return items.map(it => `
+    <div class="tv-chip"><span class="tv-chip-emoji">${it.emoji}</span>${it.name} <span class="tv-chip-count">×${it.count}</span></div>
+  `).join('');
+}
+function renderTavern(){
+  generateQuests();
+  const screenTavern = document.getElementById('screen-tavern');
+  if(!screenTavern) return;
+
+  const activeTheme = TAVERN_THEMES[state.tavernTheme || 'default'];
+  const nextExp = state.tavernLevel * 100;
+  const expPct = Math.min(100, Math.floor((state.tavernExp / nextExp) * 100));
+  const repCost = reputationCost();
+
+  screenTavern.innerHTML = `
+    <div class="tv-ticker"><span>🔥 어서옵쇼! 미식가 선술집에 오신 것을 환영합니다 🔥 &nbsp;&nbsp;&nbsp; 손님이 직접 찾아와 자리에 앉아 주문합니다 &nbsp;&nbsp;&nbsp; 원하는 요리를 서빙해서 골드를 버세요! 💰</span></div>
+
+    <div class="tv-inventory" id="tv-inventory">
+      <div class="tv-inventory-title"><b>🍳 내 보드 재료 현황</b><span>머지 화면과 실시간 연동</span></div>
+      <div class="tv-inventory-chips">${boardInventoryHtml()}</div>
+    </div>
+
+    <div class="tv-floor-wrap">
+      <div class="tv-floor" id="tv-floor">
+        <div class="tv-door">🚪</div>
+      </div>
+    </div>
+
+    <div style="background:${activeTheme.color}; padding:16px; border-radius:12px; text-align:center; transition:background 0.3s; margin-top:12px;">
+      <h3 style="color:var(--accent); margin:0;">🍺 미식가 선술집 (Lv.${state.tavernLevel})</h3>
+      <div style="font-size:11px; color:var(--sub); margin:6px 0 12px 0;">
+        선술집 명성: ${state.tavernExp} / ${nextExp} (${expPct}%)
+        <div style="height:6px; background:var(--hp-bg); border-radius:3px; margin-top:4px; overflow:hidden;">
+          <div style="height:100%; background:var(--accent); width:${expPct}%;"></div>
+        </div>
+      </div>
+
+      <!-- 👑 명성 칭호 투자 (골드 싱크) -->
+      <div style="background:var(--panel2); padding:10px; border-radius:8px; margin-bottom:12px; border:1px solid var(--accent); text-align:left;">
+        <div style="font-size:12px; font-weight:bold; color:var(--accent);">👑 선술집 명성 등급: Lv.${state.reputationLevel || 0}</div>
+        <div style="font-size:11px; color:var(--sub); margin-top:2px;">전체 파티 공/체 +${(state.reputationLevel || 0) * 5}% 영구 증가</div>
+        <button id="btn-upgrade-rep" class="quest-btn" style="width:100%; margin-top:8px;" ${state.gold < repCost ? 'disabled' : ''}>
+          명성 업그레이드 (💰${repCost})
+        </button>
+      </div>
+
+      <!-- 🎨 선술집 테마 변경 -->
+      <h4 style="color:var(--text); text-align:left; margin:14px 0 6px 0;">🎨 선술집 테마 리모델링</h4>
+      <div id="theme-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;"></div>
+
+      <h4 style="color:var(--text); text-align:left; margin:12px 0 6px 0;">🏗️ 선술집 시설 관리</h4>
+      <div id="facility-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+
+      <div class="tavern-panel">
+        <h4>🪑 가구 배치 <span style="font-weight:normal; font-size:10px; color:#a89885;">(구매 후 매장에서 드래그로 위치 조정)</span></h4>
+        <div id="furniture-list"></div>
+      </div>
+    </div>
+  `;
+
+  // 명성 업그레이드 버튼 이벤트
+  document.getElementById('btn-upgrade-rep').addEventListener('click', ()=>{
+    const cost = reputationCost();
+    if(state.gold >= cost){
+      state.gold -= cost;
+      state.reputationLevel = (state.reputationLevel || 0) + 1;
+      addLog(`👑 선술집 명성이 Lv.${state.reputationLevel}(으)로 상승했습니다!`);
+      recalcPartyStats();
+      renderAll();
+      save();
+    }
+  });
+
+  // 테마 리스트 렌더링
+  const themeListEl = document.getElementById('theme-list');
+  Object.keys(TAVERN_THEMES).forEach(key => {
+    const t = TAVERN_THEMES[key];
+    const isUnlocked = state.unlockedThemes.includes(key);
+    const isSelected = state.tavernTheme === key;
+
+    const div = document.createElement('div');
+    div.className = 'quest-card';
+    div.style.background = 'var(--panel2)';
+    div.innerHTML = `
+      <div class="quest-info">
+        <b>${t.name}</b> ${isSelected ? '<span style="color:var(--accent); font-size:10px;">[적용 중]</span>' : ''}<br>
+        <span style="font-size:11px; color:var(--sub);">${t.desc}</span>
+      </div>
+      <button class="quest-btn" ${isSelected ? 'disabled' : ''} data-theme="${key}">
+        ${isSelected ? '사용 중' : isUnlocked ? '적용하기' : `구매 💰${t.cost}`}
+      </button>
+    `;
+
+    div.querySelector('button').addEventListener('click', () => {
+      if(!isUnlocked){
+        if(state.gold >= t.cost){
+          state.gold -= t.cost;
+          state.unlockedThemes.push(key);
+          state.tavernTheme = key;
+          addLog(`✨ 선술집 테마 [${t.name}] 구매 및 적용 완료!`);
+        }
+      } else {
+        state.tavernTheme = key;
+        addLog(`🎨 선술집 테마를 [${t.name}](으)로 변경했습니다.`);
+      }
+      recalcPartyStats();
+      renderAll();
+      save();
+    });
+
+    themeListEl.appendChild(div);
+  });
+
+  renderFloor();
+
+  const facListEl = document.getElementById('facility-list');
+  Object.keys(TAVERN_FACILITIES).forEach(facKey => {
+    const fac = TAVERN_FACILITIES[facKey];
+    const curLvl = (state.facilities && state.facilities[facKey]) || 0;
+    const isMax = curLvl >= fac.maxLvl;
+    const cost = Math.round(fac.baseCost * Math.pow(1.5, curLvl));
+    
+    const reqTavernLvl = curLvl + 1;
+    const isLevelLocked = state.tavernLevel < reqTavernLvl;
+
+    const div = document.createElement('div');
+    div.className = 'quest-card';
+    div.style.background = 'var(--panel2)';
+    div.innerHTML = `
+      <div class="quest-info">
+        <b>${fac.emoji} ${fac.name}</b> <span style="font-size:11px; color:var(--sub);">(Lv.${curLvl}/${fac.maxLvl})</span><br>
+        <span style="font-size:11px; color:var(--sub);">${fac.desc}</span><br>
+        <span style="font-size:11px; color:var(--accent);">${curLvl > 0 ? fac.effectText(curLvl) : '미건설'}</span>
+      </div>
+      <button class="quest-btn" ${isMax || isLevelLocked || state.gold < cost ? 'disabled' : ''} data-fackey="${facKey}">
+        ${isMax ? '최대' : isLevelLocked ? `Lv.${reqTavernLvl} 필요` : `건설 💰${cost}`}
+      </button>
+    `;
+    facListEl.appendChild(div);
+  });
+
+  facListEl.querySelectorAll('.quest-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const facKey = e.target.dataset.fackey;
+      const fac = TAVERN_FACILITIES[facKey];
+      const curLvl = state.facilities[facKey] || 0;
+      const cost = Math.round(fac.baseCost * Math.pow(1.5, curLvl));
+
+      if(state.gold >= cost && curLvl < fac.maxLvl){
+        state.gold -= cost;
+        state.facilities[facKey] = curLvl + 1;
+        addLog(`🏗️ 선술집 시설 [${fac.name}] Lv.${curLvl + 1} 업그레이드 완료!`);
+        recalcPartyStats();
+        renderAll();
+        save();
+      }
+    });
+  });
+
+  const furListEl = document.getElementById('furniture-list');
+  FURNITURE_CATALOG.forEach(cat=>{
+    const owned = (state.furniture || []).filter(f=>f.catId===cat.id).length;
+    const isMax = owned >= cat.maxCount;
+    const cost = Math.round(cat.baseCost * Math.pow(1.4, owned));
+    const iconHtml = cat.svg ? cat.svg : cat.emoji;
+
+    const div = document.createElement('div');
+    div.className = 'tavern-item';
+    div.innerHTML = `
+      <div class="ti-icon">${iconHtml}</div>
+      <div class="ti-info"><b>${cat.name}</b><br>보유 ${owned}/${cat.maxCount}</div>
+      <button class="tavern-btn" ${isMax || state.gold < cost ? 'disabled' : ''} data-furkey="${cat.id}">
+        ${isMax ? '최대' : `구매 💰${cost}`}
+      </button>
+    `;
+    furListEl.appendChild(div);
+  });
+
+  furListEl.querySelectorAll('.tavern-btn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const catId = e.target.dataset.furkey;
+      const cat = FURNITURE_CATALOG.find(c=>c.id===catId);
+      const owned = (state.furniture || []).filter(f=>f.catId===catId).length;
+      if(!cat || owned >= cat.maxCount) return;
+      const cost = Math.round(cat.baseCost * Math.pow(1.4, owned));
+      if(state.gold < cost) return;
+
+      state.gold -= cost;
+      state.furniture.push({
+        catId,
+        ...findFreeFurnitureSpot()
+      });
+      addLog(`🪑 ${cat.name}을(를) 구매해서 매장에 배치했습니다! 드래그해서 위치를 옮길 수 있어요.`);
+      renderAll();
+      save();
+    });
+  });
+}
+
+/* ===================== 시각 이펙트 ===================== */
+function playFx(){
+  if(pendingFx.length===0) return;
+  const layer = document.getElementById('float-layer');
+  const monsterEl = document.getElementById('monster-emoji');
+  pendingFx.forEach(fx=>{
+    const div = document.createElement('div');
+    if(fx.type==='skill'){
+      div.className = 'float-text float-skill';
+      div.textContent = fx.value;
+    } else {
+      div.className = 'float-text ' + (fx.type==='dmg' ? 'float-dmg' : 'float-heal');
+      div.textContent = (fx.type==='dmg' ? '-' : '+') + fx.value;
+    }
+    div.style.left = (40 + Math.random()*20) + '%';
+    layer.appendChild(div);
+    setTimeout(()=>div.remove(), 800);
+
+    if(fx.type==='dmg' && fx.target==='monster'){
+      monsterEl.classList.remove('hit-flash');
+      void monsterEl.offsetWidth;
+      monsterEl.classList.add('hit-flash');
+    }
+  });
+  pendingFx = [];
+}
+
+/* ===================== UI 렌더링 ===================== */
+function renderBoard(){
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = '';
+  state.board.forEach((cell, idx)=>{
+    const div = document.createElement('div');
+    div.dataset.idx = idx;
+    let cls = 'cell';
+    if(selectedIdx===idx) cls += ' selected';
+    if(sellMode) cls += ' sell-mode';
+    if(boardAnimHints.combo.has(idx)) cls += ' anim-combo';
+    else if(boardAnimHints.merge.has(idx)) cls += ' anim-merge';
+    else if(boardAnimHints.spawn.has(idx)) cls += ' anim-spawn';
+    else if(boardAnimHints.moveIn.has(idx)) cls += ' anim-move';
+    div.className = cls;
+    if(cell){
+      const lineDef = LINES[cell.line];
+      const info = lineDef.chain[cell.tier];
+      div.innerHTML = `${info.emoji}<span class="tier-label">${info.name}</span><span class="line-dot" style="background:${lineDef.color}"></span>`;
+    }
+    div.addEventListener('pointerdown', (e)=>onPointerDown(e, idx));
+    boardEl.appendChild(div);
+  });
+  boardAnimHints.spawn.clear();
+  boardAnimHints.merge.clear();
+  boardAnimHints.moveIn.clear();
+  boardAnimHints.combo.clear();
+}
+
+function renderBattle(){
+  const scene = document.getElementById('battle-scene');
+  const stageLabel = document.getElementById('stage-label');
+  stageLabel.textContent = `스테이지 ${state.stage}` + (state.monster.isBoss ? ' · 👑 보스전' : '');
+  stageLabel.classList.toggle('boss-label', !!state.monster.isBoss);
+  scene.classList.toggle('boss-bg', !!state.monster.isBoss);
+
+  document.getElementById('monster-emoji').textContent = state.monster.emoji;
+  document.getElementById('monster-name').innerHTML = state.monster.name + (state.monster.isBoss ? ' <span class="boss-tag">★BOSS★</span>' : '');
+  const pct = Math.max(0, state.monster.hp/state.monster.maxHp*100);
+  document.getElementById('monster-hp-fill').style.width = pct+'%';
+  document.getElementById('monster-hp-text').textContent = `${Math.max(0,Math.ceil(state.monster.hp))} / ${state.monster.maxHp}`;
+
+  const listEl = document.getElementById('party-list');
+  listEl.innerHTML = '';
+  if(state.party.length===0){
+    const d = document.createElement('div');
+    d.className='empty-slot';
+    d.textContent='파티가 비어있습니다. 보드에서 재료를 선택 후 [유닛 편성]을 누르세요!';
+    listEl.appendChild(d);
+  } else {
+    state.party.forEach((u,i)=>{
+      const lineDef = LINES[u.line];
+      const info = tierInfo(u.line, u.tier);
+      const isFinal = u.tier >= lineDef.chain.length;
+      const d = document.createElement('div');
+      d.className='party-card';
+      d.style.borderLeftColor = lineDef.color;
+      let statLine = `ATK ${u.atk} · HP ${u.maxhp}`;
+      if(u.def>0) statLine += ` · DEF ${u.def}`;
+      if(u.heal>0) statLine += ` · 힐 ${u.heal}`;
+      const tierTag = isFinal ? '완성' : `${u.tier+1}단계`;
+      
+      const skillPct = Math.min(100, ((u.skillCharge || 0) / lineDef.skillFreq) * 100);
+      d.innerHTML = `
+        <span class="emoji">${info.emoji}</span>
+        <span class="info">
+          <b>${info.name}</b> Lv.${u.level} <span class="role-badge" style="background:${lineDef.color}">${lineDef.roleLabel}·${tierTag}</span><br>
+          ${statLine}
+          <div class="skill-meter"><div class="skill-fill" style="width:${skillPct}%"></div></div>
+        </span>
+        <button class="remove-unit-btn" data-idx="${i}" title="파티에서 빼기">✕</button>`;
+      listEl.appendChild(d);
+    });
+    listEl.querySelectorAll('.remove-unit-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=> removeUnitFromParty(parseInt(btn.dataset.idx)));
+    });
+  }
+
+  const logEl = document.getElementById('log');
+  logEl.innerHTML = state.log.map(l=>`<div>${l}</div>`).join('');
+
+  playFx();
+}
+
+function updateStatusbar(){
+  document.getElementById('gold-val').textContent = state.gold;
+  document.getElementById('party-count').textContent = `${state.party.length}/${PARTY_MAX}`;
+  document.getElementById('mini-stage').textContent = `스테이지 ${state.stage}` + (state.monster.isBoss ? ' 👑' : '');
+  const hpPct = state.partyMaxHp>0 ? Math.max(0,state.partyHp/state.partyMaxHp*100) : 0;
+  document.getElementById('mini-hp-fill').style.width = hpPct+'%';
+  document.getElementById('mini-hp-text').textContent = state.partyMaxHp>0 ? `${Math.max(0,Math.ceil(state.partyHp))}/${state.partyMaxHp}` : '-';
+  const spawnCostVal = spawnCost();
+  document.getElementById('btn-spawn').textContent = `소환 (💰${spawnCostVal})`;
+  document.getElementById('btn-spawn').disabled = state.gold < spawnCostVal;
+
+  const autoMergeBtn = document.getElementById('btn-auto-merge');
+  autoMergeBtn.textContent = '자동머지: ' + (state.autoMergeOn ? 'ON' : 'OFF');
+  autoMergeBtn.classList.toggle('active-toggle', state.autoMergeOn);
+
+  const autoRecruitBtn = document.getElementById('btn-auto-recruit');
+  autoRecruitBtn.disabled = (state.party.length===0 && state.board.every(c=>!c));
+
+  const spawnBtn = document.getElementById('btn-upgrade-spawn');
+  const interval = currentSpawnInterval();
+  const maxed = interval <= MIN_SPAWN_INTERVAL_MS;
+  const cost = spawnUpgradeCost();
+  spawnBtn.textContent = maxed
+    ? `쿨타임 MAX (${(interval/1000).toFixed(1)}초)`
+    : `쿨타임 강화 (💰${cost}) · ${(interval/1000).toFixed(1)}초`;
+  spawnBtn.disabled = maxed || state.gold < cost;
+}
+
+function renderRelics(){
+  const listEl = document.getElementById('relic-list');
+  listEl.innerHTML = '';
+  RELIC_KEYS.forEach(id=>{
+    const def = RELICS_DEF[id];
+    const lvl = relicLevel(id);
+    const owned = lvl > 0;
+    const isMax = lvl >= MAX_RELIC_LEVEL;
+    const cost = relicUpgradeCost(id);
+    const curVal = def.fmt(lvl * def.perLevel);
+    const nextVal = isMax ? '-' : def.fmt((lvl+1) * def.perLevel);
+    const d = document.createElement('div');
+    d.className = 'relic-card' + (owned ? ' owned' : '');
+    d.innerHTML = `
+      <span class="r-emoji">${def.emoji}</span>
+      <span class="r-info">
+        <b>${def.name}</b> <span class="r-level">Lv.${lvl}/${MAX_RELIC_LEVEL}</span><br>
+        ${def.desc} · 현재 ${curVal}${isMax ? '' : ` → ${nextVal}`}
+      </span>
+      <button data-relic="${id}" ${isMax ? 'disabled' : (state.gold<cost?'disabled':'')}>
+        ${isMax ? '최대' : `강화 💰${cost}`}
+      </button>`;
+    listEl.appendChild(d);
+  });
+}
+
+function showRelicChoiceModal(){
+  const modal = document.getElementById('relic-choice-modal');
+  if(modal.classList.contains('active')) return;
+  const listEl = document.getElementById('relic-choice-list');
+  listEl.innerHTML = '';
+  state.pendingRelicChoice.forEach(id=>{
+    const def = RELICS_DEF[id];
+    const lvl = relicLevel(id);
+    const d = document.createElement('div');
+    d.className = 'relic-choice-item';
+    d.innerHTML = `
+      <span class="r-emoji">${def.emoji}</span>
+      <span class="r-info"><b>${def.name}</b> (Lv.${lvl}→${lvl+1})<br>${def.desc}</span>`;
+    d.addEventListener('click', ()=>{
+      state.relics[id] = relicLevel(id) + 1;
+      recalcPartyStats();
+      state.pendingRelicChoice = null;
+      addLog(`🏺 유물 [${def.name}]을(를) 획득했습니다! (Lv.${relicLevel(id)})`);
+      modal.classList.remove('active');
+      renderAll();
+      save();
+    });
+    listEl.appendChild(d);
+  });
+  modal.classList.add('active');
+}
+
+function showPartySwapModal(){
+  const modal = document.getElementById('party-swap-modal');
+  if(modal.classList.contains('active') || !state.pendingPartySwap) return;
+  const { line, tier } = state.pendingPartySwap;
+  const info = tierInfo(line, tier);
+  document.getElementById('swap-desc').innerHTML = `${info.emoji} <b style="color:var(--accent)">${info.name}</b>을(를) 편성하려 합니다.<br>기존 유닛과 교체할까요?`;
+  const listEl = document.getElementById('swap-list');
+  listEl.innerHTML = '';
+  state.party.forEach((u, idx)=>{
+    const lineDef = LINES[u.line];
+    const uInfo = tierInfo(u.line, u.tier);
+    const d = document.createElement('div');
+    d.className = 'relic-choice-item';
+    d.innerHTML = `
+      <span class="r-emoji">${uInfo.emoji}</span>
+      <span class="r-info"><b>${uInfo.name}</b> Lv.${u.level} · ${lineDef.roleLabel}<br>ATK ${u.atk} · HP ${u.maxhp}</span>`;
+    d.addEventListener('click', ()=>{
+      const removed = state.party[idx];
+      const chainLen = LINES[removed.line].chain.length;
+      const boardTier = Math.min(removed.tier, chainLen-1);
+      const emptyIdxs = state.board.map((v,i)=>v===null?i:-1).filter(i=>i>=0);
+      if(emptyIdxs.length > 0){
+        const bIdx = emptyIdxs[Math.floor(Math.random()*emptyIdxs.length)];
+        state.board[bIdx] = { line:removed.line, tier:boardTier };
+        boardAnimHints.spawn.add(bIdx);
+        addLog(`↩️ ${tierInfo(removed.line,removed.tier).name}을(를) 보드로 되돌렸습니다.`);
+      } else {
+        const refund = (boardTier+1)*5;
+        state.gold += refund;
+        addLog(`🗑️ 보드 공간 부족으로 ${tierInfo(removed.line,removed.tier).name}을(를) 💰${refund} 골드로 전환했습니다.`);
+      }
+      const stats = unitStatsAt(line, tier, 1);
+      state.party[idx] = { line, tier, level:1, skillCharge:0, ...stats };
+      recalcPartyStats();
+      state.partyHp = Math.min(state.partyHp, state.partyMaxHp);
+      addLog(`⚔️ ${info.emoji} ${info.name}이(가) 파티에 합류했습니다!`);
+      state.pendingPartySwap = null;
+      modal.classList.remove('active');
+      renderAll();
+      save();
+    });
+    listEl.appendChild(d);
+  });
+  modal.classList.add('active');
+}
+
+document.getElementById('btn-swap-cancel').addEventListener('click', ()=>{
+  if(!state.pendingPartySwap) return;
+  const bonus = 40;
+  state.gold += bonus;
+  addLog(`💰 편성 보류: ${bonus} 골드로 대체 보상되었습니다.`);
+  state.pendingPartySwap = null;
+  document.getElementById('party-swap-modal').classList.remove('active');
+  renderAll();
+  save();
+});
+
+function renderDex(){
+  const listEl = document.getElementById('dex-list');
+  listEl.innerHTML = '';
+  LINE_KEYS.forEach(lineKey=>{
+    const lineDef = LINES[lineKey];
+    const section = document.createElement('div');
+    section.className = 'dex-section';
+    const title = document.createElement('div');
+    title.className = 'dex-section-title';
+    title.style.borderLeftColor = lineDef.color;
+    title.textContent = `${lineDef.roleLabel} 라인`;
+    section.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'dex-grid';
+    const totalSteps = lineDef.chain.length + 1;
+    for(let t=0; t<totalSteps; t++){
+      const info = tierInfo(lineKey, t);
+      const isFinal = t >= lineDef.chain.length;
+      const found = !!state.discovered[`${lineKey}:${t}`];
+      const card = document.createElement('div');
+      card.className = 'dex-card' + (found ? '' : ' locked') + (isFinal ? ' final' : '');
+      card.innerHTML = `
+        <span class="d-emoji">${found ? info.emoji : '❓'}</span>
+        <span class="d-name">${found ? info.name : '???'}</span>`;
+      grid.appendChild(card);
+    }
+    section.appendChild(grid);
+    listEl.appendChild(section);
+  });
+}
+
+function renderAll(){
+  renderBoard();
+  renderBattle();
+  renderTavern();
+  renderRelics();
+  renderDex();
+  updateRecruitButton();
+  updateStatusbar();
+}
+
+/* ===================== 이벤트 리스너 ===================== */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('screen-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+document.getElementById('btn-spawn').addEventListener('click', ()=>{
+  const cost = spawnCost();
+  if(state.gold < cost) return;
+  if(trySpawnIngredient()){
+    state.gold -= cost;
+    renderBoard();
+    updateStatusbar();
+    save();
+  }
+});
+
+document.getElementById('btn-auto-merge').addEventListener('click', toggleAutoMerge);
+document.getElementById('btn-auto-recruit').addEventListener('click', optimizeParty);
+document.getElementById('btn-upgrade-spawn').addEventListener('click', upgradeSpawnSpeed);
+
+document.getElementById('btn-sell-mode').addEventListener('click', ()=>{
+  sellMode = !sellMode;
+  selectedIdx = null;
+  const btn = document.getElementById('btn-sell-mode');
+  btn.textContent = sellMode ? '판매 종료' : '재료 판매';
+  btn.style.background = sellMode ? '#ff9f43' : '#8a2b2b';
+  renderBoard();
+  updateRecruitButton();
+});
+
+document.getElementById('btn-recruit').addEventListener('click', ()=>{
+  if(selectedIdx===null) return;
+  const cell = state.board[selectedIdx];
+  if(!cell) return;
+  const line = cell.line, tier = cell.tier;
+  state.board[selectedIdx] = null;
+  selectedIdx = null;
+  createUnit(line, tier);
+  renderBoard();
+  renderBattle();
+  updateRecruitButton();
+  updateStatusbar();
+  save();
+});
+
+document.getElementById('btn-party-reset').addEventListener('click', ()=>{
+  if(state.party.length===0) return;
+  if(!confirm('파티를 초기화하고 보드로 되돌릴까요?')) return;
+  let returned = 0, soldForGold = 0;
+  while(state.party.length > 0){
+    const u = state.party.pop();
+    const chainLen = LINES[u.line].chain.length;
+    const boardTier = Math.min(u.tier, chainLen-1);
+    const emptyIdxs = state.board.map((v,i)=>v===null?i:-1).filter(i=>i>=0);
+    if(emptyIdxs.length > 0){
+      const idx = emptyIdxs[Math.floor(Math.random()*emptyIdxs.length)];
+      state.board[idx] = { line:u.line, tier:boardTier };
+      boardAnimHints.spawn.add(idx);
+      returned++;
+    } else {
+      const refund = (boardTier + 1) * 5;
+      state.gold += refund;
+      soldForGold += refund;
+    }
+  }
+  recalcPartyStats();
+  state.partyHp = 0;
+  if(returned>0) addLog(`↩️ 유닛 ${returned}개를 보드로 되돌렸습니다.`);
+  if(soldForGold>0) addLog(`🗑️ 보드 공간 부족으로 일부는 💰${soldForGold} 골드로 대체되었습니다.`);
+  renderBoard();
+  renderBattle();
+  updateRecruitButton();
+  updateStatusbar();
+  save();
+});
+
+document.getElementById('btn-offline-claim').addEventListener('click', ()=>{
+  document.getElementById('offline-modal').classList.remove('active');
+});
+
+document.getElementById('relic-list').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-relic]');
+  if(!btn || btn.disabled) return;
+  if(upgradeRelic(btn.dataset.relic)){
+    renderRelics();
+    updateStatusbar();
+    save();
+  }
+});
+
+/* ===================== 메인 실행 루프 ===================== */
+function mainLoop(){
+  const now = Date.now();
+  let boardChanged = false;
+
+  if(now - state.lastSpawnAt >= currentSpawnInterval()){
+    state.lastSpawnAt = now;
+    if(trySpawnIngredient()) boardChanged = true;
+  }
+
+  if(state.autoMergeOn){
+    if(now - state.lastAutoMergeAt >= AUTO_MERGE_INTERVAL_MS){
+      if(performOneMerge()){
+        state.lastAutoMergeAt = now;
+        boardChanged = true;
+      }
+    }
+  }
+
+  if(boardChanged){
+    if(document.getElementById('screen-board').classList.contains('active')) renderBoard();
+    if(document.getElementById('screen-tavern').classList.contains('active')) syncCustomerReadiness();
+  }
+
+  if(!state.pendingRelicChoice){
+    battleTick(true);
+  }
+  recalcPartyStats();
+  renderBattle();
+  updateStatusbar();
+  save();
+  if(state.pendingRelicChoice) showRelicChoiceModal();
+  if(state.pendingPartySwap) showPartySwapModal();
+}
+
+load();
+renderAll();
+if(state.pendingRelicChoice) showRelicChoiceModal();
+if(state.pendingPartySwap) showPartySwapModal();
+setInterval(mainLoop, TICK_MS);
+window.addEventListener('beforeunload', save);
+</script>
+</body>
+</html>
