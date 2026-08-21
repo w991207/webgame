@@ -104,6 +104,36 @@
   .cell.anim-combo{ animation:cellComboPop .5s ease-out; border-color:var(--boss) !important; box-shadow:0 0 10px #ffd23f99; }
   .cell.anim-move{ animation:cellSpawnPop .2s ease-out; }
   .cell.anim-sell{ transform:scale(0) rotate(25deg) !important; opacity:0 !important; transition:all .2s ease-in; }
+
+  /* ---- 머지 손맛: 파티클 + 스트릭 뱃지 + 화면 흔들림 ---- */
+  .merge-particle{
+    position:absolute; left:50%; top:50%; font-size:13px; pointer-events:none; z-index:5;
+    transform:translate(-50%,-50%); animation:particleFly .55s ease-out forwards;
+  }
+  @keyframes particleFly{
+    0%{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+    100%{ transform:translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.3); opacity:0; }
+  }
+  #merge-streak-badge{
+    position:fixed; left:50%; top:38%; transform:translate(-50%,-50%) scale(0.4);
+    font-size:22px; font-weight:900; color:var(--boss); text-shadow:0 2px 4px #000c, 0 0 14px #ffd23f88;
+    pointer-events:none; z-index:50; opacity:0; white-space:nowrap;
+  }
+  #merge-streak-badge.show{ animation:streakPop .5s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes streakPop{
+    0%{ transform:translate(-50%,-50%) scale(0.3); opacity:0; }
+    30%{ transform:translate(-50%,-50%) scale(1.15); opacity:1; }
+    60%{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+    100%{ transform:translate(-50%,-50%) scale(1); opacity:0; }
+  }
+  body.screen-shake{ animation:screenShakeAnim .3s ease-in-out; }
+  @keyframes screenShakeAnim{
+    0%,100%{ transform:translate(0,0); }
+    20%{ transform:translate(-3px,2px); }
+    40%{ transform:translate(3px,-2px); }
+    60%{ transform:translate(-2px,-2px); }
+    80%{ transform:translate(2px,2px); }
+  }
   .drag-ghost{
     position:fixed; pointer-events:none; z-index:999; font-size:32px;
     transform:translate(-50%,-50%) scale(1.35);
@@ -374,6 +404,7 @@
 </head>
 <body>
 <div id="app">
+<div id="merge-streak-badge"></div>
 
   <div id="statusbar">
     <div class="stat">💰<b id="gold-val">0</b></div>
@@ -1058,6 +1089,82 @@ function handleCellTap(idx){
   save();
 }
 
+/* ===================== 머지 손맛(사운드/파티클/스트릭) ===================== */
+let actx = null;
+function ensureAudioCtx(){
+  if(!actx){
+    try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return null; }
+  }
+  if(actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function playTone(freq, duration, type, vol, delay){
+  const ctx = ensureAudioCtx();
+  if(!ctx) return;
+  const startAt = ctx.currentTime + (delay||0);
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type || 'sine';
+  osc.frequency.setValueAtTime(freq, startAt);
+  gain.gain.setValueAtTime(vol||0.15, startAt);
+  gain.gain.exponentialRampToValueAtTime(0.001, startAt + duration);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(startAt);
+  osc.stop(startAt + duration + 0.02);
+}
+function playMergeSound(tier){
+  playTone(440 + tier*36, 0.11, 'sine', 0.13);
+}
+function playComboSound(){
+  playTone(660, 0.09, 'triangle', 0.14);
+  playTone(880, 0.14, 'triangle', 0.14, 0.06);
+}
+function playFinalSound(){
+  playTone(523, 0.08, 'triangle', 0.15);
+  playTone(659, 0.08, 'triangle', 0.15, 0.07);
+  playTone(784, 0.18, 'triangle', 0.16, 0.14);
+}
+
+const MERGE_PARTICLE_EMOJIS = ['✨','💫','⭐'];
+function spawnMergeParticles(cellEl, count){
+  if(!cellEl) return;
+  for(let i=0;i<count;i++){
+    const p = document.createElement('span');
+    p.className = 'merge-particle';
+    p.textContent = MERGE_PARTICLE_EMOJIS[Math.floor(Math.random()*MERGE_PARTICLE_EMOJIS.length)];
+    const angle = Math.random()*Math.PI*2;
+    const dist = 26 + Math.random()*20;
+    p.style.setProperty('--dx', Math.cos(angle)*dist + 'px');
+    p.style.setProperty('--dy', Math.sin(angle)*dist + 'px');
+    cellEl.appendChild(p);
+    setTimeout(()=>p.remove(), 600);
+  }
+}
+
+function triggerScreenShake(){
+  document.body.classList.remove('screen-shake');
+  void document.body.offsetWidth;
+  document.body.classList.add('screen-shake');
+  setTimeout(()=>document.body.classList.remove('screen-shake'), 320);
+}
+
+let mergeStreakCount = 0;
+let mergeStreakResetTimer = null;
+function bumpMergeStreak(){
+  mergeStreakCount++;
+  clearTimeout(mergeStreakResetTimer);
+  mergeStreakResetTimer = setTimeout(()=>{ mergeStreakCount = 0; }, 1300);
+  if(mergeStreakCount >= 3){
+    const badge = document.getElementById('merge-streak-badge');
+    if(badge){
+      badge.textContent = `${mergeStreakCount} 연속 합성! 🔥`;
+      badge.classList.remove('show');
+      void badge.offsetWidth;
+      badge.classList.add('show');
+    }
+  }
+}
+
 function mergeCells(fromIdx, toIdx){
   const line = state.board[fromIdx].line;
   const tier = state.board[fromIdx].tier;
@@ -1076,6 +1183,10 @@ function mergeCells(fromIdx, toIdx){
     state.board[toIdx] = null;
     createUnit(line, chain.length);
     if(isCombo) addLog(`🔥 콤보! 단계를 건너뛰고 바로 완성되었습니다!`);
+    const finalCellEl = document.querySelector(`.cell[data-idx="${toIdx}"]`);
+    spawnMergeParticles(finalCellEl, 10);
+    playFinalSound();
+    triggerScreenShake();
   } else {
     state.board[toIdx] = { line, tier: newTier };
     markDiscovered(line, newTier);
@@ -1086,7 +1197,12 @@ function mergeCells(fromIdx, toIdx){
     if(!isCombo && Math.random() < relicEffects().mergeBonusChance){
       if(trySpawnIngredient()) addLog(`🥢 명장의 젓가락 효과로 재료가 추가 생성되었습니다!`);
     }
+    const mergedCellEl = document.querySelector(`.cell[data-idx="${toIdx}"]`);
+    spawnMergeParticles(mergedCellEl, isCombo ? 8 : 4);
+    if(isCombo){ playComboSound(); triggerScreenShake(); }
+    else{ playMergeSound(newTier); }
   }
+  bumpMergeStreak();
 }
 
 /* ===================== 드래그 인터랙션 ===================== */
@@ -1319,6 +1435,10 @@ function battleTick(doRender){
     state.stage += 1;
     state.monster = makeMonster(state.stage);
     if(doRender) addLog(`${wasBoss?'👑 보스':'몬스터'} 처치! 💰${reward} 획득 ➔ Stage ${state.stage}`);
+    if(doRender){
+      playTone(wasBoss ? 140 : 200, wasBoss ? 0.22 : 0.1, 'square', wasBoss ? 0.18 : 0.1);
+      if(wasBoss) triggerScreenShake();
+    }
     if(Math.random() < 0.4) trySpawnIngredient();
 
     if(wasBoss){
