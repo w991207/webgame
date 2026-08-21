@@ -5,15 +5,15 @@
 
 const TRAINING_DUNGEON_TICKET_MAX = 3;
 const TRAINING_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const TRAINING_DUNGEON_MAX_FLOOR = 10;
+const TRAINING_DUNGEON_MAX_FLOOR = 20;
 
 const TRAINING_DUNGEON_META = {name:'수련 인형', emoji:'🥋'};
 
 function tdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
 function tdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
 function tdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
-// 1층 400exp부터 시작해 층마다 1.45배씩 증가 (10층 클리어 시 약 12,840exp)
-function tdExpFor(floor){ return Math.round(480 * Math.pow(1.5, floor-1)); }
+// 1층 1440exp부터 시작해 층마다 1.5배씩 증가
+function tdExpFor(floor){ return Math.round(1440 * Math.pow(1.5, floor-1)); }
 
 function refreshTrainingDungeonTickets(){
   if(state.tdTicket >= TRAINING_DUNGEON_TICKET_MAX){

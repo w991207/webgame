@@ -6,7 +6,7 @@
 
 const GOLD_DUNGEON_TICKET_MAX = 3;
 const GOLD_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const GOLD_DUNGEON_MAX_FLOOR = 10;
+const GOLD_DUNGEON_MAX_FLOOR = 20;
 
 const GOLD_DUNGEON_META = {name:'물자 창고 경비병', emoji:'📦'};
 
@@ -15,7 +15,7 @@ const GOLD_DUNGEON_META = {name:'물자 창고 경비병', emoji:'📦'};
 function gdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
 function gdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
 function gdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
-function gdGoldFor(floor){ return Math.round(6000 * Math.pow(1.55, floor-1)); }
+function gdGoldFor(floor){ return Math.round(18000 * Math.pow(1.55, floor-1)); }
 
 function refreshGoldDungeonTickets(){
   if(state.gdTicket >= GOLD_DUNGEON_TICKET_MAX){

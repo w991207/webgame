@@ -6,7 +6,7 @@
 
 const RELIC_DUNGEON_TICKET_MAX = 3;
 const RELIC_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const RELIC_DUNGEON_MAX_FLOOR = 10;
+const RELIC_DUNGEON_MAX_FLOOR = 20;
 
 const RELIC_DUNGEON_META = {name:'유산 수호자', emoji:'🗿'};
 
@@ -14,8 +14,8 @@ const RELIC_DUNGEON_META = {name:'유산 수호자', emoji:'🗿'};
 function rdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
 function rdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
 function rdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
-// 보상은 유산 파편. 1층 5개부터 시작해 층마다 1.4배씩 증가 (10층 클리어 시 약 103개)
-function rdFragFor(floor){ return Math.round(6 * Math.pow(1.45, floor-1)); }
+// 보상은 유산 파편. 1층 18개부터 시작해 층마다 1.45배씩 증가
+function rdFragFor(floor){ return Math.round(18 * Math.pow(1.45, floor-1)); }
 
 function refreshRelicDungeonTickets(){
   if(state.rdTicket >= RELIC_DUNGEON_TICKET_MAX){

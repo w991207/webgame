@@ -3963,7 +3963,7 @@ document.getElementById('goldenMonster')?.addEventListener('click', clickGoldenM
 
 const GOLD_DUNGEON_TICKET_MAX = 3;
 const GOLD_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const GOLD_DUNGEON_MAX_FLOOR = 10;
+const GOLD_DUNGEON_MAX_FLOOR = 20;
 
 const GOLD_DUNGEON_META = {name:'물자 창고 경비병', emoji:'📦'};
 
@@ -3972,7 +3972,7 @@ const GOLD_DUNGEON_META = {name:'물자 창고 경비병', emoji:'📦'};
 function gdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
 function gdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
 function gdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
-function gdGoldFor(floor){ return Math.round(6000 * Math.pow(1.55, floor-1)); }
+function gdGoldFor(floor){ return Math.round(18000 * Math.pow(1.55, floor-1)); }
 
 function refreshGoldDungeonTickets(){
   if(state.gdTicket >= GOLD_DUNGEON_TICKET_MAX){
@@ -4163,7 +4163,7 @@ setInterval(()=>{
 
 const RELIC_DUNGEON_TICKET_MAX = 3;
 const RELIC_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const RELIC_DUNGEON_MAX_FLOOR = 10;
+const RELIC_DUNGEON_MAX_FLOOR = 20;
 
 const RELIC_DUNGEON_META = {name:'유산 수호자', emoji:'🗿'};
 
@@ -4171,8 +4171,8 @@ const RELIC_DUNGEON_META = {name:'유산 수호자', emoji:'🗿'};
 function rdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
 function rdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
 function rdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
-// 보상은 유산 파편. 1층 5개부터 시작해 층마다 1.4배씩 증가 (10층 클리어 시 약 103개)
-function rdFragFor(floor){ return Math.round(6 * Math.pow(1.45, floor-1)); }
+// 보상은 유산 파편. 1층 18개부터 시작해 층마다 1.45배씩 증가
+function rdFragFor(floor){ return Math.round(18 * Math.pow(1.45, floor-1)); }
 
 function refreshRelicDungeonTickets(){
   if(state.rdTicket >= RELIC_DUNGEON_TICKET_MAX){
@@ -4359,15 +4359,15 @@ setInterval(()=>{
 
 const FORGE_DUNGEON_TICKET_MAX = 3;
 const FORGE_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const FORGE_DUNGEON_MAX_FLOOR = 10;
+const FORGE_DUNGEON_MAX_FLOOR = 20;
 
 const FORGE_DUNGEON_META = {name:'단조로의 파수꾼', emoji:'🔥'};
 
 function fdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
 function fdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
 function fdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
-// 1층 3개부터 시작해 층마다 1.35배씩 증가 (10층 클리어 시 약 51개)
-function fdStoneFor(floor){ return Math.round(4 * Math.pow(1.4, floor-1)); }
+// 1층 12개부터 시작해 층마다 1.4배씩 증가
+function fdStoneFor(floor){ return Math.round(12 * Math.pow(1.4, floor-1)); }
 
 function refreshForgeDungeonTickets(){
   if(state.fdTicket >= FORGE_DUNGEON_TICKET_MAX){
@@ -4556,15 +4556,15 @@ setInterval(()=>{
 
 const TRAINING_DUNGEON_TICKET_MAX = 3;
 const TRAINING_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const TRAINING_DUNGEON_MAX_FLOOR = 10;
+const TRAINING_DUNGEON_MAX_FLOOR = 20;
 
 const TRAINING_DUNGEON_META = {name:'수련 인형', emoji:'🥋'};
 
 function tdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
 function tdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
 function tdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
-// 1층 400exp부터 시작해 층마다 1.45배씩 증가 (10층 클리어 시 약 12,840exp)
-function tdExpFor(floor){ return Math.round(480 * Math.pow(1.5, floor-1)); }
+// 1층 1440exp부터 시작해 층마다 1.5배씩 증가
+function tdExpFor(floor){ return Math.round(1440 * Math.pow(1.5, floor-1)); }
 
 function refreshTrainingDungeonTickets(){
   if(state.tdTicket >= TRAINING_DUNGEON_TICKET_MAX){

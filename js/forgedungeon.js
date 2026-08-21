@@ -6,15 +6,15 @@
 
 const FORGE_DUNGEON_TICKET_MAX = 3;
 const FORGE_DUNGEON_TICKET_INTERVAL_MS = 15 * 60 * 1000; // 15분마다 티켓 1개 충전
-const FORGE_DUNGEON_MAX_FLOOR = 10;
+const FORGE_DUNGEON_MAX_FLOOR = 20;
 
 const FORGE_DUNGEON_META = {name:'단조로의 파수꾼', emoji:'🔥'};
 
 function fdHpFor(floor){ return Math.round(1600 * Math.pow(1.4, floor-1)); }
 function fdAtkFor(floor){ return Math.round(27 * Math.pow(1.4, floor-1)); }
 function fdDefFor(floor){ return Math.round(8 * Math.pow(1.4, floor-1)); }
-// 1층 3개부터 시작해 층마다 1.35배씩 증가 (10층 클리어 시 약 51개)
-function fdStoneFor(floor){ return Math.round(4 * Math.pow(1.4, floor-1)); }
+// 1층 12개부터 시작해 층마다 1.4배씩 증가
+function fdStoneFor(floor){ return Math.round(12 * Math.pow(1.4, floor-1)); }
 
 function refreshForgeDungeonTickets(){
   if(state.fdTicket >= FORGE_DUNGEON_TICKET_MAX){
