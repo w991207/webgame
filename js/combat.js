@@ -54,6 +54,12 @@ function monsterHpFor(floor, boss, golden){
     if(golden) hp *= GOLDEN_HP_MULT;
     return Math.round(hp);
   }
+  if(state.mode === 'towerVeryHard'){
+    // 1층 = 폐허(일반모드) 회랑 10000층 보스. 체력 성장률은 일반 무한의탑(HP = 50*f^1.3)과 동일.
+    let hp = veryHardAnchor('hp') * Math.pow(floor, 1.3);
+    if(golden) hp *= GOLDEN_HP_MULT;
+    return Math.round(hp);
+  }
   let hp =
   Math.round(
     35 * Math.pow(floor, 1.45)
@@ -78,6 +84,12 @@ function monsterAtkFor(floor, boss, golden){
     if(golden) atk *= GOLDEN_ATK_MULT;
     return Math.round(atk);
   }
+  if(state.mode === 'towerVeryHard'){
+    // 1층 = 폐허(일반모드) 회랑 10000층 보스. 공격 성장률은 일반 무한의탑(atk = 10 + floor*8)과 동일.
+    let atk = veryHardAnchor('atk') * (10 + floor*8) / 18;
+    if(golden) atk *= GOLDEN_ATK_MULT;
+    return Math.round(atk);
+  }
   let atk =
   8 + Math.pow(floor, 1.15) * 2.5;
   if(boss)
@@ -99,6 +111,12 @@ function monsterDefFor(floor, boss, golden){
     if(golden) def *= GOLDEN_DEF_MULT;
     return Math.round(def);
   }
+  if(state.mode === 'towerVeryHard'){
+    // 1층 = 폐허(일반모드) 회랑 10000층 보스. 방어 성장률은 일반 무한의탑(def = floor*0.8)과 동일.
+    let def = veryHardAnchor('def') * floor;
+    if(golden) def *= GOLDEN_DEF_MULT;
+    return Math.round(def);
+  }
   let def =
   Math.pow(floor, 1.35) * 0.7;
   if(boss)
@@ -106,6 +124,23 @@ function monsterDefFor(floor, boss, golden){
   def = def * normalTierMult(floor);
   if(golden) def *= GOLDEN_DEF_MULT;
   return Math.round(def);
+}
+
+// 무한의 탑(매우어려움) 성장 곡선 기준치.
+// 1층 = 폐허(일반모드) "회랑 10000층 보스"와 정확히 동일한 수치를 기준으로 삼고,
+// 이후 층당 성장률은 일반 무한의탑(tower)의 곡선을 그대로 따른다
+// (2층 = 20000층 보스가 아니라, 무한의탑처럼 1→100층으로 완만하게 강해진다).
+function veryHardAnchor(stat){
+  const floor = VERY_HARD_FLOOR_BASE; // 일반모드 10000층(회랑 구간) 보스 기준
+  const tm = normalTierMult(floor);
+  const rm = normalRewardTierMult(floor);
+  switch(stat){
+    case 'hp':   return 35 * Math.pow(floor,1.45) * 6 * tm;
+    case 'atk':  return (8 + Math.pow(floor,1.15)*2.5) * 2.2 * tm;
+    case 'def':  return (Math.pow(floor,1.35)*0.7) * 1.8 * tm;
+    case 'gold': return (6 + floor*2.2) * 8 * rm;
+    case 'exp':  return (3 + floor*1.5) * 8 * rm;
+  }
 }
 
 // ---------- 회피/명중 (Evasion / Accuracy) ----------
@@ -169,6 +204,10 @@ function goldDropFor(floor, boss){
     if(boss) g *= 3;
     return g;
   }
+  if(state.mode === 'towerVeryHard'){
+    // 1층 = 폐허(일반모드) 회랑 10000층 보스 물자. 성장률은 일반 무한의탑(1.03^(floor-1))과 동일.
+    return Math.round(veryHardAnchor('gold') * Math.pow(1.03, floor - 1));
+  }
   let g = Math.round(6 + floor * 2.2);
   if(boss) g *= 8;
   return Math.round(g * normalRewardTierMult(floor));
@@ -179,6 +218,10 @@ function expDropFor(floor, boss){
   }
   if(state.mode === 'towerHard'){
     return Math.round(15 + floor*4.0);
+  }
+  if(state.mode === 'towerVeryHard'){
+    // 1층 = 폐허(일반모드) 회랑 10000층 보스 경험치. 성장률은 일반 무한의탑(exp = 5 + floor*2)과 동일.
+    return Math.round(veryHardAnchor('exp') * (5 + floor*2) / 7);
   }
   let e = Math.round(3 + floor*1.5);
   if(boss) e *= 8;
@@ -219,11 +262,11 @@ function spawnMonster(){
       state.monsterMaxHp = 1;
       state.monsterHp = 1;
     } else {
-      state.isBoss = (state.vhFloor % 10 === 0);
+      // 매우어려움 탑은 1층이 폐허(일반모드) 회랑 10000층 보스 수치와 동일하게 시작하고,
+      // 이후 층당 성장률은 일반 무한의탑과 동일하게 간다. 따라서 매 층이 보스전이다.
+      state.isBoss = true;
       state.monsterIndex = (state.vhFloor - 1) % TOWER_MONSTERS.length;
-      // 1층 = 10000층 기준이므로, 실제 참조 층만큼(일반모드 공식) 떼서 계산한다.
-      const vhEff = currentActiveFloor();
-      state.monsterMaxHp = monsterHpFor(vhEff, state.isBoss);
+      state.monsterMaxHp = monsterHpFor(state.vhFloor, state.isBoss);
       state.monsterHp = state.monsterMaxHp;
     }
   } else {

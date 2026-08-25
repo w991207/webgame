@@ -199,10 +199,13 @@ function renderRepeatableQuests(){
   const claimAllBtn = document.getElementById('claimAllRepeatBtn');
   if(claimAllBtn) claimAllBtn.disabled = !anyReady || restricted;
   if(restricted){
+    // 매우어려움 모드에서는 반복 퀘스트를 아예 이용할 수 없으므로, 진행 목록과 '모두 받기' 버튼을 숨긴다.
+    container.innerHTML = '';
     const note = document.createElement('div');
     note.style.cssText = 'font-size:11px;color:var(--hp);margin-top:6px;';
     note.textContent = '⚠️ 매우어려움 모드에서는 반복 퀘스트 진행/수령이 비활성화됩니다.';
     container.appendChild(note);
+    if(claimAllBtn){ claimAllBtn.disabled = true; claimAllBtn.style.display = 'none'; }
   }
 }
 
@@ -236,6 +239,17 @@ function renderCombatRepeatQuests(){
   });
   const claimAllBtn = document.getElementById('combatClaimAllRepeatBtn');
   if(claimAllBtn) claimAllBtn.disabled = !anyReady || restricted;
+  if(restricted){
+    // 매우어려움 모드에서는 전투 화면의 반복 퀘스트 위젯 전체를 숨겨 '모두 받기'를 눌러도 보상이 나오지 못하게 한다.
+    container.innerHTML = '';
+    const wrap = container.closest('.combat-quests');
+    if(wrap) wrap.style.display = 'none';
+    if(claimAllBtn) claimAllBtn.disabled = true;
+    return;
+  } else {
+    const wrap = container.closest('.combat-quests');
+    if(wrap) wrap.style.display = '';
+  }
 }
 document.getElementById('combatClaimAllRepeatBtn')?.addEventListener('click', claimAllRepeatable);
 

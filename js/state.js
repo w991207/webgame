@@ -2,17 +2,20 @@
 // 전부 무효화되고 새 게임으로 시작됩니다. 밸런스 개편 등으로 전체 초기화가 필요할 때 사용.
 const SAVE_VERSION = '3.0';
 
-// 무한의 탑(매우어려움) 모드 전용 스케일 상수: 1층이 폐허(일반모드) 기준 "10000층" 난이도부터 시작한다.
-// ('1층이 10000층 기준' — 실제 층 = vhFloor × 이 상수)
+// 무한의 탑(매우어려움) 모드 전용 스케일 상수.
+// 1층이 폐허(일반모드) 기준 "회랑 10000층 보스"와 동일하게 시작한다.
+// 이후 층당 성장률은 일반 무한의탑과 동일하게 간다 (combat.js의 veryHard 곡선).
 const VERY_HARD_FLOOR_BASE = 10000;
 
 // 현재 활성 모드의 "실제 참조 층수"를 돌려준다.
-// 폐허(normal)/무한의 탑(tower)/어려움(towerHard)은 그대로 두고,
-// 매우어려움(towerVeryHard)은 1층을 10000층 기준으로 치므로 실제 층 = vhFloor × 10000.
+// 폐허(normal)/무한의 탑(tower)/어려움(towerHard)/매우어려움(towerVeryHard) 모두
+// 자기 모드의 층수(1~100 등) 그대로 사용한다.
+// 매우어려움은 1층이 폐허(일반모드) 회랑 "10000층 보스"와 동일하게 시작하되,
+// 층당 성장률만 일반 무한의탑과 동일하게 가는 별도 곡선(combat.js 참고)을 쓴다.
 function currentActiveFloor(){
   if(state.mode === 'tower') return state.towerFloor;
   if(state.mode === 'towerHard') return state.htFloor;
-  if(state.mode === 'towerVeryHard') return state.vhFloor * VERY_HARD_FLOOR_BASE;
+  if(state.mode === 'towerVeryHard') return state.vhFloor;
   return state.floor;
 }
 
