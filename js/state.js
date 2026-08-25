@@ -159,10 +159,10 @@ function defaultState(){
     equippedCostume: null, // null이면 기본 갑주(knight.png) 착용 상태
 
         // ---------- Skills (직업 전용 스킬용 상태) ----------
-    ironWillCharges: 0, // '불굴의 의지'(생존 전문가 전용 스킬)로 쌓아둔, 치명적인 일격 방지 충전 수
-    // 불굴의 의지 충전이 유지되는 시간 제한 (decay) - 충전이 계속 쌓여서 죽지 못하는 문제 방지
-    ironWillChargesLastGainTime: 0, // 마지막으로 충전이 쌓인 시각 (ms)
-    ironWillChargesDecayInterval: 300000, // 5분마다 충전 1개씩 감소 (300,000ms = 5분)
+    // '불굴의 의지'(생존 전문가 전용 스킬)로 쌓아둔, 치명적인 일격 방지 충전 수.
+    // IRON_WILL_MAX_CHARGES(1)로 상한을 둬서 죽지 않는 문제를 막는다 — 충전은 소모해야만
+    // 다시 채울 수 있고, 시간이 지난다고 저절로 줄어들지는 않는다.
+    ironWillCharges: 0,
 
 
     // ---------- PvP ----------

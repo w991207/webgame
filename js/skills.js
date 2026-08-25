@@ -7,6 +7,10 @@
 // 아래 4개(이중 강타/관통 사격/응급 처치/강탈 일격)는 직업(job) 상관없이 누구나 배울 수 있는
 // 기본 스킬. 그 아래 JOB_EXCLUSIVE_SKILLS 4개는 전직(job.js, 레벨 1000)해서 해당 직업을
 // 선택해야만 새로 습득/강화할 수 있는 직업 전용 스킬이다.
+// '불굴의 의지' 충전 상한. 시간이 지나 저절로 줄어드는 대신, 이 상한에 걸려 있는 동안은
+// 새로 충전되지 않다가 치명적인 일격을 버텨내며 소모되면 그때 다시 채워질 수 있다.
+const IRON_WILL_MAX_CHARGES = 1;
+
 const ACTIVE_SKILLS = [
   {
     key:'skillDoubleStrike', name:'이중 강타', icon:'🗡️',
@@ -178,9 +182,12 @@ function triggerActiveSkill(sk, lvl){
       state.playerHp = Math.min(s.maxHp, state.playerHp + healAmt);
       floatText('+'+healAmt, 'heal');
     }
-    state.ironWillCharges = (state.ironWillCharges||0) + 1;
-    state.ironWillChargesLastGainTime = Date.now(); // 충전 획득 시각 기록 (decay 타이머 시작)
-    log(`💪 불굴의 의지 발동! (+${healAmt} 체력, 치명적인 일격 1회 방지 준비)`, 'good');
+    if((state.ironWillCharges||0) < IRON_WILL_MAX_CHARGES){
+      state.ironWillCharges = (state.ironWillCharges||0) + 1;
+      log(`💪 불굴의 의지 발동! (+${healAmt} 체력, 치명적인 일격 1회 방지 준비)`, 'good');
+    } else {
+      log(`💪 불굴의 의지 발동! (+${healAmt} 체력, 치명적인 일격 방지 충전은 이미 최대)`, 'good');
+    }
     return true;
   }
 
@@ -194,17 +201,6 @@ function checkActiveSkills(){
   // 클리어 후에는 스킬도 완전히 멈춰야 하므로(강탈 일격 등으로 골드가 계속 들어오는 문제 방지) 여기서 차단.
   if((state.mode === 'tower' && state.towerCleared) || (state.mode === 'towerHard' && state.htCleared)) return;
     const now = Date.now();
-  // 불굴의 의지 충전 decay: 5분마다 충전 1개 감소 (누적 충전으로 죽지 않게 하는 문제 방지)
-  if((state.ironWillCharges||0) > 0 && state.ironWillChargesLastGainTime > 0){
-    const elapsed = now - state.ironWillChargesLastGainTime;
-    if(elapsed >= state.ironWillChargesDecayInterval){
-      state.ironWillCharges--;
-      state.ironWillChargesLastGainTime = now; // decay 타이머 초기화
-      if(state.ironWillCharges > 0){
-        log(`⏳ 불굴의 의지 충전이 1개 감소했습니다. (남은 충전: ${state.ironWillCharges})`);
-      }
-    }
-  }
   let touched = false;
   ACTIVE_SKILLS.forEach(sk=>{
     const lvl = skillLevel(sk.key);
