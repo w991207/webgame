@@ -21,10 +21,6 @@ function defaultState(){
     htHighestFloor: 1,
     htRewardsClaimed: {},
     htCleared: false,
-    vhFloor: 1,
-    vhHighestFloor: 1,
-    vhRewardsClaimed: {},
-    vhCleared: false,
 
     monsterHp: 0,
     monsterMaxHp: 0,

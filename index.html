@@ -59,7 +59,7 @@
       <button class="mode-btn active" id="modeNormalBtn">폐허 (기본 모드)</button>
       <button class="mode-btn" id="modeTowerBtn">무한의 탑 (100층)</button>
       <button class="mode-btn" id="modeTowerHardBtn">무한의 탑(어려움) 🔒</button>
-      <button class="mode-btn" id="modeTowerVeryHardBtn">무한의 탑(매우어려움) 🔒</button>
+      <button class="mode-btn worldmap-open-btn" id="worldMapOpenBtn">🗺️ 세계지도</button>
       <button class="mode-btn worldmap-open-btn" id="minigameOpenBtn" type="button" onclick="document.getElementById('minigameModal').style.display='flex'; document.getElementById('minigameFrame').src='minigame.html';">🎮 미니게임</button>
     </div>
     <div class="currency-bar">
@@ -717,6 +717,25 @@
     <button id="importBtn">데이터 가져오기</button>
     <button id="resetBtn">전체 초기화</button>
     <input type="file" id="importFileInput" accept=".json" style="display:none;">
+  </div>
+</div>
+
+<!-- ---------- 세계지도 (오픈월드 스타일 이동 UI) ---------- -->
+<div class="modal-overlay worldmap-overlay" id="worldMapOverlay" style="display:none;">
+  <div class="worldmap-card">
+    <div class="worldmap-header">
+      <h3>🗺️ 황혼의 회랑 — 세계지도</h3>
+      <button class="worldmap-close-btn" id="worldMapCloseBtn">✕</button>
+    </div>
+    <p class="worldmap-hint">지역을 클릭해 이동하세요. 잠긴 지역은 조건을 채우면 열립니다.</p>
+    <div class="worldmap-canvas" id="worldMapCanvas">
+      <svg class="worldmap-lines" id="worldMapLines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+      <div class="worldmap-traveler" id="worldMapTraveler" style="display:none;">🚩</div>
+    </div>
+    <div class="worldmap-legend">
+      <span><span class="wm-dot unlocked"></span> 이동 가능</span>
+      <span><span class="wm-dot locked"></span> 잠김</span>
+    </div>
   </div>
 </div>
 

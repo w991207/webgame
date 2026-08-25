@@ -42,17 +42,6 @@ function applyCorridorTheme(){
   }
 }
 
-// ---------- 무한의 탑(매우어려움) 기준값 ----------
-// "1층이 폐허 1만층 수준"이라는 요청에 맞춰, 일반모드(폐허) 몬스터 스탯 공식을 그대로
-// floor=10000에 대입해서 나온 값(비보스 기준)을 그대로 이 모드의 1층 기준값(BASE)으로 삼는다.
-// 이후 층 성장은 towerHard(어려움, floor^1.5로 100층까지 1000배)보다 한 단계 더 가파른
-// floor^1.6(100층까지 약 1585배)을 적용해, "이미 극단적으로 센 상태에서 더 가파르게" 오르게 한다.
-// 무한의 탑/무한의 탑(어려움)과 마찬가지로 층수 자체에는 보스 배율을 별도로 곱하지 않는다.
-const VERY_HARD_HP_BASE = 444000000;
-const VERY_HARD_ATK_BASE = 2000000;
-const VERY_HARD_DEF_BASE = 3535000;
-const VERY_HARD_EXPONENT = 1.6;
-
 // ---------- Monster generation ----------
 function monsterHpFor(floor, boss, golden){
   if(state.mode === 'tower'){
@@ -62,11 +51,6 @@ function monsterHpFor(floor, boss, golden){
   }
   if(state.mode === 'towerHard'){
     let hp = Math.round(300 * Math.pow(floor, 1.5));
-    if(golden) hp *= GOLDEN_HP_MULT;
-    return Math.round(hp);
-  }
-  if(state.mode === 'towerVeryHard'){
-    let hp = Math.round(VERY_HARD_HP_BASE * Math.pow(floor, VERY_HARD_EXPONENT));
     if(golden) hp *= GOLDEN_HP_MULT;
     return Math.round(hp);
   }
@@ -94,11 +78,6 @@ function monsterAtkFor(floor, boss, golden){
     if(golden) atk *= GOLDEN_ATK_MULT;
     return Math.round(atk);
   }
-  if(state.mode === 'towerVeryHard'){
-    let atk = Math.round(VERY_HARD_ATK_BASE * Math.pow(floor, VERY_HARD_EXPONENT));
-    if(golden) atk *= GOLDEN_ATK_MULT;
-    return Math.round(atk);
-  }
   let atk =
   8 + Math.pow(floor, 1.15) * 2.5;
   if(boss)
@@ -117,11 +96,6 @@ function monsterDefFor(floor, boss, golden){
   }
   if(state.mode === 'towerHard'){
     let def = Math.round(floor*3.5);
-    if(golden) def *= GOLDEN_DEF_MULT;
-    return Math.round(def);
-  }
-  if(state.mode === 'towerVeryHard'){
-    let def = Math.round(VERY_HARD_DEF_BASE * Math.pow(floor, VERY_HARD_EXPONENT));
     if(golden) def *= GOLDEN_DEF_MULT;
     return Math.round(def);
   }
@@ -150,8 +124,6 @@ function monsterEvasionFor(floor, boss){
     ev = floor * 0.3;
   } else if(state.mode === 'towerHard'){
     ev = floor * 0.55;
-  } else if(state.mode === 'towerVeryHard'){
-    ev = floor * 0.8;
   } else {
     // 명중(accuracy)은 골드강화/혈청강화 레벨당 고정 수치를 더하는 "가산형" 스탯이라,
     // HP/공격력/방어력처럼 1000층마다 복리로(normalTierMult, ×1.35씩) 불어나는 배율을
@@ -197,13 +169,6 @@ function goldDropFor(floor, boss){
     if(boss) g *= 3;
     return g;
   }
-  if(state.mode === 'towerVeryHard'){
-    // 몬스터 체감 난이도(HP 등)는 폐허 1만층 수준으로 뛰지만, 보상까지 그 배율을 그대로
-    // 따라가면 경제가 붕괴하므로 보상은 towerHard 대비 5배 정도의 별도 수치로 잡는다.
-    let g = Math.round(3000 * Math.pow(1.045, floor - 1));
-    if(boss) g *= 3;
-    return g;
-  }
   let g = Math.round(6 + floor * 2.2);
   if(boss) g *= 8;
   return Math.round(g * normalRewardTierMult(floor));
@@ -214,9 +179,6 @@ function expDropFor(floor, boss){
   }
   if(state.mode === 'towerHard'){
     return Math.round(15 + floor*4.0);
-  }
-  if(state.mode === 'towerVeryHard'){
-    return Math.round(60 + floor*10.0);
   }
   let e = Math.round(3 + floor*1.5);
   if(boss) e *= 8;
@@ -250,18 +212,6 @@ function spawnMonster(){
       state.monsterMaxHp = monsterHpFor(state.htFloor, state.isBoss);
       state.monsterHp = state.monsterMaxHp;
     }
-  } else if(state.mode === 'towerVeryHard'){
-    if(state.vhCleared){
-      state.isBoss = false;
-      state.monsterIndex = -1;
-      state.monsterMaxHp = 1;
-      state.monsterHp = 1;
-    } else {
-      state.isBoss = (state.vhFloor % 10 === 0);
-      state.monsterIndex = (state.vhFloor - 1) % TOWER_MONSTERS.length;
-      state.monsterMaxHp = monsterHpFor(state.vhFloor, state.isBoss);
-      state.monsterHp = state.monsterMaxHp;
-    }
   } else {
     const boss = state.floor % 10 === 0;
     state.isBoss = boss;
@@ -286,12 +236,6 @@ function currentMonsterMeta(){
   if(state.mode === 'towerHard'){
     if(state.htCleared){
       return {name:'무한의 탑(어려움) 정복 완료', emoji:'👑'};
-    }
-    return TOWER_MONSTERS[state.monsterIndex] || TOWER_MONSTERS[0];
-  }
-  if(state.mode === 'towerVeryHard'){
-    if(state.vhCleared){
-      return {name:'무한의 탑(매우어려움) 정복 완료', emoji:'💀'};
     }
     return TOWER_MONSTERS[state.monsterIndex] || TOWER_MONSTERS[0];
   }
@@ -365,11 +309,7 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
   const s = stats();
   if(state.monsterHp <= 0) return false; // 이미 처치된 경우 무시
 
-  const currentFloor =
-    state.mode === 'tower' ? state.towerFloor :
-    state.mode === 'towerHard' ? state.htFloor :
-    state.mode === 'towerVeryHard' ? state.vhFloor :
-    state.floor;
+  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
 
   state.monsterHp -= dmgToMonster;
   if(!opts.silent){
@@ -447,22 +387,6 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
         state.htCleared = true;
         log(`[무한의 탑(어려움)] 100층 정복 완료! 무한의 탑(어려움)을 완전히 정복했습니다. 환생 후 다시 도전할 수 있습니다.`, 'good');
       }
-    } else if(state.mode === 'towerVeryHard'){
-      if(state.vhFloor % 10 === 0 && !state.vhRewardsClaimed[state.vhFloor]){
-        state.soul += 8;
-        state.fragments += 20;
-        state.vhRewardsClaimed[state.vhFloor] = true;
-        log(`[무한의 탑(매우어려움)] ${state.vhFloor}층 첫 돌파 보상! 🧪 혈청 8개, ◈ 유산 파편 20개 획득!`, 'good');
-      }
-
-      if(state.vhFloor < 100){
-        state.vhFloor++;
-        state.vhHighestFloor = Math.max(state.vhHighestFloor, state.vhFloor);
-        log(`[무한의 탑(매우어려움)] ${state.vhFloor}층으로 상승합니다!`, 'good');
-      } else if(!state.vhCleared){
-        state.vhCleared = true;
-        log(`[무한의 탑(매우어려움)] 100층 정복 완료! 무한의 탑(매우어려움)을 완전히 정복했습니다. 환생 후 다시 도전할 수 있습니다.`, 'good');
-      }
     } else {
       state.killsOnFloor++;
       const killsNeeded = boss ? 1 : 5;
@@ -525,17 +449,9 @@ function playerAttackTick(){
     schedulePlayerTick();
     return;
   }
-  if(state.mode === 'towerVeryHard' && state.vhCleared){
-    schedulePlayerTick();
-    return;
-  }
   if(state.monsterHp <= 0) return; // 이미 처치된 경우 무시
 
-  const currentFloor =
-    state.mode === 'tower' ? state.towerFloor :
-    state.mode === 'towerHard' ? state.htFloor :
-    state.mode === 'towerVeryHard' ? state.vhFloor :
-    state.floor;
+  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
 
   attackPlayerAnim();
 
@@ -569,16 +485,8 @@ function monsterAttackTick(){
     scheduleMonsterTick();
     return;
   }
-  if(state.mode === 'towerVeryHard' && state.vhCleared){
-    scheduleMonsterTick();
-    return;
-  }
 
-  const currentFloor =
-    state.mode === 'tower' ? state.towerFloor :
-    state.mode === 'towerHard' ? state.htFloor :
-    state.mode === 'towerVeryHard' ? state.vhFloor :
-    state.floor;
+  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
   const monAtk = monsterAtkFor(currentFloor, state.isBoss, state.isGolden);
   const dmgToPlayer = Math.round(Math.max(1, monAtk - s.def));
   state.playerHp -= dmgToPlayer;
@@ -602,9 +510,6 @@ function monsterAttackTick(){
     } else if(state.mode === 'towerHard'){
       state.playerHp = s.maxHp;
       log(`[무한의 탑(어려움)] 쓰러졌습니다. 현재 층(${state.htFloor}층)에 재도전합니다.`, 'warn');
-    } else if(state.mode === 'towerVeryHard'){
-      state.playerHp = s.maxHp;
-      log(`[무한의 탑(매우어려움)] 쓰러졌습니다. 현재 층(${state.vhFloor}층)에 재도전합니다.`, 'warn');
     } else {
       state.floor = Math.max(1, state.floor-1);
       state.killsOnFloor = 0;
@@ -658,10 +563,9 @@ function schedulePlayerTick(){
   function scheduleMonsterTick(){
   clearTimeout(monsterTickHandle);
   const floor =
-    state.mode === 'tower' ? state.towerFloor :
-    state.mode === 'towerHard' ? state.htFloor :
-    state.mode === 'towerVeryHard' ? state.vhFloor :
-    state.floor;
+    state.mode === 'tower'
+    ? state.towerFloor
+    : (state.mode === 'towerHard' ? state.htFloor : state.floor);
   // 층이 올라갈수록 빨라짐 (최소 0.8초)
   const speed = Math.max(
     800,
@@ -688,24 +592,17 @@ function setMode(mode){
     alert('무한의 탑(어려움)은 무한의 탑(100층)을 먼저 정복해야 입장할 수 있습니다.');
     return;
   }
-  if(mode === 'towerVeryHard' && !state.htCleared){
-    alert('무한의 탑(매우어려움)은 무한의 탑(어려움, 100층)을 먼저 정복해야 입장할 수 있습니다.');
-    return;
-  }
   state.mode = mode;
   document.getElementById('modeNormalBtn').classList.toggle('active', mode==='normal');
   document.getElementById('modeTowerBtn').classList.toggle('active', mode==='tower');
   const hardBtn = document.getElementById('modeTowerHardBtn');
   if(hardBtn) hardBtn.classList.toggle('active', mode==='towerHard');
-  const veryHardBtn = document.getElementById('modeTowerVeryHardBtn');
-  if(veryHardBtn) veryHardBtn.classList.toggle('active', mode==='towerVeryHard');
 
   document.getElementById('arenaTitle').textContent =
     mode === 'tower' ? '무한의 탑 (100층)' :
     mode === 'towerHard' ? '무한의 탑(어려움) (100층)' :
-    mode === 'towerVeryHard' ? '무한의 탑(매우어려움) (100층)' :
     '폐허';
-  log(`[모드 변경] ${mode==='tower'?'무한의 탑':mode==='towerHard'?'무한의 탑(어려움)':mode==='towerVeryHard'?'무한의 탑(매우어려움)':'라스트 존'} 모드로 전환했습니다.`, 'new');
+  log(`[모드 변경] ${mode==='tower'?'무한의 탑':mode==='towerHard'?'무한의 탑(어려움)':'라스트 존'} 모드로 전환했습니다.`, 'new');
   
   const s = stats();
   state.playerHp = s.maxHp;
@@ -717,5 +614,3 @@ document.getElementById('modeNormalBtn').addEventListener('click', ()=>setMode('
 document.getElementById('modeTowerBtn').addEventListener('click', ()=>setMode('tower'));
 const modeTowerHardBtnEl = document.getElementById('modeTowerHardBtn');
 if(modeTowerHardBtnEl) modeTowerHardBtnEl.addEventListener('click', ()=>setMode('towerHard'));
-const modeTowerVeryHardBtnEl = document.getElementById('modeTowerVeryHardBtn');
-if(modeTowerVeryHardBtnEl) modeTowerVeryHardBtnEl.addEventListener('click', ()=>setMode('towerVeryHard'));

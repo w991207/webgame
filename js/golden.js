@@ -78,7 +78,7 @@ function clickGoldenMonster(){
     el.style.display = 'none';
   }
 
-  const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : (state.mode==='towerVeryHard' ? state.vhFloor : state.floor));
+  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
   state.isGolden = true;
   state.monsterMaxHp = monsterHpFor(currentFloor, false, true);
   state.monsterHp = state.monsterMaxHp;

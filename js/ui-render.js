@@ -18,12 +18,8 @@ function renderMonster(){
   // (몬스터 기준 / 보스 기준을 함께 보여줘서, 보스전 대비 여유치까지 가늠할 수 있게 함)
   const accEl = document.getElementById('accuracyLine');
   if(accEl){
-  const cf =
-    state.mode === 'tower' ? state.towerFloor :
-    state.mode === 'towerHard' ? state.htFloor :
-    state.mode === 'towerVeryHard' ? state.vhFloor :
-    state.floor;
-    if((state.mode === 'tower' && state.towerCleared) || (state.mode === 'towerHard' && state.htCleared) || (state.mode === 'towerVeryHard' && state.vhCleared)){
+    const cf = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+    if((state.mode === 'tower' && state.towerCleared) || (state.mode === 'towerHard' && state.htCleared)){
       accEl.textContent = '';
     } else {
       const recMob = recommendedAccuracyFor(cf, false);
@@ -41,9 +37,6 @@ function renderMonster(){
   } else if(state.mode === 'towerHard'){
     document.getElementById('floorBadge').textContent = state.htCleared ? '👑 HARD TOWER CLEAR! (100/100)' : ('HARD TOWER ' + state.htFloor + ' / 100F');
     progressEl.textContent = `무한의 탑(어려움) 진행 중`;
-  } else if(state.mode === 'towerVeryHard'){
-    document.getElementById('floorBadge').textContent = state.vhCleared ? '💀 VERY HARD TOWER CLEAR! (100/100)' : ('VERY HARD TOWER ' + state.vhFloor + ' / 100F');
-    progressEl.textContent = `무한의 탑(매우어려움) 진행 중`;
   } else {
     document.getElementById('floorBadge').textContent = 'FLOOR ' + state.floor;
     if(state.isGolden){
@@ -76,13 +69,6 @@ function renderCombatFrame(){
     const hardUnlocked = !!state.towerCleared;
     towerHardBtn.textContent = hardUnlocked ? '무한의 탑(어려움)' : '무한의 탑(어려움) 🔒(탑 100층 클리어)';
     towerHardBtn.classList.toggle('locked', !hardUnlocked);
-  }
-
-  const towerVeryHardBtn = document.getElementById('modeTowerVeryHardBtn');
-  if(towerVeryHardBtn){
-    const vhUnlocked = !!state.htCleared;
-    towerVeryHardBtn.textContent = vhUnlocked ? '무한의 탑(매우어려움)' : '무한의 탑(매우어려움) 🔒(어려움 100층 클리어)';
-    towerVeryHardBtn.classList.toggle('locked', !vhUnlocked);
   }
 
   document.getElementById('statAtk').textContent = s.atk;
@@ -193,6 +179,10 @@ function renderAll(){
   if(typeof renderCostumeShop === 'function') renderCostumeShop();
   if(typeof renderKillPassPanel === 'function') renderKillPassPanel();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
+  if(typeof renderWorldMap === 'function'){
+    const wmOverlay = document.getElementById('worldMapOverlay');
+    if(wmOverlay && wmOverlay.style.display !== 'none') renderWorldMap();
+  }
   if(typeof renderTerritoryPanel === 'function') renderTerritoryPanel();
   if(typeof renderExpeditionPanel === 'function') renderExpeditionPanel();
   updateTabBadges();
