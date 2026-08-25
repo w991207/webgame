@@ -2174,10 +2174,17 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
     state.totalKills++;
     state.dailyKills++;
     state.dailyGoldEarned += goldGain;
-    state.repKillProgress++;
+    // 반복 퀘스트(연속 사냥/보스 사냥꾼) 진행은 폐허(일반 모드)에서만 카운트한다.
+    // 무한의 탑은 보상 스케일(goldDropFor)이 다른 기준이라 그대로 진행시키면 보상이
+    // 비정상적으로 계산돼서, 일반 모드가 아닐 때는 아예 진행되지 않게 막는다.
+    if(state.mode === 'normal'){
+      state.repKillProgress++;
+    }
     if(boss){
       state.dailyBossKills++;
-      state.repBossProgress++;
+      if(state.mode === 'normal'){
+        state.repBossProgress++;
+      }
       state.totalBossKills = (state.totalBossKills||0) + 1;
       if(typeof gainMutationPoints === 'function') gainMutationPoints(3);
       if(typeof gainJobMasteryPoints === 'function') gainJobMasteryPoints(2);
