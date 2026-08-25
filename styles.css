@@ -1012,6 +1012,13 @@
   .relic-card .rlvl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--frag);}
   .relic-card .rdesc{font-size:11px;color:var(--text-dim);margin-top:4px;line-height:1.5;}
 
+  .raid-slot.maxed{border-color:var(--gold);}
+  .raid-craft-btn{
+    margin-top:8px;width:100%;background:transparent;border:1px solid var(--border);color:var(--text);
+    padding:6px 8px;border-radius:6px;cursor:pointer;font-size:11px;
+  }
+  .raid-craft-btn:hover{border-color:var(--frag);color:var(--frag);}
+
   .pet-shelter-room{
     position:relative;height:150px;margin-bottom:12px;overflow:hidden;
     border:1px solid var(--border);border-radius:10px;

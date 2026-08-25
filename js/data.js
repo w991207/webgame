@@ -353,12 +353,37 @@ const SOUL_UPGRADES = [
 
 // ---------- Raid Gear (1인 레이드 전용 장비) ----------
 // 유산보다 레벨당 효과가 2배 강함 (뽑기 확률이 훨씬 낮고 티켓제로 제한되기 때문)
+// 더 이상 레이드 클리어 RNG 드랍이 아니라, 부위별로 🔮 회랑 결정을 소모해 "제작"으로 올린다
+// (raid.js의 attemptCraftRaidGear 참고). maxLevel까지 올리면 해당 부위는 완성.
 const RAID_GEAR = [
-  {key:'raidWeapon', name:'파멸의 파편검', icon:'🗡️', perLevel:6, descFn:v=>`공격력 +${v}%`},
-  {key:'raidArmor', name:'심연의 갑주', icon:'🛡️', perLevel:6, descFn:v=>`방어력 +${v}%`},
-  {key:'raidCrown', name:'파멸의 왕관', icon:'👑', perLevel:5, descFn:v=>`최대 체력 +${v}%`},
-  {key:'raidRing', name:'천공의 인장', icon:'💍', perLevel:4, descFn:v=>`물자/경험치 획득 +${v}%`},
+  {key:'raidWeapon', name:'파멸의 파편검', icon:'🗡️', perLevel:6, maxLevel:20, descFn:v=>`공격력 +${v}%`},
+  {key:'raidArmor', name:'심연의 갑주', icon:'🛡️', perLevel:6, maxLevel:20, descFn:v=>`방어력 +${v}%`},
+  {key:'raidCrown', name:'파멸의 왕관', icon:'👑', perLevel:5, maxLevel:20, descFn:v=>`최대 체력 +${v}%`},
+  {key:'raidRing', name:'천공의 인장', icon:'💍', perLevel:4, maxLevel:20, descFn:v=>`물자/경험치 획득 +${v}%`},
 ];
+
+// 4개 부위 중 몇 개를 "장착"(레벨 1 이상 제작)했는지에 따라 붙는 세트 효과.
+// count 기준을 만족하는 티어 전부가 누적 적용된다(2개 달성 시 2개 보너스만, 4개 달성 시 2개+4개 보너스 전부).
+const RAID_SET_BONUS_TIERS = [
+  {count:2, label:'2부위 장착', bonus:{atkPct:3, defPct:3, hpPct:3}},
+  {count:4, label:'4부위 장착(풀세트)', bonus:{atkPct:5, defPct:5, hpPct:5}},
+];
+
+// 레이드 장비 제작 성공 확률표 (강화석 강화와 달리 실패해도 장비가 파괴/하락하지 않고 재료만 소모됨 —
+// 레이드 자체가 이미 티켓제로 진입이 제한되는 콘텐츠라, 제작까지 파괴 리스크를 얹으면 지나치게 가혹해짐).
+const RAID_CRAFT_LEVELS_TABLE = [
+  {maxLevel:5,  rate:90}, // Lv1~5
+  {maxLevel:10, rate:65}, // Lv6~10
+  {maxLevel:15, rate:40}, // Lv11~15
+  {maxLevel:20, rate:18}, // Lv16~20
+];
+function raidCraftSuccessRate(targetLevel){
+  const tier = RAID_CRAFT_LEVELS_TABLE.find(t => targetLevel <= t.maxLevel);
+  return tier ? tier.rate : RAID_CRAFT_LEVELS_TABLE[RAID_CRAFT_LEVELS_TABLE.length-1].rate;
+}
+function raidCraftShardCost(targetLevel){
+  return Math.round(6 * Math.pow(1.32, targetLevel-1));
+}
 
 // ---------- Equipment (장비 뽑기 시스템) ----------
 // 등급별 메인 옵션(무기=공격력%, 방어구=방어력%, 장신구=공격력/방어력/체력 동시 적용) 범위와,

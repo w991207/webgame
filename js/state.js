@@ -82,9 +82,12 @@ function defaultState(){
     // ---------- Raid (1인 레이드) ----------
     raidTicket: 3,
     raidTicketLastRefill: Date.now(),
-    raidPity: 0,
     raidClearCount: 0,
+    // 레이드 장비(부위별 제작 레벨). 이제 클리어 RNG 드랍이 아니라 🔮 회랑 결정으로 "제작"해서 올린다.
     raidGear: {raidWeapon:0, raidArmor:0, raidCrown:0, raidRing:0},
+    // 🔮 회랑 결정: 무한의 탑 100층 클리어 후에도 계속 오르는 폐허 1000층 이상("회랑" 테마 구간)에서
+    // 드랍되는 레이드 장비 제작 전용 재료. 레이드 클리어 보상으로도 지급된다.
+    corridorShard: 0,
     raidActive: false,
     raidBossHp: 0,
     raidBossMaxHp: 0,
@@ -288,10 +291,11 @@ function stats(){
   const cob = (typeof costumeBonus === 'function') ? costumeBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
   const cb = (typeof companionBonus === 'function') ? companionBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
   const jb = (typeof jobBonus === 'function') ? jobBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
+  const rsb = (typeof raidSetBonus === 'function') ? raidSetBonus() : {atkPct:0, defPct:0, hpPct:0};
   const bf = (typeof buffBonus === 'function') ? buffBonus() : {atkPct:0, defPct:0, hpPct:0, critDmgAdd:0, accuracyAdd:0};
-  const atk = Math.round((b.atk + gu.atk*2) * (1 + su.atkMult*0.15) * (1 + re.atkRelic*0.03) * (1 + rg.raidWeapon*0.06) * (1 + eq.atkPct/100) * (1 + mut.atkPct/100) * (1 + tb.atkPct/100) * (1 + cob.atkPct/100) * (1 + cb.atkPct/100) * (1 + jb.atkPct/100) * (1 + bf.atkPct/100));
-  const def = Math.round((b.def + gu.def*1) * (1 + su.defMult*0.15) * (1 + re.defRelic*0.03) * (1 + rg.raidArmor*0.06) * (1 + eq.defPct/100) * (1 + mut.defPct/100) * (1 + tb.defPct/100) * (1 + cob.defPct/100) * (1 + cb.defPct/100) * (1 + jb.defPct/100) * (1 + bf.defPct/100));
-  const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05) * (1 + eq.hpPct/100) * (1 + mut.hpPct/100) * (1 + tb.hpPct/100) * (1 + cob.hpPct/100) * (1 + cb.hpPct/100) * (1 + jb.hpPct/100) * (1 + bf.hpPct/100));
+  const atk = Math.round((b.atk + gu.atk*2) * (1 + su.atkMult*0.15) * (1 + re.atkRelic*0.03) * (1 + rg.raidWeapon*0.06) * (1 + eq.atkPct/100) * (1 + mut.atkPct/100) * (1 + tb.atkPct/100) * (1 + cob.atkPct/100) * (1 + cb.atkPct/100) * (1 + jb.atkPct/100) * (1 + rsb.atkPct/100) * (1 + bf.atkPct/100));
+  const def = Math.round((b.def + gu.def*1) * (1 + su.defMult*0.15) * (1 + re.defRelic*0.03) * (1 + rg.raidArmor*0.06) * (1 + eq.defPct/100) * (1 + mut.defPct/100) * (1 + tb.defPct/100) * (1 + cob.defPct/100) * (1 + cb.defPct/100) * (1 + jb.defPct/100) * (1 + rsb.defPct/100) * (1 + bf.defPct/100));
+  const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05) * (1 + eq.hpPct/100) * (1 + mut.hpPct/100) * (1 + tb.hpPct/100) * (1 + cob.hpPct/100) * (1 + cb.hpPct/100) * (1 + jb.hpPct/100) * (1 + rsb.hpPct/100) * (1 + bf.hpPct/100));
   // 물자/경험치 획득 배율은 5개 소스가 전부 곱연산으로 쌓이는 구조라, 상한이 없으면
   // "물자로 물자강화 구매 → 물자 획득 증가 → 더 많은 물자강화 구매"가 서로를 부풀리는
   // 피드백 루프가 걸려 눈덩이처럼 폭증할 수 있다. 최종값에 상한선을 걸어 원천 차단한다.

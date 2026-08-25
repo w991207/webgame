@@ -575,12 +575,37 @@ const SOUL_UPGRADES = [
 
 // ---------- Raid Gear (1인 레이드 전용 장비) ----------
 // 유산보다 레벨당 효과가 2배 강함 (뽑기 확률이 훨씬 낮고 티켓제로 제한되기 때문)
+// 더 이상 레이드 클리어 RNG 드랍이 아니라, 부위별로 🔮 회랑 결정을 소모해 "제작"으로 올린다
+// (raid.js의 attemptCraftRaidGear 참고). maxLevel까지 올리면 해당 부위는 완성.
 const RAID_GEAR = [
-  {key:'raidWeapon', name:'파멸의 파편검', icon:'🗡️', perLevel:6, descFn:v=>`공격력 +${v}%`},
-  {key:'raidArmor', name:'심연의 갑주', icon:'🛡️', perLevel:6, descFn:v=>`방어력 +${v}%`},
-  {key:'raidCrown', name:'파멸의 왕관', icon:'👑', perLevel:5, descFn:v=>`최대 체력 +${v}%`},
-  {key:'raidRing', name:'천공의 인장', icon:'💍', perLevel:4, descFn:v=>`물자/경험치 획득 +${v}%`},
+  {key:'raidWeapon', name:'파멸의 파편검', icon:'🗡️', perLevel:6, maxLevel:20, descFn:v=>`공격력 +${v}%`},
+  {key:'raidArmor', name:'심연의 갑주', icon:'🛡️', perLevel:6, maxLevel:20, descFn:v=>`방어력 +${v}%`},
+  {key:'raidCrown', name:'파멸의 왕관', icon:'👑', perLevel:5, maxLevel:20, descFn:v=>`최대 체력 +${v}%`},
+  {key:'raidRing', name:'천공의 인장', icon:'💍', perLevel:4, maxLevel:20, descFn:v=>`물자/경험치 획득 +${v}%`},
 ];
+
+// 4개 부위 중 몇 개를 "장착"(레벨 1 이상 제작)했는지에 따라 붙는 세트 효과.
+// count 기준을 만족하는 티어 전부가 누적 적용된다(2개 달성 시 2개 보너스만, 4개 달성 시 2개+4개 보너스 전부).
+const RAID_SET_BONUS_TIERS = [
+  {count:2, label:'2부위 장착', bonus:{atkPct:3, defPct:3, hpPct:3}},
+  {count:4, label:'4부위 장착(풀세트)', bonus:{atkPct:5, defPct:5, hpPct:5}},
+];
+
+// 레이드 장비 제작 성공 확률표 (강화석 강화와 달리 실패해도 장비가 파괴/하락하지 않고 재료만 소모됨 —
+// 레이드 자체가 이미 티켓제로 진입이 제한되는 콘텐츠라, 제작까지 파괴 리스크를 얹으면 지나치게 가혹해짐).
+const RAID_CRAFT_LEVELS_TABLE = [
+  {maxLevel:5,  rate:90}, // Lv1~5
+  {maxLevel:10, rate:65}, // Lv6~10
+  {maxLevel:15, rate:40}, // Lv11~15
+  {maxLevel:20, rate:18}, // Lv16~20
+];
+function raidCraftSuccessRate(targetLevel){
+  const tier = RAID_CRAFT_LEVELS_TABLE.find(t => targetLevel <= t.maxLevel);
+  return tier ? tier.rate : RAID_CRAFT_LEVELS_TABLE[RAID_CRAFT_LEVELS_TABLE.length-1].rate;
+}
+function raidCraftShardCost(targetLevel){
+  return Math.round(6 * Math.pow(1.32, targetLevel-1));
+}
 
 // ---------- Equipment (장비 뽑기 시스템) ----------
 // 등급별 메인 옵션(무기=공격력%, 방어구=방어력%, 장신구=공격력/방어력/체력 동시 적용) 범위와,
@@ -1513,9 +1538,12 @@ function defaultState(){
     // ---------- Raid (1인 레이드) ----------
     raidTicket: 3,
     raidTicketLastRefill: Date.now(),
-    raidPity: 0,
     raidClearCount: 0,
+    // 레이드 장비(부위별 제작 레벨). 이제 클리어 RNG 드랍이 아니라 🔮 회랑 결정으로 "제작"해서 올린다.
     raidGear: {raidWeapon:0, raidArmor:0, raidCrown:0, raidRing:0},
+    // 🔮 회랑 결정: 무한의 탑 100층 클리어 후에도 계속 오르는 폐허 1000층 이상("회랑" 테마 구간)에서
+    // 드랍되는 레이드 장비 제작 전용 재료. 레이드 클리어 보상으로도 지급된다.
+    corridorShard: 0,
     raidActive: false,
     raidBossHp: 0,
     raidBossMaxHp: 0,
@@ -1719,10 +1747,11 @@ function stats(){
   const cob = (typeof costumeBonus === 'function') ? costumeBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
   const cb = (typeof companionBonus === 'function') ? companionBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
   const jb = (typeof jobBonus === 'function') ? jobBonus() : {atkPct:0, defPct:0, hpPct:0, goldPct:0, expPct:0, critAdd:0, critDmgAdd:0, dropAdd:0, spdPct:0, accuracyAdd:0};
+  const rsb = (typeof raidSetBonus === 'function') ? raidSetBonus() : {atkPct:0, defPct:0, hpPct:0};
   const bf = (typeof buffBonus === 'function') ? buffBonus() : {atkPct:0, defPct:0, hpPct:0, critDmgAdd:0, accuracyAdd:0};
-  const atk = Math.round((b.atk + gu.atk*2) * (1 + su.atkMult*0.15) * (1 + re.atkRelic*0.03) * (1 + rg.raidWeapon*0.06) * (1 + eq.atkPct/100) * (1 + mut.atkPct/100) * (1 + tb.atkPct/100) * (1 + cob.atkPct/100) * (1 + cb.atkPct/100) * (1 + jb.atkPct/100) * (1 + bf.atkPct/100));
-  const def = Math.round((b.def + gu.def*1) * (1 + su.defMult*0.15) * (1 + re.defRelic*0.03) * (1 + rg.raidArmor*0.06) * (1 + eq.defPct/100) * (1 + mut.defPct/100) * (1 + tb.defPct/100) * (1 + cob.defPct/100) * (1 + cb.defPct/100) * (1 + jb.defPct/100) * (1 + bf.defPct/100));
-  const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05) * (1 + eq.hpPct/100) * (1 + mut.hpPct/100) * (1 + tb.hpPct/100) * (1 + cob.hpPct/100) * (1 + cb.hpPct/100) * (1 + jb.hpPct/100) * (1 + bf.hpPct/100));
+  const atk = Math.round((b.atk + gu.atk*2) * (1 + su.atkMult*0.15) * (1 + re.atkRelic*0.03) * (1 + rg.raidWeapon*0.06) * (1 + eq.atkPct/100) * (1 + mut.atkPct/100) * (1 + tb.atkPct/100) * (1 + cob.atkPct/100) * (1 + cb.atkPct/100) * (1 + jb.atkPct/100) * (1 + rsb.atkPct/100) * (1 + bf.atkPct/100));
+  const def = Math.round((b.def + gu.def*1) * (1 + su.defMult*0.15) * (1 + re.defRelic*0.03) * (1 + rg.raidArmor*0.06) * (1 + eq.defPct/100) * (1 + mut.defPct/100) * (1 + tb.defPct/100) * (1 + cob.defPct/100) * (1 + cb.defPct/100) * (1 + jb.defPct/100) * (1 + rsb.defPct/100) * (1 + bf.defPct/100));
+  const maxHp = Math.round((b.maxHp + gu.hp*15) * (1 + rg.raidCrown*0.05) * (1 + eq.hpPct/100) * (1 + mut.hpPct/100) * (1 + tb.hpPct/100) * (1 + cob.hpPct/100) * (1 + cb.hpPct/100) * (1 + jb.hpPct/100) * (1 + rsb.hpPct/100) * (1 + bf.hpPct/100));
   // 물자/경험치 획득 배율은 5개 소스가 전부 곱연산으로 쌓이는 구조라, 상한이 없으면
   // "물자로 물자강화 구매 → 물자 획득 증가 → 더 많은 물자강화 구매"가 서로를 부풀리는
   // 피드백 루프가 걸려 눈덩이처럼 폭증할 수 있다. 최종값에 상한선을 걸어 원천 차단한다.
@@ -2217,6 +2246,16 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
       state.enhanceStone = (state.enhanceStone||0) + stoneGain;
       state.totalEnhanceStonesEarned = (state.totalEnhanceStonesEarned||0) + stoneGain;
       log(`🔩 강화석 획득! +${stoneGain}`, 'good');
+    }
+    // 🔮 회랑 결정: 일반모드(폐허) 1000층 이상 "회랑" 테마 구간에서만 드랍되는 레이드 장비 제작 재료.
+    // 무한의 탑을 다 깬 뒤에도 계속 폐허 층수를 밀어붙일 이유를 만들어준다 (raid.js 제작 시스템 참고).
+    if(state.mode === 'normal' && currentFloor >= NORMAL_TIER_SIZE){
+      const shardChance = boss ? 0.25 : 0.06;
+      if(Math.random() < shardChance){
+        const shardGain = boss ? (2 + Math.floor(Math.random()*2)) : 1;
+        state.corridorShard = (state.corridorShard||0) + shardGain;
+        log(`🔮 회랑 결정 획득! +${shardGain}`, 'good');
+      }
     }
     if(state.relics.hpRelic > 0){
       const healAmt = Math.round(s.maxHp * (state.relics.hpRelic*0.02));
@@ -3586,12 +3625,11 @@ function renderEnhanceScrollShop(){
 // ---------- Raid (1인 레이드) ----------
 // 해금 조건: 무한의 탑 100층 클리어(state.towerHighestFloor >= 100)
 // 티켓제: 최대 3개, 1시간마다 1개 충전 (오프라인 시간도 반영됨)
-// 보상: 클리어 시 파편 확정 지급 + 낮은 확률로 레이드 장비 획득, 천장 시스템으로 일정 횟수 내 확정 지급
+// 보상: 클리어 시 파편 + 🔮 회랑 결정 확정 지급. 레이드 장비는 더 이상 RNG 드랍이 아니라
+// 회랑 결정을 모아 부위별로 "제작"해서 올린다(craftRaidGear 참고). 실패해도 최소 보상은 받는다.
 
 const RAID_TICKET_MAX = 3;
 const RAID_TICKET_INTERVAL_MS = 60 * 60 * 1000; // 1시간마다 티켓 1개 충전
-const RAID_PITY_CAP = 10; // 이 횟수 안에 장비를 못 얻으면 다음 클리어 때 확정 지급
-const RAID_GEAR_DROP_CHANCE = 0.12; // 클리어당 장비 획득 확률 12%
 
 const RAID_BOSS_META = {name:'완전변이체 디스토션', emoji:'☣️'};
 
@@ -3714,22 +3752,18 @@ function resolveRaidVictory(){
   state.raidClearCount++;
   const fragGain = 15 + Math.floor(Math.random()*6); // 15~20
   state.fragments += fragGain;
-  state.raidPity++;
+  const shardGain = 8 + Math.floor(Math.random()*5); // 8~12, 일반 층 드랍보다 훨씬 후하게
+  state.corridorShard = (state.corridorShard||0) + shardGain;
 
-  let dropMsg = '';
-  if(Math.random() < RAID_GEAR_DROP_CHANCE || state.raidPity >= RAID_PITY_CAP){
-    const picked = RAID_GEAR[Math.floor(Math.random()*RAID_GEAR.length)];
-    state.raidGear[picked.key] = (state.raidGear[picked.key]||0) + 1;
-    state.raidPity = 0;
-    dropMsg = ` ${picked.icon} ${picked.name} 획득! (Lv.${state.raidGear[picked.key]})`;
-  }
-
-  log(`🏆 [레이드] ${RAID_BOSS_META.name} 처치! ◈ 파편 +${fragGain}${dropMsg}`, 'good');
+  log(`🏆 [레이드] ${RAID_BOSS_META.name} 처치! ◈ 파편 +${fragGain}, 🔮 회랑 결정 +${shardGain}`, 'good');
   endRaid();
 }
 
 function resolveRaidDefeat(){
-  log(`💀 [레이드] ${RAID_BOSS_META.name}에게 패배했습니다. 다음 티켓으로 다시 도전하세요.`, 'warn');
+  // 패배해도 완전히 빈손으로 돌려보내지 않도록 소량의 회랑 결정은 지급한다 (도전 자체의 소모값 보전).
+  const shardGain = 2 + Math.floor(Math.random()*2); // 2~3
+  state.corridorShard = (state.corridorShard||0) + shardGain;
+  log(`💀 [레이드] ${RAID_BOSS_META.name}에게 패배했습니다. 🔮 회랑 결정 +${shardGain} (다음 티켓으로 다시 도전하세요)`, 'warn');
   endRaid();
 }
 
@@ -3744,6 +3778,54 @@ function endRaid(){
 }
 
 document.getElementById('raidEnterBtn').addEventListener('click', enterRaid);
+
+// ---------- Raid Gear Crafting (부위별 제작) ----------
+// 부위(weapon/armor/crown/ring)당 레벨 1~20까지, 레벨을 올릴 때마다 🔮 회랑 결정을 소모해 시도한다.
+// 실패해도 재료만 소모될 뿐 레벨은 그대로 유지된다(하락/파괴 없음).
+function raidGearOwnedCount(){
+  return RAID_GEAR.filter(g => (state.raidGear[g.key]||0) > 0).length;
+}
+
+// state.js stats()에서 typeof 가드로 호출한다 (job.js의 jobBonus()와 동일한 패턴).
+function raidSetBonus(){
+  const b = {atkPct:0, defPct:0, hpPct:0};
+  const owned = raidGearOwnedCount();
+  RAID_SET_BONUS_TIERS.forEach(t=>{
+    if(owned >= t.count){
+      b.atkPct += t.bonus.atkPct||0;
+      b.defPct += t.bonus.defPct||0;
+      b.hpPct += t.bonus.hpPct||0;
+    }
+  });
+  return b;
+}
+
+function craftRaidGear(key){
+  const gear = RAID_GEAR.find(g => g.key === key);
+  if(!gear) return;
+  const current = state.raidGear[key]||0;
+  if(current >= gear.maxLevel){
+    flashMessageSafe(`${gear.name}은(는) 이미 최대 강화입니다.`);
+    return;
+  }
+  const target = current + 1;
+  const rate = raidCraftSuccessRate(target);
+  const cost = raidCraftShardCost(target);
+  if((state.corridorShard||0) < cost){
+    flashMessageSafe(`🔮 회랑 결정이 부족합니다. (필요 🔮${cost} / 보유 🔮${state.corridorShard||0})`);
+    return;
+  }
+  state.corridorShard -= cost;
+  const success = Math.random()*100 < rate;
+  if(success){
+    state.raidGear[key] = target;
+    log(`✅ ${gear.icon} ${gear.name} 제작 성공! (Lv.${current} → Lv.${target}, 🔮-${cost})`, 'good');
+  } else {
+    log(`❌ ${gear.icon} ${gear.name} 제작 실패... (Lv.${current} 유지, 🔮-${cost} 소모)`, 'warn');
+  }
+  renderRaidPanel();
+  renderAll();
+}
 
 function formatMs(ms){
   const totalSec = Math.max(0, Math.ceil(ms/1000));
@@ -3775,7 +3857,7 @@ function renderRaidPanel(){
     timerEl.textContent = `(다음 충전까지 ${formatMs(remain)})`;
   }
 
-  document.getElementById('raidPityText').textContent = Math.max(0, RAID_PITY_CAP - state.raidPity);
+  document.getElementById('raidShardText').textContent = state.corridorShard||0;
 
   const enterBtn = document.getElementById('raidEnterBtn');
   enterBtn.disabled = state.raidActive || state.raidTicket <= 0;
@@ -3798,18 +3880,38 @@ function renderRaidPanel(){
     battleBox.style.display = 'none';
   }
 
+  const owned = raidGearOwnedCount();
+  const setBonusEl = document.getElementById('raidSetBonusText');
+  if(setBonusEl){
+    const active = RAID_SET_BONUS_TIERS.filter(t => owned >= t.count);
+    setBonusEl.textContent = active.length > 0
+      ? active.map(t => `✅ ${t.label} (공/방/체력 +${t.bonus.atkPct}%)`).join(' · ')
+      : `${RAID_SET_BONUS_TIERS[0].count}부위 이상 제작 시 세트 효과 발동`;
+  }
+
   const grid = document.getElementById('raidGearGrid');
   grid.innerHTML = '';
   RAID_GEAR.forEach(g=>{
     const lvl = state.raidGear[g.key] || 0;
-    const owned = lvl > 0;
+    const isOwned = lvl > 0;
+    const isMax = lvl >= g.maxLevel;
     const value = Math.round(lvl * g.perLevel * 10) / 10;
+    const target = lvl + 1;
+    const rate = isMax ? null : raidCraftSuccessRate(target);
+    const cost = isMax ? null : raidCraftShardCost(target);
     const card = document.createElement('div');
-    card.className = 'relic-card' + (owned?' owned':'');
+    card.className = 'relic-card raid-slot' + (isOwned?' owned':'') + (isMax?' maxed':'');
     card.innerHTML = `
-      <div class="rname"><span>${g.icon} ${g.name}</span><span class="rlvl">Lv.${lvl}</span></div>
-      <div class="rdesc">${g.descFn(owned ? value : g.perLevel)}${owned?'':' (미보유)'}</div>
+      <div class="rname"><span>${g.icon} ${g.name}</span><span class="rlvl">Lv.${lvl}/${g.maxLevel}</span></div>
+      <div class="rdesc">${g.descFn(isOwned ? value : g.perLevel)}${isOwned?'':' (미제작)'}</div>
+      ${isMax
+        ? `<div class="rdesc" style="color:var(--gold);margin-top:4px;">✨ 최대 강화 완료</div>`
+        : `<button class="raid-craft-btn" type="button" data-key="${g.key}">🔨 제작 (성공률 ${rate}% · 🔮${cost})</button>`
+      }
     `;
+    if(!isMax){
+      card.querySelector('.raid-craft-btn').addEventListener('click', () => craftRaidGear(g.key));
+    }
     grid.appendChild(card);
   });
 }

@@ -406,6 +406,16 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
       state.totalEnhanceStonesEarned = (state.totalEnhanceStonesEarned||0) + stoneGain;
       log(`🔩 강화석 획득! +${stoneGain}`, 'good');
     }
+    // 🔮 회랑 결정: 일반모드(폐허) 1000층 이상 "회랑" 테마 구간에서만 드랍되는 레이드 장비 제작 재료.
+    // 무한의 탑을 다 깬 뒤에도 계속 폐허 층수를 밀어붙일 이유를 만들어준다 (raid.js 제작 시스템 참고).
+    if(state.mode === 'normal' && currentFloor >= NORMAL_TIER_SIZE){
+      const shardChance = boss ? 0.25 : 0.06;
+      if(Math.random() < shardChance){
+        const shardGain = boss ? (2 + Math.floor(Math.random()*2)) : 1;
+        state.corridorShard = (state.corridorShard||0) + shardGain;
+        log(`🔮 회랑 결정 획득! +${shardGain}`, 'good');
+      }
+    }
     if(state.relics.hpRelic > 0){
       const healAmt = Math.round(s.maxHp * (state.relics.hpRelic*0.02));
       if(healAmt > 0 && state.playerHp > 0){

@@ -398,13 +398,13 @@
     </div>
     <div id="raidUnlockedBox" style="display:none;">
       <p style="font-size:12px;color:var(--text-dim);margin:0 0 12px;line-height:1.6;">
-        무한의 탑 100층을 클리어한 강자를 위한 강력한 1인 보스전입니다. 클리어 시 ◈ 유산 파편을 확정으로 얻고, 낮은 확률로 <span style="color:var(--frag)">레이드 장비</span>를 획득합니다 (연속 미획득 시 천장 시스템으로 확정 지급).
+        무한의 탑 100층을 클리어한 강자를 위한 강력한 1인 보스전입니다. 클리어 시 ◈ 유산 파편과 🔮 회랑 결정을 확정으로 얻습니다 (패배해도 회랑 결정은 소량 지급). 회랑 결정은 아래 <b>레이드 장비 제작</b>에 사용합니다.
       </p>
       <div class="relic-pull-row">
         <div class="frag-count">🎫 티켓: <span id="raidTicketText">0/3</span> <span id="raidTicketTimer" style="color:var(--text-dim);font-size:11px;"></span></div>
         <button class="pull-relic" id="raidEnterBtn">레이드 입장</button>
       </div>
-      <div class="frag-count" style="margin-top:6px;">천장까지: <span id="raidPityText">-</span>회</div>
+      <div class="frag-count" style="margin-top:6px;">🔮 회랑 결정: <span id="raidShardText">0</span></div>
 
       <div id="raidBattleBox" style="display:none;margin-top:14px;">
         <div class="floor-badge">RAID BATTLE</div>
@@ -418,7 +418,9 @@
         <div class="player-hp-label"><span>내 체력</span><span id="raidPlayerHpText">0 / 0</span></div>
       </div>
 
-      <div class="relic-grid" id="raidGearGrid" style="margin-top:14px;"></div>
+      <h3 style="font-size:13px;margin:16px 0 4px;">🛠️ 레이드 장비 제작 (4부위)</h3>
+      <div class="frag-count" id="raidSetBonusText" style="margin-bottom:8px;">2부위 이상 제작 시 세트 효과 발동</div>
+      <div class="relic-grid" id="raidGearGrid" style="margin-top:0;"></div>
     </div>
   </div>
 
