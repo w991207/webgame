@@ -271,9 +271,15 @@ document.getElementById('rebirthBtn').addEventListener('click', ()=>{
   state.htHighestFloor = 1;
   state.htRewardsClaimed = {};
   state.htCleared = false;
+  state.vhFloor = 1;
+  state.vhHighestFloor = 1;
+  state.vhRewardsClaimed = {};
+  state.vhCleared = false;
   state.mode = 'normal';
   document.getElementById('modeNormalBtn').classList.toggle('active', true);
   document.getElementById('modeTowerBtn').classList.toggle('active', false);
+  const vhBtn = document.getElementById('modeTowerVeryHardBtn');
+  if(vhBtn) vhBtn.classList.toggle('active', false);
   document.getElementById('arenaTitle').textContent = '폐허';
   const s = stats();
   state.playerHp = s.maxHp;

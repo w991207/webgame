@@ -199,7 +199,7 @@ function computeOfflineProgress(){
 
   const s = stats();
   const killsPerSec = 1000/s.tickMs;
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : (state.mode==='towerVeryHard' ? state.vhFloor : state.floor));
   const avgGoldPerKill = goldDropFor(currentFloor, false) * s.goldMult;
   const avgExpPerKill = expDropFor(currentFloor, false) * s.expMult;
   
