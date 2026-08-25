@@ -165,6 +165,7 @@ function petTick(){
   // 로그가 스팸처럼 쌓이는 문제가 있었다. 정복 완료 상태에서는 펫도 함께 정지시킨다.
   if(state.mode === 'tower' && state.towerCleared) return;
   if(state.mode === 'towerHard' && state.htCleared) return;
+  if(state.mode === 'towerVeryHard' && state.vhCleared) return;
   const s = stats();
   let changed = false;
   PETS.forEach(p=>{

@@ -73,7 +73,7 @@ const PETS = [
     companionStat:'goldPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${12}초마다 물자 즉시 획득 (레벨 비례)`,
     trigger:(lvl,s)=>{
-      const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : state.floor);
+      const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : (state.mode==='towerVeryHard' ? state.vhFloor : state.floor));
       const g = Math.round(goldDropFor(currentFloor,false) * s.goldMult * (0.4+lvl*0.2));
       state.gold += g;
       log(`🌭 분홍소세지가 물자를 물어왔습니다! +${g}📦`, 'good');
@@ -84,7 +84,7 @@ const PETS = [
     companionStat:'expPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${12}초마다 경험치 즉시 획득 (레벨 비례)`,
     trigger:(lvl,s)=>{
-      const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : state.floor);
+      const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : (state.mode==='towerVeryHard' ? state.vhFloor : state.floor));
       const e = Math.round(expDropFor(currentFloor,false) * s.expMult * (0.4+lvl*0.2));
       state.exp += e;
       tryLevelUp();
