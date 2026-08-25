@@ -158,24 +158,6 @@ document.getElementById('raidEnterBtn').addEventListener('click', enterRaid);
 // ---------- Raid Gear Crafting (부위별 제작) ----------
 // 부위(weapon/armor/crown/ring)당 레벨 1~20까지, 레벨을 올릴 때마다 🔮 회랑 결정을 소모해 시도한다.
 // 실패해도 재료만 소모될 뿐 레벨은 그대로 유지된다(하락/파괴 없음).
-function raidGearOwnedCount(){
-  return RAID_GEAR.filter(g => (state.raidGear[g.key]||0) > 0).length;
-}
-
-// state.js stats()에서 typeof 가드로 호출한다 (job.js의 jobBonus()와 동일한 패턴).
-function raidSetBonus(){
-  const b = {atkPct:0, defPct:0, hpPct:0};
-  const owned = raidGearOwnedCount();
-  RAID_SET_BONUS_TIERS.forEach(t=>{
-    if(owned >= t.count){
-      b.atkPct += t.bonus.atkPct||0;
-      b.defPct += t.bonus.defPct||0;
-      b.hpPct += t.bonus.hpPct||0;
-    }
-  });
-  return b;
-}
-
 function craftRaidGear(key){
   const gear = RAID_GEAR.find(g => g.key === key);
   if(!gear) return;
@@ -256,15 +238,6 @@ function renderRaidPanel(){
     battleBox.style.display = 'none';
   }
 
-  const owned = raidGearOwnedCount();
-  const setBonusEl = document.getElementById('raidSetBonusText');
-  if(setBonusEl){
-    const active = RAID_SET_BONUS_TIERS.filter(t => owned >= t.count);
-    setBonusEl.textContent = active.length > 0
-      ? active.map(t => `✅ ${t.label} (공/방/체력 +${t.bonus.atkPct}%)`).join(' · ')
-      : `${RAID_SET_BONUS_TIERS[0].count}부위 이상 제작 시 세트 효과 발동`;
-  }
-
   const grid = document.getElementById('raidGearGrid');
   grid.innerHTML = '';
   RAID_GEAR.forEach(g=>{
@@ -278,7 +251,7 @@ function renderRaidPanel(){
     const card = document.createElement('div');
     card.className = 'relic-card raid-slot' + (isOwned?' owned':'') + (isMax?' maxed':'');
     card.innerHTML = `
-      <div class="rname"><span>${g.icon} ${g.name}</span><span class="rlvl">Lv.${lvl}/${g.maxLevel}</span></div>
+      <div class="rname"><span class="asset-icon-label"><img src="${g.img}" class="asset-icon-sm" alt="">${g.name}</span><span class="rlvl">Lv.${lvl}/${g.maxLevel}</span></div>
       <div class="rdesc">${g.descFn(isOwned ? value : g.perLevel)}${isOwned?'':' (미제작)'}</div>
       ${isMax
         ? `<div class="rdesc" style="color:var(--gold);margin-top:4px;">✨ 최대 강화 완료</div>`

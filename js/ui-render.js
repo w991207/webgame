@@ -148,6 +148,7 @@ function renderAll(){
   renderShop();
   renderSoulShop();
   renderEquipment();
+  if(typeof renderInventoryModal === 'function') renderInventoryModal();
   renderRelics();
   renderPets();
   updateRebirthAvailability();

@@ -25,6 +25,7 @@ BUNDLE1_FILES=(
   js/combat.js
   js/skills.js
   js/equipment.js
+  js/inventory.js
   js/potions.js
   js/enhance.js
   js/goods-shop.js

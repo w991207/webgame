@@ -228,12 +228,12 @@ function renderEquipRarityInfo(){
 
 function renderEquipment(){
   const slotBoxIds = {weapon:'equipWeaponSlot', armor:'equipArmorSlot', accessory:'equipAccessorySlot'};
-  const slotLabels = {weapon:'⚔️ 무기', armor:'🛡️ 방어구', accessory:'💍 장신구'};
+  const slotNames = {weapon:'무기', armor:'방어구', accessory:'장신구'};
   ['weapon', 'armor', 'accessory'].forEach(slot => {
     const item = state.equipment[slot];
     const box = document.getElementById(slotBoxIds[slot]);
     if(!box) return;
-    const slotLabel = slotLabels[slot];
+    const slotLabel = `<img src="${SLOT_IMG[slot]}" class="asset-icon-sm" alt="">${slotNames[slot]}`;
     if(item){
       const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
       const enh = item.enhance || 0;
@@ -286,9 +286,9 @@ function renderEquipment(){
           <div class="desc">${tierOddsText(tier)}</div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="buy" type="button" data-slot="weapon">⚔️${multLabel} ${cost.toLocaleString()}📦</button>
-          <button class="buy" type="button" data-slot="armor">🛡️${multLabel} ${cost.toLocaleString()}📦</button>
-          <button class="buy" type="button" data-slot="accessory">💍${multLabel} ${cost.toLocaleString()}📦</button>
+          <button class="buy asset-icon-btn" type="button" data-slot="weapon"><img src="${SLOT_IMG.weapon}" class="asset-icon-sm" alt="">${multLabel} ${cost.toLocaleString()}📦</button>
+          <button class="buy asset-icon-btn" type="button" data-slot="armor"><img src="${SLOT_IMG.armor}" class="asset-icon-sm" alt="">${multLabel} ${cost.toLocaleString()}📦</button>
+          <button class="buy asset-icon-btn" type="button" data-slot="accessory"><img src="${SLOT_IMG.accessory}" class="asset-icon-sm" alt="">${multLabel} ${cost.toLocaleString()}📦</button>
         </div>
       `;
       tierList.appendChild(row);
@@ -347,13 +347,13 @@ function renderEquipment(){
           if(b.mainValue !== a.mainValue) return b.mainValue - a.mainValue;
           return b.createdAt - a.createdAt;
         });
-        const slotIcons = {weapon:'⚔️ 무기', armor:'🛡️ 방어구', accessory:'💍 장신구'};
+        const slotNames2 = {weapon:'무기', armor:'방어구', accessory:'장신구'};
         sorted.forEach(item => {
           const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
           const card = document.createElement('div');
           card.className = 'relic-card equip-card rarity-' + item.rarity;
           card.innerHTML = `
-            <div class="rname"><span style="color:${rarity.color}">[${rarity.name}] ${slotIcons[item.slot]}</span></div>
+            <div class="rname"><span class="asset-icon-label" style="color:${rarity.color}"><img src="${SLOT_IMG[item.slot]}" class="asset-icon-sm" alt="">[${rarity.name}] ${slotNames2[item.slot]}</span></div>
             <div class="rdesc">${equipItemLabel(item)}</div>
             <div class="eq-card-btns">
               <button class="eq-equip-btn" type="button">장착</button>

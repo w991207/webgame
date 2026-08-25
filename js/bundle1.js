@@ -573,22 +573,25 @@ const SOUL_UPGRADES = [
   {key:'accuracyAdd', name:'심안의 룬', desc:'명중 영구 +5 (골드강화 조준 훈련보다 상승폭이 큽니다, 상한 없음)', baseCost:4, mult:1.5},
 ];
 
+// 기본 장비 슬롯(무기/방어구/장신구) + 레이드 장비 아이콘용 이미지. 기존엔 이모지였으나
+// 사용자가 업로드한 전용 아이콘 에셋으로 교체 (2026-08-25).
+const SLOT_IMG = {
+  weapon: 'image/icons/weapon.png',
+  armor: 'image/icons/armor.png',
+  accessory: 'image/icons/ring.png',
+  crown: 'image/icons/crown.png',
+  ring: 'image/icons/ring.png',
+};
+
 // ---------- Raid Gear (1인 레이드 전용 장비) ----------
 // 유산보다 레벨당 효과가 2배 강함 (뽑기 확률이 훨씬 낮고 티켓제로 제한되기 때문)
 // 더 이상 레이드 클리어 RNG 드랍이 아니라, 부위별로 🔮 회랑 결정을 소모해 "제작"으로 올린다
 // (raid.js의 attemptCraftRaidGear 참고). maxLevel까지 올리면 해당 부위는 완성.
 const RAID_GEAR = [
-  {key:'raidWeapon', name:'파멸의 파편검', icon:'🗡️', perLevel:6, maxLevel:20, descFn:v=>`공격력 +${v}%`},
-  {key:'raidArmor', name:'심연의 갑주', icon:'🛡️', perLevel:6, maxLevel:20, descFn:v=>`방어력 +${v}%`},
-  {key:'raidCrown', name:'파멸의 왕관', icon:'👑', perLevel:5, maxLevel:20, descFn:v=>`최대 체력 +${v}%`},
-  {key:'raidRing', name:'천공의 인장', icon:'💍', perLevel:4, maxLevel:20, descFn:v=>`물자/경험치 획득 +${v}%`},
-];
-
-// 4개 부위 중 몇 개를 "장착"(레벨 1 이상 제작)했는지에 따라 붙는 세트 효과.
-// count 기준을 만족하는 티어 전부가 누적 적용된다(2개 달성 시 2개 보너스만, 4개 달성 시 2개+4개 보너스 전부).
-const RAID_SET_BONUS_TIERS = [
-  {count:2, label:'2부위 장착', bonus:{atkPct:3, defPct:3, hpPct:3}},
-  {count:4, label:'4부위 장착(풀세트)', bonus:{atkPct:5, defPct:5, hpPct:5}},
+  {key:'raidWeapon', name:'파멸의 파편검', icon:'🗡️', img:SLOT_IMG.weapon, perLevel:6, maxLevel:20, descFn:v=>`공격력 +${v}%`},
+  {key:'raidArmor', name:'심연의 갑주', icon:'🛡️', img:SLOT_IMG.armor, perLevel:6, maxLevel:20, descFn:v=>`방어력 +${v}%`},
+  {key:'raidCrown', name:'파멸의 왕관', icon:'👑', img:SLOT_IMG.crown, perLevel:5, maxLevel:20, descFn:v=>`최대 체력 +${v}%`},
+  {key:'raidRing', name:'천공의 인장', icon:'💍', img:SLOT_IMG.ring, perLevel:4, maxLevel:20, descFn:v=>`물자/경험치 획득 +${v}%`},
 ];
 
 // 레이드 장비 제작 성공 확률표 (강화석 강화와 달리 실패해도 장비가 파괴/하락하지 않고 재료만 소모됨 —
@@ -2993,12 +2996,12 @@ function renderEquipRarityInfo(){
 
 function renderEquipment(){
   const slotBoxIds = {weapon:'equipWeaponSlot', armor:'equipArmorSlot', accessory:'equipAccessorySlot'};
-  const slotLabels = {weapon:'⚔️ 무기', armor:'🛡️ 방어구', accessory:'💍 장신구'};
+  const slotNames = {weapon:'무기', armor:'방어구', accessory:'장신구'};
   ['weapon', 'armor', 'accessory'].forEach(slot => {
     const item = state.equipment[slot];
     const box = document.getElementById(slotBoxIds[slot]);
     if(!box) return;
-    const slotLabel = slotLabels[slot];
+    const slotLabel = `<img src="${SLOT_IMG[slot]}" class="asset-icon-sm" alt="">${slotNames[slot]}`;
     if(item){
       const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
       const enh = item.enhance || 0;
@@ -3051,9 +3054,9 @@ function renderEquipment(){
           <div class="desc">${tierOddsText(tier)}</div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
-          <button class="buy" type="button" data-slot="weapon">⚔️${multLabel} ${cost.toLocaleString()}📦</button>
-          <button class="buy" type="button" data-slot="armor">🛡️${multLabel} ${cost.toLocaleString()}📦</button>
-          <button class="buy" type="button" data-slot="accessory">💍${multLabel} ${cost.toLocaleString()}📦</button>
+          <button class="buy asset-icon-btn" type="button" data-slot="weapon"><img src="${SLOT_IMG.weapon}" class="asset-icon-sm" alt="">${multLabel} ${cost.toLocaleString()}📦</button>
+          <button class="buy asset-icon-btn" type="button" data-slot="armor"><img src="${SLOT_IMG.armor}" class="asset-icon-sm" alt="">${multLabel} ${cost.toLocaleString()}📦</button>
+          <button class="buy asset-icon-btn" type="button" data-slot="accessory"><img src="${SLOT_IMG.accessory}" class="asset-icon-sm" alt="">${multLabel} ${cost.toLocaleString()}📦</button>
         </div>
       `;
       tierList.appendChild(row);
@@ -3112,13 +3115,13 @@ function renderEquipment(){
           if(b.mainValue !== a.mainValue) return b.mainValue - a.mainValue;
           return b.createdAt - a.createdAt;
         });
-        const slotIcons = {weapon:'⚔️ 무기', armor:'🛡️ 방어구', accessory:'💍 장신구'};
+        const slotNames2 = {weapon:'무기', armor:'방어구', accessory:'장신구'};
         sorted.forEach(item => {
           const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
           const card = document.createElement('div');
           card.className = 'relic-card equip-card rarity-' + item.rarity;
           card.innerHTML = `
-            <div class="rname"><span style="color:${rarity.color}">[${rarity.name}] ${slotIcons[item.slot]}</span></div>
+            <div class="rname"><span class="asset-icon-label" style="color:${rarity.color}"><img src="${SLOT_IMG[item.slot]}" class="asset-icon-sm" alt="">[${rarity.name}] ${slotNames2[item.slot]}</span></div>
             <div class="rdesc">${equipItemLabel(item)}</div>
             <div class="eq-card-btns">
               <button class="eq-equip-btn" type="button">장착</button>
@@ -3131,6 +3134,149 @@ function renderEquipment(){
         });
       }
     }
+  }
+}
+
+// ===== js/inventory.js =====
+// ---------- 인벤토리(상태창) 모달 ----------
+// 모험가 패널의 "🎒 인벤토리" 버튼으로 열리는 상태창. 기본 장비(무기/방어구/장신구) 3부위는
+// 이 화면에서 바로 장착/해제할 수 있고, 레이드 장비(제작형 4부위, equipment.js의 RAID_GEAR)는
+// 장착/해제 개념이 없는 상시 적용 스탯이라 열람 전용으로 보여준다.
+// 우측 그리드에는 뽑기로 획득해 미장착 상태인 state.equipInventory 아이템들을 아이콘 카드로 보여준다.
+
+let inventoryModalOpen = false;
+let invSelectedItemId = null; // 그리드에서 클릭해 액션 팝오버가 열려있는 아이템
+
+const INV_SLOT_LABEL = {weapon:'무기', armor:'방어구', accessory:'장신구'};
+function invIconImg(src, alt){ return `<img src="${src}" class="asset-icon-md" alt="${alt||''}">`; }
+
+function openInventoryModal(){
+  inventoryModalOpen = true;
+  document.getElementById('inventoryModal').style.display = 'flex';
+  renderInventoryModal();
+}
+
+function closeInventoryModal(){
+  inventoryModalOpen = false;
+  document.getElementById('inventoryModal').style.display = 'none';
+}
+
+document.getElementById('openInventoryBtn')?.addEventListener('click', openInventoryModal);
+document.getElementById('inventoryCloseBtn')?.addEventListener('click', closeInventoryModal);
+document.getElementById('inventoryModal')?.addEventListener('click', (e) => {
+  if(e.target.id === 'inventoryModal') closeInventoryModal();
+});
+
+document.getElementById('invSortBtn')?.addEventListener('click', () => {
+  const rarityRank = {mythic:4, legendary:3, epic:2, rare:1, common:0};
+  state.equipInventory.sort((a, b) => {
+    const rd = rarityRank[b.rarity] - rarityRank[a.rarity];
+    if(rd !== 0) return rd;
+    if((b.enhance||0) !== (a.enhance||0)) return (b.enhance||0) - (a.enhance||0);
+    return b.mainValue - a.mainValue;
+  });
+  renderInventoryModal();
+});
+
+document.getElementById('invGachaBtn')?.addEventListener('click', () => {
+  closeInventoryModal();
+  document.querySelector('.tab-nav-btn[data-tab="tab-gear"]')?.click();
+  document.getElementById('gachaTierList')?.scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+function renderInventoryModal(){
+  if(!inventoryModalOpen) return;
+
+  document.getElementById('invCpValue').textContent = document.getElementById('cpValue')?.textContent || '0';
+
+  // 캐릭터 장비 슬롯 (무기/방어구/장신구) — equipItem/unequipItem 재사용
+  const slotBox = document.getElementById('invEquipSlots');
+  if(slotBox){
+    slotBox.innerHTML = '';
+    ['weapon', 'armor', 'accessory'].forEach(slot => {
+      const item = state.equipment[slot];
+      const cell = document.createElement('div');
+      if(item){
+        const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
+        const enh = item.enhance || 0;
+        cell.className = 'inv-slot filled rarity-' + item.rarity;
+        cell.innerHTML = `
+          <div class="inv-slot-icon">${invIconImg(SLOT_IMG[slot], slot)}</div>
+          ${enh > 0 ? `<div class="inv-slot-enh">+${enh}</div>` : ''}
+          <div class="inv-slot-name" style="color:${rarity.color}">${rarity.name}</div>
+          <button class="inv-slot-unequip" type="button">해제</button>
+        `;
+        cell.querySelector('.inv-slot-unequip').addEventListener('click', () => unequipItem(slot));
+      } else {
+        cell.className = 'inv-slot empty';
+        cell.innerHTML = `
+          <div class="inv-slot-icon">${invIconImg(SLOT_IMG[slot], slot)}</div>
+          <div class="inv-slot-name">${INV_SLOT_LABEL[slot]}</div>
+        `;
+      }
+      slotBox.appendChild(cell);
+    });
+  }
+
+  // 레이드 장비 (제작형, 항상 적용 — 장착/해제 없음, 레벨만 표시)
+  const raidBox = document.getElementById('invRaidSlots');
+  if(raidBox && typeof RAID_GEAR !== 'undefined'){
+    raidBox.innerHTML = '';
+    RAID_GEAR.forEach(g => {
+      const lvl = (state.raidGear && state.raidGear[g.key]) || 0;
+      const cell = document.createElement('div');
+      cell.className = 'inv-slot' + (lvl > 0 ? ' filled raid-owned' : ' empty');
+      cell.innerHTML = `
+        <div class="inv-slot-icon">${invIconImg(g.img, g.name)}</div>
+        <div class="inv-slot-name">${g.name}</div>
+        <div class="inv-slot-lvl">Lv.${lvl}/${g.maxLevel}</div>
+      `;
+      raidBox.appendChild(cell);
+    });
+  }
+
+  // 우측 그리드: 미장착 보유 장비
+  const grid = document.getElementById('invIconGrid');
+  const countEl = document.getElementById('invGridCount');
+  if(countEl) countEl.textContent = `${state.equipInventory.length}/20`;
+  if(grid){
+    grid.innerHTML = '';
+    if(state.equipInventory.length === 0){
+      grid.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:8px 2px;grid-column:1/-1;">보유한 미장착 장비가 없습니다. [아이템 획득]에서 뽑아보세요.</div>';
+      return;
+    }
+    state.equipInventory.forEach(item => {
+      const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
+      const enh = item.enhance || 0;
+      const cell = document.createElement('div');
+      cell.className = 'inv-cell rarity-' + item.rarity;
+      cell.innerHTML = `
+        <div class="inv-cell-icon">${invIconImg(SLOT_IMG[item.slot], item.slot)}</div>
+        ${enh > 0 ? `<div class="inv-cell-badge">+${enh}</div>` : ''}
+      `;
+      cell.title = `[${rarity.name}] ${INV_SLOT_LABEL[item.slot]} · ${equipItemLabel(item)}`;
+      cell.addEventListener('click', () => {
+        invSelectedItemId = (invSelectedItemId === item.id) ? null : item.id;
+        renderInventoryModal();
+      });
+      grid.appendChild(cell);
+
+      if(invSelectedItemId === item.id){
+        const pop = document.createElement('div');
+        pop.className = 'inv-cell-popover';
+        pop.innerHTML = `
+          <div class="inv-pop-title" style="color:${rarity.color}">[${rarity.name}] ${INV_SLOT_LABEL[item.slot]}</div>
+          <div class="inv-pop-desc">${equipItemLabel(item)}</div>
+          <div class="inv-pop-btns">
+            <button type="button" class="inv-pop-equip">장착</button>
+            <button type="button" class="inv-pop-sell">판매 (${rarity.sellBase.toLocaleString()}📦)</button>
+          </div>
+        `;
+        pop.querySelector('.inv-pop-equip').addEventListener('click', () => { invSelectedItemId = null; equipItem(item.id); });
+        pop.querySelector('.inv-pop-sell').addEventListener('click', () => { invSelectedItemId = null; sellEquipment(item.id); });
+        grid.appendChild(pop);
+      }
+    });
   }
 }
 
@@ -3782,24 +3928,6 @@ document.getElementById('raidEnterBtn').addEventListener('click', enterRaid);
 // ---------- Raid Gear Crafting (부위별 제작) ----------
 // 부위(weapon/armor/crown/ring)당 레벨 1~20까지, 레벨을 올릴 때마다 🔮 회랑 결정을 소모해 시도한다.
 // 실패해도 재료만 소모될 뿐 레벨은 그대로 유지된다(하락/파괴 없음).
-function raidGearOwnedCount(){
-  return RAID_GEAR.filter(g => (state.raidGear[g.key]||0) > 0).length;
-}
-
-// state.js stats()에서 typeof 가드로 호출한다 (job.js의 jobBonus()와 동일한 패턴).
-function raidSetBonus(){
-  const b = {atkPct:0, defPct:0, hpPct:0};
-  const owned = raidGearOwnedCount();
-  RAID_SET_BONUS_TIERS.forEach(t=>{
-    if(owned >= t.count){
-      b.atkPct += t.bonus.atkPct||0;
-      b.defPct += t.bonus.defPct||0;
-      b.hpPct += t.bonus.hpPct||0;
-    }
-  });
-  return b;
-}
-
 function craftRaidGear(key){
   const gear = RAID_GEAR.find(g => g.key === key);
   if(!gear) return;
@@ -3880,15 +4008,6 @@ function renderRaidPanel(){
     battleBox.style.display = 'none';
   }
 
-  const owned = raidGearOwnedCount();
-  const setBonusEl = document.getElementById('raidSetBonusText');
-  if(setBonusEl){
-    const active = RAID_SET_BONUS_TIERS.filter(t => owned >= t.count);
-    setBonusEl.textContent = active.length > 0
-      ? active.map(t => `✅ ${t.label} (공/방/체력 +${t.bonus.atkPct}%)`).join(' · ')
-      : `${RAID_SET_BONUS_TIERS[0].count}부위 이상 제작 시 세트 효과 발동`;
-  }
-
   const grid = document.getElementById('raidGearGrid');
   grid.innerHTML = '';
   RAID_GEAR.forEach(g=>{
@@ -3902,7 +4021,7 @@ function renderRaidPanel(){
     const card = document.createElement('div');
     card.className = 'relic-card raid-slot' + (isOwned?' owned':'') + (isMax?' maxed':'');
     card.innerHTML = `
-      <div class="rname"><span>${g.icon} ${g.name}</span><span class="rlvl">Lv.${lvl}/${g.maxLevel}</span></div>
+      <div class="rname"><span class="asset-icon-label"><img src="${g.img}" class="asset-icon-sm" alt="">${g.name}</span><span class="rlvl">Lv.${lvl}/${g.maxLevel}</span></div>
       <div class="rdesc">${g.descFn(isOwned ? value : g.perLevel)}${isOwned?'':' (미제작)'}</div>
       ${isMax
         ? `<div class="rdesc" style="color:var(--gold);margin-top:4px;">✨ 최대 강화 완료</div>`
@@ -5222,6 +5341,7 @@ function renderAll(){
   renderShop();
   renderSoulShop();
   renderEquipment();
+  if(typeof renderInventoryModal === 'function') renderInventoryModal();
   renderRelics();
   renderPets();
   updateRebirthAvailability();
