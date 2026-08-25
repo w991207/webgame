@@ -94,6 +94,7 @@
   else document.addEventListener('DOMContentLoaded', init);
 })();
 
+
 // ===== js/patch.js =====
 let latestPatch = null;
 
@@ -180,6 +181,7 @@ checkPatch();
 //  유저가 많아서 Vercel 엣지 요청량을 순식간에 잡아먹는 원인이 됐음. 패치 알림은
 //  몇 분 늦게 떠도 큰 문제가 없으니 주기를 크게 늘려서 요청 횟수를 18배 줄인다.)
 setInterval(checkPatch, 180000);
+
 // ===== js/storage.js =====
 const STORAGE_KEY = 'twilight-corridor-save-v2';
 const LOCAL_PREFIX = 'twilight-corridor-';
@@ -218,6 +220,7 @@ async function storageSet(key, value, force){
 
   return localSuccess ? {key, value, shared:false} : null;
 }
+
 
 // ===== js/data.js =====
 const MONSTERS = [
@@ -295,7 +298,7 @@ const PETS = [
     companionStat:'goldPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${12}초마다 물자 즉시 획득 (레벨 비례)`,
     trigger:(lvl,s)=>{
-      const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : state.floor);
+      const currentFloor = currentActiveFloor();
       const g = Math.round(goldDropFor(currentFloor,false) * s.goldMult * (0.4+lvl*0.2));
       state.gold += g;
       log(`🌭 분홍소세지가 물자를 물어왔습니다! +${g}📦`, 'good');
@@ -306,7 +309,7 @@ const PETS = [
     companionStat:'expPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${12}초마다 경험치 즉시 획득 (레벨 비례)`,
     trigger:(lvl,s)=>{
-      const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : state.floor);
+      const currentFloor = currentActiveFloor();
       const e = Math.round(expDropFor(currentFloor,false) * s.expMult * (0.4+lvl*0.2));
       state.exp += e;
       tryLevelUp();
@@ -526,6 +529,7 @@ const TITLES = [
   {key:'title_towerClimber', name:'탑을 오르는 자', icon:'🗼', condText:'무한의 탑 50층 도달', check:s=>s.towerHighestFloor>=50, stat:'spdPct', value:2},
   {key:'title_towerConqueror', name:'탑의 정복자', icon:'👑', condText:'무한의 탑 클리어', check:s=>!!s.towerCleared, stat:'spdPct', value:5},
   {key:'title_hellWalker', name:'지옥 답파자', icon:'🔥', condText:'무한의 탑(어려움) 클리어', check:s=>!!s.htCleared, stat:'atkPct', value:12},
+  {key:'title_abyssWalker', name:'심연을 걷는 자', icon:'💀', condText:'무한의 탑(매우어려움) 클리어', check:s=>!!s.vhCleared, stat:'critAdd', value:8},
   {key:'title_judge', name:'심판자', icon:'⚖️', condText:'1인 레이드 15회 클리어', check:s=>(s.raidClearCount||0)>=15, stat:'critDmgAdd', value:6},
   {key:'title_goldHoarder', name:'물자 수집광', icon:'📦', condText:'물자 구역 완전 정복', check:s=>!!s.gdCleared, stat:'goldPct', value:5},
   {key:'title_relicSeeker', name:'유산 탐구자', icon:'🔍', condText:'유산 구역 완전 정복', check:s=>!!s.rdCleared, stat:'dropAdd', value:2},
@@ -686,6 +690,7 @@ const ATTENDANCE_REWARDS = [
     { type:"pet", amount:1,    text:"🐾 펫 소환 1회" },
     { type:"both", amount:100, mut:240, text:"🧪 혈청 100 + 🧬 적응 포인트 240" }
 ];
+
 // ===== js/bestiary.js =====
 // ---------- 몬스터 도감 (Bestiary) ----------
 // MONSTERS/BOSSES/TOWER_MONSTERS(js/data.js)를 그룹별로 묶어서 도감 UI에 쓴다.
@@ -755,6 +760,7 @@ function renderBestiary(){
   });
   el.innerHTML = html;
 }
+
 
 // ===== js/mutation.js =====
 // ---------- 돌연변이 각성 (Mutation Awakening) ----------
@@ -970,6 +976,7 @@ function renderMutationTree(){
     btn.addEventListener('click', ()=>buyMutationNode(btn.dataset.key));
   });
 }
+
 
 // ===== js/job.js =====
 // ---------- 전직 (Job Class) ----------
@@ -1254,6 +1261,7 @@ function renderJobMasteryPanel(){
   });
 }
 
+
 // ===== js/titles.js =====
 // ---------- Titles (칭호) ----------
 // 조건을 달성하면 영구 해금되며, 해금한 칭호는 전부 동시에 효과가 적용됨(보유효과).
@@ -1342,6 +1350,7 @@ function renderTitles(){
     btn.addEventListener('click', ()=>equipTitle(btn.dataset.key));
   });
 }
+
 
 // ===== js/costumes.js =====
 // ---------- Costumes (코스튬) ----------
@@ -1458,10 +1467,25 @@ function renderCostumeGrid(){
   });
 }
 
+
 // ===== js/state.js =====
 // 세이브 데이터 버전. 이 값을 올리면 그보다 낮은 버전의 세이브(자동 로드 + 가져오기 모두)가
 // 전부 무효화되고 새 게임으로 시작됩니다. 밸런스 개편 등으로 전체 초기화가 필요할 때 사용.
 const SAVE_VERSION = '3.0';
+
+// 무한의 탑(매우어려움) 모드 전용 스케일 상수: 1층이 폐허(일반모드) 기준 "10000층" 난이도부터 시작한다.
+// ('1층이 10000층 기준' — 실제 층 = vhFloor × 이 상수)
+const VERY_HARD_FLOOR_BASE = 10000;
+
+// 현재 활성 모드의 "실제 참조 층수"를 돌려준다.
+// 폐허(normal)/무한의 탑(tower)/어려움(towerHard)은 그대로 두고,
+// 매우어려움(towerVeryHard)은 1층을 10000층 기준으로 치므로 실제 층 = vhFloor × 10000.
+function currentActiveFloor(){
+  if(state.mode === 'tower') return state.towerFloor;
+  if(state.mode === 'towerHard') return state.htFloor;
+  if(state.mode === 'towerVeryHard') return state.vhFloor * VERY_HARD_FLOOR_BASE;
+  return state.floor;
+}
 
 function defaultState(){
   return {
@@ -1482,6 +1506,10 @@ function defaultState(){
     htHighestFloor: 1,
     htRewardsClaimed: {},
     htCleared: false,
+    vhFloor: 1,
+    vhHighestFloor: 1,
+    vhRewardsClaimed: {},
+    vhCleared: false,
 
     monsterHp: 0,
     monsterMaxHp: 0,
@@ -1843,6 +1871,7 @@ function tryLevelUp(){
     needed = expNeeded(state.level);
   }
 }
+
 // ===== js/combat.js =====
 // 일반모드(폐허) 전용 고층 난이도 보정.
 // 1~999층은 기존과 동일(배율 1배), 1000층마다 한 단계씩 아래 배율만큼 몬스터 전체 스탯이
@@ -2058,6 +2087,20 @@ function spawnMonster(){
       state.monsterMaxHp = monsterHpFor(state.htFloor, state.isBoss);
       state.monsterHp = state.monsterMaxHp;
     }
+  } else if(state.mode === 'towerVeryHard'){
+    if(state.vhCleared){
+      state.isBoss = false;
+      state.monsterIndex = -1;
+      state.monsterMaxHp = 1;
+      state.monsterHp = 1;
+    } else {
+      state.isBoss = (state.vhFloor % 10 === 0);
+      state.monsterIndex = (state.vhFloor - 1) % TOWER_MONSTERS.length;
+      // 1층 = 10000층 기준이므로, 실제 참조 층만큼(일반모드 공식) 떼서 계산한다.
+      const vhEff = currentActiveFloor();
+      state.monsterMaxHp = monsterHpFor(vhEff, state.isBoss);
+      state.monsterHp = state.monsterMaxHp;
+    }
   } else {
     const boss = state.floor % 10 === 0;
     state.isBoss = boss;
@@ -2082,6 +2125,12 @@ function currentMonsterMeta(){
   if(state.mode === 'towerHard'){
     if(state.htCleared){
       return {name:'무한의 탑(어려움) 정복 완료', emoji:'👑'};
+    }
+    return TOWER_MONSTERS[state.monsterIndex] || TOWER_MONSTERS[0];
+  }
+  if(state.mode === 'towerVeryHard'){
+    if(state.vhCleared){
+      return {name:'무한의 탑(매우어려움) 정복 완료', emoji:'💀'};
     }
     return TOWER_MONSTERS[state.monsterIndex] || TOWER_MONSTERS[0];
   }
@@ -2155,7 +2204,7 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
   const s = stats();
   if(state.monsterHp <= 0) return false; // 이미 처치된 경우 무시
 
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = currentActiveFloor();
 
   state.monsterHp -= dmgToMonster;
   if(!opts.silent){
@@ -2233,6 +2282,22 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
         state.htCleared = true;
         log(`[무한의 탑(어려움)] 100층 정복 완료! 무한의 탑(어려움)을 완전히 정복했습니다. 환생 후 다시 도전할 수 있습니다.`, 'good');
       }
+    } else if(state.mode === 'towerVeryHard'){
+      if(state.vhFloor % 10 === 0 && !state.vhRewardsClaimed[state.vhFloor]){
+        state.soul += 5;
+        state.fragments += 12;
+        state.vhRewardsClaimed[state.vhFloor] = true;
+        log(`[무한의 탑(매우어려움)] ${state.vhFloor}층 첫 돌파 보상! 🧪 혈청 5개, ◈ 유산 파편 12개 획득!`, 'good');
+      }
+
+      if(state.vhFloor < 100){
+        state.vhFloor++;
+        state.vhHighestFloor = Math.max(state.vhHighestFloor, state.vhFloor);
+        log(`[무한의 탑(매우어려움)] ${state.vhFloor}층으로 상승합니다!`, 'good');
+      } else if(!state.vhCleared){
+        state.vhCleared = true;
+        log(`[무한의 탑(매우어려움)] 100층 정복 완료! 무한의 탑(매우어려움)을 완전히 정복했습니다. 환생 후 다시 도전할 수 있습니다.`, 'good');
+      }
     } else {
       state.killsOnFloor++;
       const killsNeeded = boss ? 1 : 5;
@@ -2295,9 +2360,13 @@ function playerAttackTick(){
     schedulePlayerTick();
     return;
   }
+  if(state.mode === 'towerVeryHard' && state.vhCleared){
+    schedulePlayerTick();
+    return;
+  }
   if(state.monsterHp <= 0) return; // 이미 처치된 경우 무시
 
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = currentActiveFloor();
 
   attackPlayerAnim();
 
@@ -2331,8 +2400,12 @@ function monsterAttackTick(){
     scheduleMonsterTick();
     return;
   }
+  if(state.mode === 'towerVeryHard' && state.vhCleared){
+    scheduleMonsterTick();
+    return;
+  }
 
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = currentActiveFloor();
   const monAtk = monsterAtkFor(currentFloor, state.isBoss, state.isGolden);
   const dmgToPlayer = Math.round(Math.max(1, monAtk - s.def));
   state.playerHp -= dmgToPlayer;
@@ -2356,6 +2429,9 @@ function monsterAttackTick(){
     } else if(state.mode === 'towerHard'){
       state.playerHp = s.maxHp;
       log(`[무한의 탑(어려움)] 쓰러졌습니다. 현재 층(${state.htFloor}층)에 재도전합니다.`, 'warn');
+    } else if(state.mode === 'towerVeryHard'){
+      state.playerHp = s.maxHp;
+      log(`[무한의 탑(매우어려움)] 쓰러졌습니다. 현재 층(${state.vhFloor}층)에 재도전합니다.`, 'warn');
     } else {
       state.floor = Math.max(1, state.floor-1);
       state.killsOnFloor = 0;
@@ -2408,10 +2484,7 @@ function schedulePlayerTick(){
 
   function scheduleMonsterTick(){
   clearTimeout(monsterTickHandle);
-  const floor =
-    state.mode === 'tower'
-    ? state.towerFloor
-    : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const floor = currentActiveFloor();
   // 층이 올라갈수록 빨라짐 (최소 0.8초)
   const speed = Math.max(
     800,
@@ -2438,17 +2511,24 @@ function setMode(mode){
     alert('무한의 탑(어려움)은 무한의 탑(100층)을 먼저 정복해야 입장할 수 있습니다.');
     return;
   }
+  if(mode === 'towerVeryHard' && !state.htCleared){
+    alert('무한의 탑(매우어려움)은 무한의 탑(어려움·100층)을 먼저 정복해야 입장할 수 있습니다.');
+    return;
+  }
   state.mode = mode;
   document.getElementById('modeNormalBtn').classList.toggle('active', mode==='normal');
   document.getElementById('modeTowerBtn').classList.toggle('active', mode==='tower');
   const hardBtn = document.getElementById('modeTowerHardBtn');
   if(hardBtn) hardBtn.classList.toggle('active', mode==='towerHard');
+  const vhBtn = document.getElementById('modeTowerVeryHardBtn');
+  if(vhBtn) vhBtn.classList.toggle('active', mode==='towerVeryHard');
 
   document.getElementById('arenaTitle').textContent =
     mode === 'tower' ? '무한의 탑 (100층)' :
     mode === 'towerHard' ? '무한의 탑(어려움) (100층)' :
+    mode === 'towerVeryHard' ? '무한의 탑(매우어려움) (100층)' :
     '폐허';
-  log(`[모드 변경] ${mode==='tower'?'무한의 탑':mode==='towerHard'?'무한의 탑(어려움)':'라스트 존'} 모드로 전환했습니다.`, 'new');
+  log(`[모드 변경] ${mode==='tower'?'무한의 탑':mode==='towerHard'?'무한의 탑(어려움)':mode==='towerVeryHard'?'무한의 탑(매우어려움)':'라스트 존'} 모드로 전환했습니다.`, 'new');
   
   const s = stats();
   state.playerHp = s.maxHp;
@@ -2460,6 +2540,9 @@ document.getElementById('modeNormalBtn').addEventListener('click', ()=>setMode('
 document.getElementById('modeTowerBtn').addEventListener('click', ()=>setMode('tower'));
 const modeTowerHardBtnEl = document.getElementById('modeTowerHardBtn');
 if(modeTowerHardBtnEl) modeTowerHardBtnEl.addEventListener('click', ()=>setMode('towerHard'));
+const modeTowerVeryHardBtnEl = document.getElementById('modeTowerVeryHardBtn');
+if(modeTowerVeryHardBtnEl) modeTowerVeryHardBtnEl.addEventListener('click', ()=>setMode('towerVeryHard'));
+
 // ===== js/skills.js =====
 // ---------- 액티브 스킬 (자동 발동) ----------
 // 🧪 혈청으로 습득/강화하는 액티브 스킬. 각 스킬은 배우는 즉시 자신만의 쿨타임마다
@@ -2568,7 +2651,7 @@ function buySkill(key){
 // ---------- 발동 로직 ----------
 function triggerActiveSkill(sk, lvl){
   const s = stats();
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = currentActiveFloor();
 
   if(sk.key === 'skillDoubleStrike'){
     if(state.monsterHp <= 0) return false;
@@ -2662,7 +2745,7 @@ function checkActiveSkills(){
   // 무한의 탑을 완전히 클리어하면 combat.js 쪽 전투 루프는 이미 멈춰있지만(더미 몬스터만 유지),
   // 액티브 스킬은 그 더미를 계속 타격 가능한 대상으로 인식해 무한정 발동할 수 있었다.
   // 클리어 후에는 스킬도 완전히 멈춰야 하므로(강탈 일격 등으로 골드가 계속 들어오는 문제 방지) 여기서 차단.
-  if((state.mode === 'tower' && state.towerCleared) || (state.mode === 'towerHard' && state.htCleared)) return;
+  if((state.mode === 'tower' && state.towerCleared) || (state.mode === 'towerHard' && state.htCleared) || (state.mode === 'towerVeryHard' && state.vhCleared)) return;
     const now = Date.now();
   let touched = false;
   ACTIVE_SKILLS.forEach(sk=>{
@@ -2773,6 +2856,7 @@ function renderSkillsPanel(){
     btn.addEventListener('click', ()=>buySkill(btn.dataset.key));
   });
 }
+
 
 // ===== js/equipment.js =====
 // ---------- Equipment (장비 뽑기 시스템) ----------
@@ -3146,6 +3230,7 @@ function renderEquipment(){
   }
 }
 
+
 // ===== js/inventory.js =====
 // ---------- 인벤토리(상태창) 모달 ----------
 // 모험가 패널의 "🎒 인벤토리" 버튼으로 열리는 상태창. 기본 장비(무기/방어구/장신구) 3부위는
@@ -3289,6 +3374,7 @@ function renderInventoryModal(){
   }
 }
 
+
 // ===== js/potions.js =====
 // ---------- 물약 상점 (일시적 버프) ----------
 // 물자획득/경험치획득처럼 전역 상한(GOLD_MULT_CAP 등)이 걸린 스탯은 강화를 다 채운 유저에겐
@@ -3419,6 +3505,7 @@ function renderPotionShop(){
     btn.addEventListener('click', ()=>buyPotion(btn.dataset.key));
   });
 }
+
 
 // ===== js/enhance.js =====
 // ---------- 장비 강화 (Enhance) ----------
@@ -3682,6 +3769,7 @@ function renderEnhancePanel(){
   });
 }
 
+
 // ===== js/goods-shop.js =====
 // ---------- 잡화 상점 (레이드 입장권 + 강화 주문서) ----------
 // 물자(gold)로 구매하는 소모품 상점. 레이드 입장권은 자연 충전(1시간당 1개, 최대 3개)과 별개로
@@ -3775,6 +3863,7 @@ function renderEnhanceScrollShop(){
     btn.addEventListener('click', () => buyEnhanceScroll(btn.dataset.key));
   });
 }
+
 
 // ===== js/raid.js =====
 // ---------- Raid (1인 레이드) ----------
@@ -4051,6 +4140,7 @@ setInterval(()=>{
   renderRaidPanel();
 }, 1000);
 
+
 // ===== js/golden.js =====
 // ---------- 황금 몬스터 (레어 강화 조우) ----------
 // 아주 낮은 확률로 화면 위에 반짝이는 황금 몬스터 표식이 잠깐 나타난다.
@@ -4132,7 +4222,7 @@ function clickGoldenMonster(){
     el.style.display = 'none';
   }
 
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = currentActiveFloor();
   state.isGolden = true;
   state.monsterMaxHp = monsterHpFor(currentFloor, false, true);
   state.monsterHp = state.monsterMaxHp;
@@ -4177,6 +4267,7 @@ function awardGoldenKillBonus(currentFloor, s){
 }
 
 document.getElementById('goldenMonster')?.addEventListener('click', clickGoldenMonster);
+
 
 // ===== js/golddungeon.js =====
 // ---------- Gold Dungeon (물자 구역) ----------
@@ -4377,6 +4468,7 @@ setInterval(()=>{
   renderGoldDungeonPanel();
 }, 1000);
 
+
 // ===== js/relicdungeon.js =====
 // ---------- Relic Dungeon (유산 구역) ----------
 // 물자 구역과 동일한 구조(티켓제, 10층, 고정 스탯 전투)지만 보상이 물자 대신 유산 파편입니다.
@@ -4571,6 +4663,7 @@ setInterval(()=>{
   refreshRelicDungeonTickets();
   renderRelicDungeonPanel();
 }, 1000);
+
 
 // ===== js/forgedungeon.js =====
 // ---------- Forge Dungeon (단조 구역) ----------
@@ -4768,6 +4861,7 @@ setInterval(()=>{
   renderForgeDungeonPanel();
 }, 1000);
 
+
 // ===== js/trainingdungeon.js =====
 // ---------- Training Dungeon (수련 구역) ----------
 // 물자/유산 구역과 동일한 구조(티켓제, 10층, 고정 스탯 전투)지만 보상이 확정 경험치입니다.
@@ -4962,6 +5056,7 @@ setInterval(()=>{
   refreshTrainingDungeonTickets();
   renderTrainingDungeonPanel();
 }, 1000);
+
 
 // ===== js/territory.js =====
 // ---------- 영지 (Territory) ----------
@@ -5199,6 +5294,7 @@ document.getElementById('territoryBuildGoldBtn')?.addEventListener('click', ()=>
 document.getElementById('territoryBuildFragBtn')?.addEventListener('click', ()=>expandTerritorySlot('fragment'));
 document.getElementById('territoryBuildSoulBtn')?.addEventListener('click', ()=>expandTerritorySlot('soul'));
 
+
 // ===== js/ui-render.js =====
 // ---------- Rendering ----------
 function renderMonster(){
@@ -5220,8 +5316,8 @@ function renderMonster(){
   // (몬스터 기준 / 보스 기준을 함께 보여줘서, 보스전 대비 여유치까지 가늠할 수 있게 함)
   const accEl = document.getElementById('accuracyLine');
   if(accEl){
-    const cf = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
-    if((state.mode === 'tower' && state.towerCleared) || (state.mode === 'towerHard' && state.htCleared)){
+    const cf = currentActiveFloor();
+    if((state.mode === 'tower' && state.towerCleared) || (state.mode === 'towerHard' && state.htCleared) || (state.mode === 'towerVeryHard' && state.vhCleared)){
       accEl.textContent = '';
     } else {
       const recMob = recommendedAccuracyFor(cf, false);
@@ -5239,6 +5335,9 @@ function renderMonster(){
   } else if(state.mode === 'towerHard'){
     document.getElementById('floorBadge').textContent = state.htCleared ? '👑 HARD TOWER CLEAR! (100/100)' : ('HARD TOWER ' + state.htFloor + ' / 100F');
     progressEl.textContent = `무한의 탑(어려움) 진행 중`;
+  } else if(state.mode === 'towerVeryHard'){
+    document.getElementById('floorBadge').textContent = state.vhCleared ? '💀 VERY HARD TOWER CLEAR! (100/100)' : ('VERY HARD TOWER ' + state.vhFloor + ' / 100F');
+    progressEl.textContent = `무한의 탑(매우어려움) 진행 중`;
   } else {
     document.getElementById('floorBadge').textContent = 'FLOOR ' + state.floor;
     if(state.isGolden){
@@ -5271,6 +5370,13 @@ function renderCombatFrame(){
     const hardUnlocked = !!state.towerCleared;
     towerHardBtn.textContent = hardUnlocked ? '무한의 탑(어려움)' : '무한의 탑(어려움) 🔒(탑 100층 클리어)';
     towerHardBtn.classList.toggle('locked', !hardUnlocked);
+  }
+
+  const towerVeryHardBtn = document.getElementById('modeTowerVeryHardBtn');
+  if(towerVeryHardBtn){
+    const vhUnlocked = !!state.htCleared;
+    towerVeryHardBtn.textContent = vhUnlocked ? '무한의 탑(매우어려움)' : '무한의 탑(매우어려움) 🔒(어려움 100층 클리어)';
+    towerVeryHardBtn.classList.toggle('locked', !vhUnlocked);
   }
 
   document.getElementById('statAtk').textContent = s.atk;
@@ -5317,7 +5423,7 @@ function renderCombatFrame(){
   if(accEl) accEl.textContent = s.accuracy;
   const hitChanceEl = document.getElementById('statHitChance');
   if(hitChanceEl){
-    const cf = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+    const cf = currentActiveFloor();
     const hc = hitChanceFor(cf, state.isBoss, s.accuracy);
     hitChanceEl.textContent = hc.toFixed(0) + '%';
     hitChanceEl.style.color = hc >= 90 ? '' : (hc >= 50 ? '#e8a33d' : 'var(--hp)');
@@ -5381,10 +5487,6 @@ function renderAll(){
   if(typeof renderCostumeShop === 'function') renderCostumeShop();
   if(typeof renderKillPassPanel === 'function') renderKillPassPanel();
   if(typeof renderWorldBossPanel === 'function') renderWorldBossPanel();
-  if(typeof renderWorldMap === 'function'){
-    const wmOverlay = document.getElementById('worldMapOverlay');
-    if(wmOverlay && wmOverlay.style.display !== 'none') renderWorldMap();
-  }
   if(typeof renderTerritoryPanel === 'function') renderTerritoryPanel();
   if(typeof renderExpeditionPanel === 'function') renderExpeditionPanel();
   updateTabBadges();
@@ -5433,208 +5535,6 @@ function setTabBadge(id, count){
 
 
 
-// ===== js/worldmap.js =====
-// ---------- 세계지도 (오픈월드 스타일 이동 UI) ----------
-// 실제 필드를 걸어다니는 오픈월드 엔진을 새로 만드는 대신, 기존에 이미 존재하는 컨텐츠들
-// (폐허/무한의 탑/구역/레이드/월드보스/영지/전직)을 "세계지도 위의 지역"으로 시각화해서
-// 지역을 클릭하면 그 위치로 "이동"하는 연출과 함께 해당 컨텐츠 화면으로 데려다주는 방식.
-// 해금 조건은 전부 각 시스템에 이미 존재하는 함수/상태를 그대로 재사용하며, 이 파일은
-// 새로운 해금 로직을 만들지 않는다 (예: 무한의 탑 레벨 조건, 레이드/월드보스 100층 조건 등).
-
-const WORLD_ZONES = [
-  {
-    key:'town', name:'🏘️ 마을', x:50, y:50,
-    unlockedFn: () => true,
-    action:{type:'tab', tab:'tab-growth'},
-  },
-  {
-    key:'ruins', name:'🏚️ 폐허', x:17, y:35,
-    unlockedFn: () => true,
-    action:{type:'mode', value:'normal'},
-  },
-  {
-    key:'tower', name:'🗼 무한의 탑', x:50, y:14,
-    unlockedFn: () => state.level >= TOWER_UNLOCK_LEVEL,
-    lockText: `레벨 ${typeof TOWER_UNLOCK_LEVEL !== 'undefined' ? TOWER_UNLOCK_LEVEL : 10} 이상 필요`,
-    action:{type:'mode', value:'tower'},
-  },
-  {
-    key:'towerHard', name:'👑 무한의 탑(어려움)', x:70, y:20,
-    unlockedFn: () => !!state.towerCleared,
-    lockText: '무한의 탑(100층) 클리어 필요',
-    action:{type:'mode', value:'towerHard'},
-  },
-  {
-    key:'raid', name:'☣️ 심연 (1인 레이드)', x:83, y:35,
-    unlockedFn: () => typeof raidUnlocked === 'function' && raidUnlocked(),
-    lockText: '무한의 탑 100층 클리어 필요',
-    action:{type:'tab', tab:'tab-dungeon', scrollTarget:'raidEnterBtn'},
-  },
-  {
-    key:'worldBoss', name:'🧟 월드보스 유적', x:86, y:55,
-    unlockedFn: () => typeof worldBossUnlocked === 'function' && worldBossUnlocked(),
-    lockText: '무한의 탑 100층 클리어 필요',
-    action:{type:'tab', tab:'tab-dungeon', scrollTarget:'wbEnterBtn'},
-  },
-  {
-    key:'territory', name:'🏰 영지', x:77, y:74,
-    unlockedFn: () => true,
-    action:{type:'tab', tab:'tab-territory'},
-  },
-  {
-    key:'relicDungeon', name:'🗿 유산 구역', x:60, y:85,
-    unlockedFn: () => true,
-    action:{type:'tab', tab:'tab-dungeon', scrollTarget:'rdEnterBtn'},
-  },
-  {
-    key:'forgeDungeon', name:'🔥 단조 구역', x:40, y:85,
-    unlockedFn: () => true,
-    action:{type:'tab', tab:'tab-dungeon', scrollTarget:'fdEnterBtn'},
-  },
-  {
-    key:'trainingDungeon', name:'🥋 수련 구역', x:23, y:74,
-    unlockedFn: () => true,
-    action:{type:'tab', tab:'tab-dungeon', scrollTarget:'tdEnterBtn'},
-  },
-  {
-    key:'goldDungeon', name:'📦 물자 구역', x:14, y:55,
-    unlockedFn: () => true,
-    action:{type:'tab', tab:'tab-dungeon', scrollTarget:'gdEnterBtn'},
-  },
-  {
-    key:'job', name:'⚜️ 전직의 제단', x:31, y:20,
-    unlockedFn: () => typeof jobUnlocked === 'function' && jobUnlocked(),
-    lockText: `레벨 ${typeof JOB_UNLOCK_LEVEL !== 'undefined' ? JOB_UNLOCK_LEVEL : 1000} 이상 필요`,
-    action:{type:'tab', tab:'tab-growth', scrollTarget:'jobPanelSection'},
-  },
-];
-
-// 마을(town)을 중심으로 뻗어나가는 기본 연결선 + 진행 흐름을 보여주는 추가 연결선.
-const WORLD_MAP_LINKS = [
-  ['town','ruins'], ['town','tower'], ['town','towerHard'], ['town','raid'],
-  ['town','worldBoss'], ['town','territory'], ['town','relicDungeon'],
-  ['town','forgeDungeon'], ['town','trainingDungeon'], ['town','goldDungeon'], ['town','job'],
-  ['tower','towerHard'], ['raid','worldBoss'],
-  ['goldDungeon','relicDungeon'], ['relicDungeon','forgeDungeon'], ['forgeDungeon','trainingDungeon'],
-];
-
-function worldZoneByKey(key){
-  return WORLD_ZONES.find(z => z.key === key);
-}
-
-function renderWorldMap(){
-  const canvas = document.getElementById('worldMapCanvas');
-  const svg = document.getElementById('worldMapLines');
-  if(!canvas || !svg) return;
-
-  // 연결선은 지도가 바뀌지 않으므로 최초 1회만 그린다.
-  if(!svg.dataset.built){
-    svg.innerHTML = WORLD_MAP_LINKS.map(([a,b])=>{
-      const za = worldZoneByKey(a), zb = worldZoneByKey(b);
-      if(!za || !zb) return '';
-      return `<line x1="${za.x}" y1="${za.y}" x2="${zb.x}" y2="${zb.y}" class="worldmap-link" />`;
-    }).join('');
-    svg.dataset.built = '1';
-  }
-
-  // 노드 div는 매번 다시 그리되(해금 상태가 실시간으로 바뀔 수 있으므로), 기존 요소가 있으면 재사용.
-  WORLD_ZONES.forEach(zone=>{
-    let node = canvas.querySelector(`.worldmap-node[data-key="${zone.key}"]`);
-    const unlocked = !!zone.unlockedFn();
-    if(!node){
-      node = document.createElement('div');
-      node.className = 'worldmap-node';
-      node.dataset.key = zone.key;
-      node.style.left = zone.x + '%';
-      node.style.top = zone.y + '%';
-      node.innerHTML = `
-        <div class="worldmap-node-icon"></div>
-        <div class="worldmap-node-label"></div>
-        <div class="worldmap-node-lock">🔒</div>
-      `;
-      node.addEventListener('click', ()=>travelToZone(zone.key));
-      canvas.appendChild(node);
-    }
-    node.classList.toggle('locked', !unlocked);
-    node.classList.toggle('home', zone.key === 'town');
-    node.querySelector('.worldmap-node-icon').textContent = zone.name.split(' ')[0];
-    node.querySelector('.worldmap-node-label').textContent = zone.name.split(' ').slice(1).join(' ');
-    node.title = unlocked ? zone.name : `🔒 ${zone.lockText || '조건 미충족'}`;
-  });
-}
-
-function openWorldMap(){
-  const overlay = document.getElementById('worldMapOverlay');
-  if(!overlay) return;
-  renderWorldMap();
-  overlay.style.display = 'flex';
-}
-
-function closeWorldMap(){
-  const overlay = document.getElementById('worldMapOverlay');
-  if(overlay) overlay.style.display = 'none';
-}
-
-// 마을 좌표에서 목적지 좌표까지 작은 깃발 마커가 이동하는 짧은 연출을 보여준 뒤,
-// 실제 화면 전환(모드 변경 or 탭 이동)을 수행한다. 잠긴 지역은 이유를 알려주고 끝낸다.
-function travelToZone(key){
-  const zone = worldZoneByKey(key);
-  if(!zone) return;
-  if(!zone.unlockedFn()){
-    alert(`🔒 아직 갈 수 없는 지역입니다.\n(${zone.lockText || '조건 미충족'})`);
-    return;
-  }
-
-  const traveler = document.getElementById('worldMapTraveler');
-  const town = worldZoneByKey('town');
-  if(traveler && zone.key !== 'town'){
-    traveler.style.transition = 'none';
-    traveler.style.left = town.x + '%';
-    traveler.style.top = town.y + '%';
-    traveler.style.display = 'block';
-    // 강제 리플로우 후 목적지로 트랜지션 이동 (연출용)
-    void traveler.offsetWidth;
-    traveler.style.transition = 'left .6s ease, top .6s ease';
-    traveler.style.left = zone.x + '%';
-    traveler.style.top = zone.y + '%';
-  }
-
-  setTimeout(()=>{
-    executeZoneAction(zone);
-    if(traveler) traveler.style.display = 'none';
-    closeWorldMap();
-  }, (traveler && zone.key !== 'town') ? 650 : 0);
-}
-
-function executeZoneAction(zone){
-  const a = zone.action;
-  if(a.type === 'mode'){
-    if(typeof setMode === 'function') setMode(a.value);
-  } else if(a.type === 'tab'){
-    const tabBtn = document.querySelector(`.tab-nav-btn[data-tab="${a.tab}"]`);
-    if(tabBtn) tabBtn.click();
-    if(a.scrollTarget){
-      setTimeout(()=>{
-        const el = document.getElementById(a.scrollTarget);
-        if(el){
-          el.scrollIntoView({behavior:'smooth', block:'center'});
-          const panel = el.closest('.panel');
-          if(panel){
-            panel.classList.add('worldmap-highlight');
-            setTimeout(()=>panel.classList.remove('worldmap-highlight'), 1600);
-          }
-        }
-      }, 80);
-    }
-  }
-  log(`🗺️ ${zone.name}(으)로 이동했습니다.`, 'new');
-}
-
-document.getElementById('worldMapOpenBtn')?.addEventListener('click', openWorldMap);
-document.getElementById('worldMapCloseBtn')?.addEventListener('click', closeWorldMap);
-document.getElementById('worldMapOverlay')?.addEventListener('click', (e)=>{
-  if(e.target && e.target.id === 'worldMapOverlay') closeWorldMap();
-});
 
 // ===== js/shop.js =====
 let shopBuyMultiplier = 1;
@@ -5780,6 +5680,7 @@ function renderSoulShop(){
     if(btn.textContent !== label) btn.textContent = label;
   });
 }
+
 // ===== js/relics-pets.js =====
 // ---------- Relics ----------
 function relicPullCost(){
@@ -5948,6 +5849,7 @@ function petTick(){
   // 로그가 스팸처럼 쌓이는 문제가 있었다. 정복 완료 상태에서는 펫도 함께 정지시킨다.
   if(state.mode === 'tower' && state.towerCleared) return;
   if(state.mode === 'towerHard' && state.htCleared) return;
+  if(state.mode === 'towerVeryHard' && state.vhCleared) return;
   const s = stats();
   let changed = false;
   PETS.forEach(p=>{
@@ -5962,6 +5864,7 @@ function petTick(){
   });
   if(changed) renderAll();
 }
+
 
 
 // ===== js/killpass.js =====
@@ -6115,6 +6018,7 @@ document.getElementById('killPassTrack')?.addEventListener('click', (e)=>{
   const claimed = state.killPassClaimed || 0;
   if(tier === claimed + 1) claimKillPassTier();
 });
+
 
 // ===== js/pet-shelter.js =====
 // ---------- 동료 쉼터 (Pet Shelter) ----------
@@ -6277,6 +6181,7 @@ function wanderPetShelter(){
     el.style.top = nextTop + '%';
   });
 }
+
 
 // ===== js/expedition.js =====
 // ---------- 원정대 (Expedition) ----------
@@ -6540,6 +6445,7 @@ function renderExpeditionPanel(){
   });
 }
 
+
 // ===== js/quests.js =====
 // ---------- Quests & Achievements ----------
 // 예전엔 "마지막 리셋 후 24시간 경과"로 판정해서 유저마다 리셋 시각이 최초 접속 시간에 따라
@@ -6577,7 +6483,7 @@ function rewardText(reward){
 // 층수가 오를수록 보상이 자동으로 커져서 초반엔 확실하게, 후반에도 계속 의미 있게 받을 수 있다.
 function repeatQuestReward(q){
   const base = q.reward || {};
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = currentActiveFloor();
   const s = stats();
   const scaled = q.scale ? Math.round(goldDropFor(currentFloor, false) * s.goldMult * q.scale) : 0;
   return {gold:(base.gold||0)+scaled, soul:base.soul||0, frag:base.frag||0};
@@ -6668,6 +6574,11 @@ function renderAchievements(){
 }
 
 function claimRepeatable(key){
+  if(state.mode === 'towerVeryHard'){
+    log('반복 퀘스트 보상은 무한의 탑(매우어려움) 모드에서는 수령할 수 없습니다.', 'warn');
+    renderAll();
+    return;
+  }
   const q = REPEATABLE_QUESTS.find(x=>x.key===key);
   if(!q) return;
   if(state[q.statKey] < q.target) return;
@@ -6679,6 +6590,11 @@ function claimRepeatable(key){
 }
 
 function claimAllRepeatable(){
+  if(state.mode === 'towerVeryHard'){
+    log('반복 퀘스트 보상은 무한의 탑(매우어려움) 모드에서는 수령할 수 없습니다.', 'warn');
+    renderAll();
+    return;
+  }
   let totalClaims = 0;
   const totalReward = {gold:0, soul:0, frag:0};
   REPEATABLE_QUESTS.forEach(q=>{
@@ -6702,12 +6618,13 @@ function renderRepeatableQuests(){
   const container = document.getElementById('repeatQuestList');
   container.innerHTML = '';
   let anyReady = false;
+  const restricted = state.mode === 'towerVeryHard';
   REPEATABLE_QUESTS.forEach(q=>{
     const raw = state[q.statKey];
     const stacks = Math.floor(raw / q.target);
     const displayProgress = raw % q.target;
     const ready = stacks >= 1;
-    if(ready) anyReady = true;
+    if(ready && !restricted) anyReady = true;
     const reward = repeatQuestReward(q);
     const row = document.createElement('div');
     row.className = 'quest-item';
@@ -6722,14 +6639,20 @@ function renderRepeatableQuests(){
       <div class="quest-progress-outer"><div class="quest-progress-inner ${ready?'done':''}" style="width:${(ready?100:(displayProgress/q.target*100))}%"></div></div>
       <div class="quest-foot">
         <span class="ptext">${ready? q.target+'/'+q.target : displayProgress+'/'+q.target}</span>
-        <button class="claim ${ready?'ready':''}" ${ready?'':'disabled'} data-key="${q.key}">받기</button>
+        <button class="claim ${(ready&&!restricted)?'ready':''}" ${(!ready||restricted)?'disabled':''} data-key="${q.key}">${restricted?'수령 불가':'받기'}</button>
       </div>
     `;
     container.appendChild(row);
     row.querySelector('button').addEventListener('click', ()=>claimRepeatable(q.key));
   });
   const claimAllBtn = document.getElementById('claimAllRepeatBtn');
-  if(claimAllBtn) claimAllBtn.disabled = !anyReady;
+  if(claimAllBtn) claimAllBtn.disabled = !anyReady || restricted;
+  if(restricted){
+    const note = document.createElement('div');
+    note.style.cssText = 'font-size:11px;color:var(--hp);margin-top:6px;';
+    note.textContent = '⚠️ 매우어려움 모드에서는 반복 퀘스트 진행/수령이 비활성화됩니다.';
+    container.appendChild(note);
+  }
 }
 
 // 전투 화면(아레나) 아래에 표시되는 컴팩트 반복 퀘스트 위젯.
@@ -6739,12 +6662,13 @@ function renderCombatRepeatQuests(){
   if(!container) return;
   container.innerHTML = '';
   let anyReady = false;
+  const restricted = state.mode === 'towerVeryHard';
   REPEATABLE_QUESTS.forEach(q=>{
     const raw = state[q.statKey];
     const stacks = Math.floor(raw / q.target);
     const displayProgress = raw % q.target;
     const ready = stacks >= 1;
-    if(ready) anyReady = true;
+    if(ready && !restricted) anyReady = true;
     const reward = repeatQuestReward(q);
     const card = document.createElement('div');
     card.className = 'combat-quest-card'+(ready?' ready':'');
@@ -6753,14 +6677,14 @@ function renderCombatRepeatQuests(){
       <div class="quest-progress-outer"><div class="quest-progress-inner ${ready?'done':''}" style="width:${(ready?100:(displayProgress/q.target*100))}%"></div></div>
       <div class="cq-foot">
         <span class="cq-reward">${rewardText(reward)}</span>
-        <button class="claim ${ready?'ready':''}" ${ready?'':'disabled'} data-key="${q.key}">${ready?'받기':'대기'}</button>
+        <button class="claim ${(ready&&!restricted)?'ready':''}" ${(!ready||restricted)?'disabled':''} data-key="${q.key}">${restricted?'⛔':(ready?'받기':'대기')}</button>
       </div>
     `;
     container.appendChild(card);
     card.querySelector('button').addEventListener('click', ()=>claimRepeatable(q.key));
   });
   const claimAllBtn = document.getElementById('combatClaimAllRepeatBtn');
-  if(claimAllBtn) claimAllBtn.disabled = !anyReady;
+  if(claimAllBtn) claimAllBtn.disabled = !anyReady || restricted;
 }
 document.getElementById('combatClaimAllRepeatBtn')?.addEventListener('click', claimAllRepeatable);
 
@@ -6814,9 +6738,15 @@ document.getElementById('rebirthBtn').addEventListener('click', ()=>{
   state.htHighestFloor = 1;
   state.htRewardsClaimed = {};
   state.htCleared = false;
+  state.vhFloor = 1;
+  state.vhHighestFloor = 1;
+  state.vhRewardsClaimed = {};
+  state.vhCleared = false;
   state.mode = 'normal';
   document.getElementById('modeNormalBtn').classList.toggle('active', true);
   document.getElementById('modeTowerBtn').classList.toggle('active', false);
+  document.getElementById('modeTowerHardBtn')?.classList.toggle('active', false);
+  document.getElementById('modeTowerVeryHardBtn')?.classList.toggle('active', false);
   document.getElementById('arenaTitle').textContent = '폐허';
   const s = stats();
   state.playerHp = s.maxHp;
@@ -6862,6 +6792,7 @@ function openRebirthHistory(){
   document.getElementById('rebirthHistoryModal').style.display = 'flex';
 }
 document.getElementById('rebirthHistoryBtn')?.addEventListener('click', openRebirthHistory);
+
 
 
 // ===== js/attendance.js =====
@@ -6984,6 +6915,7 @@ saveState(true);
 document
 .getElementById("attendanceBtn")
 .onclick=claimAttendance;
+
 // ===== js/persistence.js =====
 document.getElementById('saveBtn').addEventListener('click', ()=>{ saveState(true); });
 document.getElementById('resetBtn').addEventListener('click', async ()=>{
@@ -7046,6 +6978,7 @@ function processImportedData(jsonStr){
     state.equipPullCounts = Object.assign({t1:0,t2:0,t3:0,t4:0,t5:0}, loaded.equipPullCounts||{});
     state.towerRewardsClaimed = loaded.towerRewardsClaimed || {};
     state.htRewardsClaimed = loaded.htRewardsClaimed || {};
+    state.vhRewardsClaimed = loaded.vhRewardsClaimed || {};
     state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
     state.unlockedTitles = loaded.unlockedTitles || {};
     state.ownedCostumes = loaded.ownedCostumes || {};
@@ -7057,7 +6990,12 @@ function processImportedData(jsonStr){
 
     document.getElementById('modeNormalBtn').classList.toggle('active', state.mode==='normal');
     document.getElementById('modeTowerBtn').classList.toggle('active', state.mode==='tower');
-    document.getElementById('arenaTitle').textContent = state.mode === 'tower' ? '무한의 탑 (100층)' : '폐허';
+    document.getElementById('modeTowerHardBtn')?.classList.toggle('active', state.mode==='towerHard');
+    document.getElementById('modeTowerVeryHardBtn')?.classList.toggle('active', state.mode==='towerVeryHard');
+    document.getElementById('arenaTitle').textContent =
+      state.mode === 'tower' ? '무한의 탑 (100층)' :
+      state.mode === 'towerHard' ? '무한의 탑(어려움) (100층)' :
+      state.mode === 'towerVeryHard' ? '무한의 탑(매우어려움) (100층)' : '폐허';
 
     const s = stats();
     if(state.playerHp <= 0) state.playerHp = s.maxHp;
@@ -7186,7 +7124,7 @@ function computeOfflineProgress(){
 
   const s = stats();
   const killsPerSec = 1000/s.tickMs;
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = currentActiveFloor();
   const avgGoldPerKill = goldDropFor(currentFloor, false) * s.goldMult;
   const avgExpPerKill = expDropFor(currentFloor, false) * s.expMult;
   
@@ -7228,3 +7166,4 @@ document.getElementById('offlineCloseBtn').addEventListener('click', ()=>{
   document.getElementById('offlineModal').style.display = 'none';
   renderAll();
 });
+

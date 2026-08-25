@@ -34,7 +34,7 @@ function rewardText(reward){
 // 층수가 오를수록 보상이 자동으로 커져서 초반엔 확실하게, 후반에도 계속 의미 있게 받을 수 있다.
 function repeatQuestReward(q){
   const base = q.reward || {};
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = currentActiveFloor();
   const s = stats();
   const scaled = q.scale ? Math.round(goldDropFor(currentFloor, false) * s.goldMult * q.scale) : 0;
   return {gold:(base.gold||0)+scaled, soul:base.soul||0, frag:base.frag||0};
@@ -125,6 +125,11 @@ function renderAchievements(){
 }
 
 function claimRepeatable(key){
+  if(state.mode === 'towerVeryHard'){
+    log('반복 퀘스트 보상은 무한의 탑(매우어려움) 모드에서는 수령할 수 없습니다.', 'warn');
+    renderAll();
+    return;
+  }
   const q = REPEATABLE_QUESTS.find(x=>x.key===key);
   if(!q) return;
   if(state[q.statKey] < q.target) return;
@@ -136,6 +141,11 @@ function claimRepeatable(key){
 }
 
 function claimAllRepeatable(){
+  if(state.mode === 'towerVeryHard'){
+    log('반복 퀘스트 보상은 무한의 탑(매우어려움) 모드에서는 수령할 수 없습니다.', 'warn');
+    renderAll();
+    return;
+  }
   let totalClaims = 0;
   const totalReward = {gold:0, soul:0, frag:0};
   REPEATABLE_QUESTS.forEach(q=>{
@@ -159,12 +169,13 @@ function renderRepeatableQuests(){
   const container = document.getElementById('repeatQuestList');
   container.innerHTML = '';
   let anyReady = false;
+  const restricted = state.mode === 'towerVeryHard';
   REPEATABLE_QUESTS.forEach(q=>{
     const raw = state[q.statKey];
     const stacks = Math.floor(raw / q.target);
     const displayProgress = raw % q.target;
     const ready = stacks >= 1;
-    if(ready) anyReady = true;
+    if(ready && !restricted) anyReady = true;
     const reward = repeatQuestReward(q);
     const row = document.createElement('div');
     row.className = 'quest-item';
@@ -179,14 +190,20 @@ function renderRepeatableQuests(){
       <div class="quest-progress-outer"><div class="quest-progress-inner ${ready?'done':''}" style="width:${(ready?100:(displayProgress/q.target*100))}%"></div></div>
       <div class="quest-foot">
         <span class="ptext">${ready? q.target+'/'+q.target : displayProgress+'/'+q.target}</span>
-        <button class="claim ${ready?'ready':''}" ${ready?'':'disabled'} data-key="${q.key}">받기</button>
+        <button class="claim ${(ready&&!restricted)?'ready':''}" ${(!ready||restricted)?'disabled':''} data-key="${q.key}">${restricted?'수령 불가':'받기'}</button>
       </div>
     `;
     container.appendChild(row);
     row.querySelector('button').addEventListener('click', ()=>claimRepeatable(q.key));
   });
   const claimAllBtn = document.getElementById('claimAllRepeatBtn');
-  if(claimAllBtn) claimAllBtn.disabled = !anyReady;
+  if(claimAllBtn) claimAllBtn.disabled = !anyReady || restricted;
+  if(restricted){
+    const note = document.createElement('div');
+    note.style.cssText = 'font-size:11px;color:var(--hp);margin-top:6px;';
+    note.textContent = '⚠️ 매우어려움 모드에서는 반복 퀘스트 진행/수령이 비활성화됩니다.';
+    container.appendChild(note);
+  }
 }
 
 // 전투 화면(아레나) 아래에 표시되는 컴팩트 반복 퀘스트 위젯.
@@ -196,12 +213,13 @@ function renderCombatRepeatQuests(){
   if(!container) return;
   container.innerHTML = '';
   let anyReady = false;
+  const restricted = state.mode === 'towerVeryHard';
   REPEATABLE_QUESTS.forEach(q=>{
     const raw = state[q.statKey];
     const stacks = Math.floor(raw / q.target);
     const displayProgress = raw % q.target;
     const ready = stacks >= 1;
-    if(ready) anyReady = true;
+    if(ready && !restricted) anyReady = true;
     const reward = repeatQuestReward(q);
     const card = document.createElement('div');
     card.className = 'combat-quest-card'+(ready?' ready':'');
@@ -210,14 +228,14 @@ function renderCombatRepeatQuests(){
       <div class="quest-progress-outer"><div class="quest-progress-inner ${ready?'done':''}" style="width:${(ready?100:(displayProgress/q.target*100))}%"></div></div>
       <div class="cq-foot">
         <span class="cq-reward">${rewardText(reward)}</span>
-        <button class="claim ${ready?'ready':''}" ${ready?'':'disabled'} data-key="${q.key}">${ready?'받기':'대기'}</button>
+        <button class="claim ${(ready&&!restricted)?'ready':''}" ${(!ready||restricted)?'disabled':''} data-key="${q.key}">${restricted?'⛔':(ready?'받기':'대기')}</button>
       </div>
     `;
     container.appendChild(card);
     card.querySelector('button').addEventListener('click', ()=>claimRepeatable(q.key));
   });
   const claimAllBtn = document.getElementById('combatClaimAllRepeatBtn');
-  if(claimAllBtn) claimAllBtn.disabled = !anyReady;
+  if(claimAllBtn) claimAllBtn.disabled = !anyReady || restricted;
 }
 document.getElementById('combatClaimAllRepeatBtn')?.addEventListener('click', claimAllRepeatable);
 
@@ -271,9 +289,15 @@ document.getElementById('rebirthBtn').addEventListener('click', ()=>{
   state.htHighestFloor = 1;
   state.htRewardsClaimed = {};
   state.htCleared = false;
+  state.vhFloor = 1;
+  state.vhHighestFloor = 1;
+  state.vhRewardsClaimed = {};
+  state.vhCleared = false;
   state.mode = 'normal';
   document.getElementById('modeNormalBtn').classList.toggle('active', true);
   document.getElementById('modeTowerBtn').classList.toggle('active', false);
+  document.getElementById('modeTowerHardBtn')?.classList.toggle('active', false);
+  document.getElementById('modeTowerVeryHardBtn')?.classList.toggle('active', false);
   document.getElementById('arenaTitle').textContent = '폐허';
   const s = stats();
   state.playerHp = s.maxHp;

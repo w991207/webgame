@@ -212,6 +212,20 @@ function spawnMonster(){
       state.monsterMaxHp = monsterHpFor(state.htFloor, state.isBoss);
       state.monsterHp = state.monsterMaxHp;
     }
+  } else if(state.mode === 'towerVeryHard'){
+    if(state.vhCleared){
+      state.isBoss = false;
+      state.monsterIndex = -1;
+      state.monsterMaxHp = 1;
+      state.monsterHp = 1;
+    } else {
+      state.isBoss = (state.vhFloor % 10 === 0);
+      state.monsterIndex = (state.vhFloor - 1) % TOWER_MONSTERS.length;
+      // 1층 = 10000층 기준이므로, 실제 참조 층만큼(일반모드 공식) 떼서 계산한다.
+      const vhEff = currentActiveFloor();
+      state.monsterMaxHp = monsterHpFor(vhEff, state.isBoss);
+      state.monsterHp = state.monsterMaxHp;
+    }
   } else {
     const boss = state.floor % 10 === 0;
     state.isBoss = boss;
@@ -236,6 +250,12 @@ function currentMonsterMeta(){
   if(state.mode === 'towerHard'){
     if(state.htCleared){
       return {name:'무한의 탑(어려움) 정복 완료', emoji:'👑'};
+    }
+    return TOWER_MONSTERS[state.monsterIndex] || TOWER_MONSTERS[0];
+  }
+  if(state.mode === 'towerVeryHard'){
+    if(state.vhCleared){
+      return {name:'무한의 탑(매우어려움) 정복 완료', emoji:'💀'};
     }
     return TOWER_MONSTERS[state.monsterIndex] || TOWER_MONSTERS[0];
   }
@@ -309,7 +329,7 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
   const s = stats();
   if(state.monsterHp <= 0) return false; // 이미 처치된 경우 무시
 
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = currentActiveFloor();
 
   state.monsterHp -= dmgToMonster;
   if(!opts.silent){
@@ -387,6 +407,22 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
         state.htCleared = true;
         log(`[무한의 탑(어려움)] 100층 정복 완료! 무한의 탑(어려움)을 완전히 정복했습니다. 환생 후 다시 도전할 수 있습니다.`, 'good');
       }
+    } else if(state.mode === 'towerVeryHard'){
+      if(state.vhFloor % 10 === 0 && !state.vhRewardsClaimed[state.vhFloor]){
+        state.soul += 5;
+        state.fragments += 12;
+        state.vhRewardsClaimed[state.vhFloor] = true;
+        log(`[무한의 탑(매우어려움)] ${state.vhFloor}층 첫 돌파 보상! 🧪 혈청 5개, ◈ 유산 파편 12개 획득!`, 'good');
+      }
+
+      if(state.vhFloor < 100){
+        state.vhFloor++;
+        state.vhHighestFloor = Math.max(state.vhHighestFloor, state.vhFloor);
+        log(`[무한의 탑(매우어려움)] ${state.vhFloor}층으로 상승합니다!`, 'good');
+      } else if(!state.vhCleared){
+        state.vhCleared = true;
+        log(`[무한의 탑(매우어려움)] 100층 정복 완료! 무한의 탑(매우어려움)을 완전히 정복했습니다. 환생 후 다시 도전할 수 있습니다.`, 'good');
+      }
     } else {
       state.killsOnFloor++;
       const killsNeeded = boss ? 1 : 5;
@@ -449,9 +485,13 @@ function playerAttackTick(){
     schedulePlayerTick();
     return;
   }
+  if(state.mode === 'towerVeryHard' && state.vhCleared){
+    schedulePlayerTick();
+    return;
+  }
   if(state.monsterHp <= 0) return; // 이미 처치된 경우 무시
 
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = currentActiveFloor();
 
   attackPlayerAnim();
 
@@ -485,8 +525,12 @@ function monsterAttackTick(){
     scheduleMonsterTick();
     return;
   }
+  if(state.mode === 'towerVeryHard' && state.vhCleared){
+    scheduleMonsterTick();
+    return;
+  }
 
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = currentActiveFloor();
   const monAtk = monsterAtkFor(currentFloor, state.isBoss, state.isGolden);
   const dmgToPlayer = Math.round(Math.max(1, monAtk - s.def));
   state.playerHp -= dmgToPlayer;
@@ -510,6 +554,9 @@ function monsterAttackTick(){
     } else if(state.mode === 'towerHard'){
       state.playerHp = s.maxHp;
       log(`[무한의 탑(어려움)] 쓰러졌습니다. 현재 층(${state.htFloor}층)에 재도전합니다.`, 'warn');
+    } else if(state.mode === 'towerVeryHard'){
+      state.playerHp = s.maxHp;
+      log(`[무한의 탑(매우어려움)] 쓰러졌습니다. 현재 층(${state.vhFloor}층)에 재도전합니다.`, 'warn');
     } else {
       state.floor = Math.max(1, state.floor-1);
       state.killsOnFloor = 0;
@@ -562,10 +609,7 @@ function schedulePlayerTick(){
 
   function scheduleMonsterTick(){
   clearTimeout(monsterTickHandle);
-  const floor =
-    state.mode === 'tower'
-    ? state.towerFloor
-    : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const floor = currentActiveFloor();
   // 층이 올라갈수록 빨라짐 (최소 0.8초)
   const speed = Math.max(
     800,
@@ -592,17 +636,24 @@ function setMode(mode){
     alert('무한의 탑(어려움)은 무한의 탑(100층)을 먼저 정복해야 입장할 수 있습니다.');
     return;
   }
+  if(mode === 'towerVeryHard' && !state.htCleared){
+    alert('무한의 탑(매우어려움)은 무한의 탑(어려움·100층)을 먼저 정복해야 입장할 수 있습니다.');
+    return;
+  }
   state.mode = mode;
   document.getElementById('modeNormalBtn').classList.toggle('active', mode==='normal');
   document.getElementById('modeTowerBtn').classList.toggle('active', mode==='tower');
   const hardBtn = document.getElementById('modeTowerHardBtn');
   if(hardBtn) hardBtn.classList.toggle('active', mode==='towerHard');
+  const vhBtn = document.getElementById('modeTowerVeryHardBtn');
+  if(vhBtn) vhBtn.classList.toggle('active', mode==='towerVeryHard');
 
   document.getElementById('arenaTitle').textContent =
     mode === 'tower' ? '무한의 탑 (100층)' :
     mode === 'towerHard' ? '무한의 탑(어려움) (100층)' :
+    mode === 'towerVeryHard' ? '무한의 탑(매우어려움) (100층)' :
     '폐허';
-  log(`[모드 변경] ${mode==='tower'?'무한의 탑':mode==='towerHard'?'무한의 탑(어려움)':'라스트 존'} 모드로 전환했습니다.`, 'new');
+  log(`[모드 변경] ${mode==='tower'?'무한의 탑':mode==='towerHard'?'무한의 탑(어려움)':mode==='towerVeryHard'?'무한의 탑(매우어려움)':'라스트 존'} 모드로 전환했습니다.`, 'new');
   
   const s = stats();
   state.playerHp = s.maxHp;
@@ -614,3 +665,5 @@ document.getElementById('modeNormalBtn').addEventListener('click', ()=>setMode('
 document.getElementById('modeTowerBtn').addEventListener('click', ()=>setMode('tower'));
 const modeTowerHardBtnEl = document.getElementById('modeTowerHardBtn');
 if(modeTowerHardBtnEl) modeTowerHardBtnEl.addEventListener('click', ()=>setMode('towerHard'));
+const modeTowerVeryHardBtnEl = document.getElementById('modeTowerVeryHardBtn');
+if(modeTowerVeryHardBtnEl) modeTowerVeryHardBtnEl.addEventListener('click', ()=>setMode('towerVeryHard'));

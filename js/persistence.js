@@ -59,6 +59,7 @@ function processImportedData(jsonStr){
     state.equipPullCounts = Object.assign({t1:0,t2:0,t3:0,t4:0,t5:0}, loaded.equipPullCounts||{});
     state.towerRewardsClaimed = loaded.towerRewardsClaimed || {};
     state.htRewardsClaimed = loaded.htRewardsClaimed || {};
+    state.vhRewardsClaimed = loaded.vhRewardsClaimed || {};
     state.claimedGlobalGifts = loaded.claimedGlobalGifts || {};
     state.unlockedTitles = loaded.unlockedTitles || {};
     state.ownedCostumes = loaded.ownedCostumes || {};
@@ -70,7 +71,12 @@ function processImportedData(jsonStr){
 
     document.getElementById('modeNormalBtn').classList.toggle('active', state.mode==='normal');
     document.getElementById('modeTowerBtn').classList.toggle('active', state.mode==='tower');
-    document.getElementById('arenaTitle').textContent = state.mode === 'tower' ? '무한의 탑 (100층)' : '폐허';
+    document.getElementById('modeTowerHardBtn')?.classList.toggle('active', state.mode==='towerHard');
+    document.getElementById('modeTowerVeryHardBtn')?.classList.toggle('active', state.mode==='towerVeryHard');
+    document.getElementById('arenaTitle').textContent =
+      state.mode === 'tower' ? '무한의 탑 (100층)' :
+      state.mode === 'towerHard' ? '무한의 탑(어려움) (100층)' :
+      state.mode === 'towerVeryHard' ? '무한의 탑(매우어려움) (100층)' : '폐허';
 
     const s = stats();
     if(state.playerHp <= 0) state.playerHp = s.maxHp;
@@ -199,7 +205,7 @@ function computeOfflineProgress(){
 
   const s = stats();
   const killsPerSec = 1000/s.tickMs;
-  const currentFloor = state.mode === 'tower' ? state.towerFloor : (state.mode === 'towerHard' ? state.htFloor : state.floor);
+  const currentFloor = currentActiveFloor();
   const avgGoldPerKill = goldDropFor(currentFloor, false) * s.goldMult;
   const avgExpPerKill = expDropFor(currentFloor, false) * s.expMult;
   

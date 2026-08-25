@@ -73,7 +73,7 @@ const PETS = [
     companionStat:'goldPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${12}초마다 물자 즉시 획득 (레벨 비례)`,
     trigger:(lvl,s)=>{
-      const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : state.floor);
+      const currentFloor = currentActiveFloor();
       const g = Math.round(goldDropFor(currentFloor,false) * s.goldMult * (0.4+lvl*0.2));
       state.gold += g;
       log(`🌭 분홍소세지가 물자를 물어왔습니다! +${g}📦`, 'good');
@@ -84,7 +84,7 @@ const PETS = [
     companionStat:'expPct', companionValueFn:lvl=>Math.round(Math.min(35, 3+lvl*0.25)*10)/10,
     descFn:lvl=>`${12}초마다 경험치 즉시 획득 (레벨 비례)`,
     trigger:(lvl,s)=>{
-      const currentFloor = state.mode==='tower' ? state.towerFloor : (state.mode==='towerHard' ? state.htFloor : state.floor);
+      const currentFloor = currentActiveFloor();
       const e = Math.round(expDropFor(currentFloor,false) * s.expMult * (0.4+lvl*0.2));
       state.exp += e;
       tryLevelUp();
@@ -304,6 +304,7 @@ const TITLES = [
   {key:'title_towerClimber', name:'탑을 오르는 자', icon:'🗼', condText:'무한의 탑 50층 도달', check:s=>s.towerHighestFloor>=50, stat:'spdPct', value:2},
   {key:'title_towerConqueror', name:'탑의 정복자', icon:'👑', condText:'무한의 탑 클리어', check:s=>!!s.towerCleared, stat:'spdPct', value:5},
   {key:'title_hellWalker', name:'지옥 답파자', icon:'🔥', condText:'무한의 탑(어려움) 클리어', check:s=>!!s.htCleared, stat:'atkPct', value:12},
+  {key:'title_abyssWalker', name:'심연을 걷는 자', icon:'💀', condText:'무한의 탑(매우어려움) 클리어', check:s=>!!s.vhCleared, stat:'critAdd', value:8},
   {key:'title_judge', name:'심판자', icon:'⚖️', condText:'1인 레이드 15회 클리어', check:s=>(s.raidClearCount||0)>=15, stat:'critDmgAdd', value:6},
   {key:'title_goldHoarder', name:'물자 수집광', icon:'📦', condText:'물자 구역 완전 정복', check:s=>!!s.gdCleared, stat:'goldPct', value:5},
   {key:'title_relicSeeker', name:'유산 탐구자', icon:'🔍', condText:'유산 구역 완전 정복', check:s=>!!s.rdCleared, stat:'dropAdd', value:2},

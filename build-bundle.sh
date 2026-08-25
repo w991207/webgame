@@ -37,7 +37,6 @@ BUNDLE1_FILES=(
   js/trainingdungeon.js
   js/territory.js
   js/ui-render.js
-  js/worldmap.js
   js/shop.js
   js/relics-pets.js
   js/killpass.js
