@@ -142,7 +142,7 @@ function pullEquipment(tierKey, slot){
   const item = rollEquipment(slot, tierKey);
   state.equipInventory.push(item);
   const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
-  const cls = (item.rarity === 'epic' || item.rarity === 'legendary' || item.rarity === 'mythic') ? 'good' : undefined;
+  const cls = (item.rarity === 'epic' || item.rarity === 'legendary' || item.rarity === 'mythic' || item.rarity === 'transcendent') ? 'good' : undefined;
   log(`🎰 장비 뽑기: [${rarity.name}] ${equipSlotName(slot)} 획득 — ${equipItemLabel(item)}`, cls);
   renderAll();
 }
@@ -153,8 +153,8 @@ function pullEquipmentMulti(tierKey, slot, n){
   const totalCost = equipMultiPullCost(tierKey, n);
   if(state.gold < totalCost) return;
   state.gold -= totalCost;
-  const rarityOrder = ['common', 'rare', 'epic', 'legendary', 'mythic'];
-  const counts = {common:0, rare:0, epic:0, legendary:0, mythic:0};
+  const rarityOrder = ['common', 'rare', 'epic', 'legendary', 'mythic', 'transcendent'];
+  const counts = {common:0, rare:0, epic:0, legendary:0, mythic:0, transcendent:0};
   let bestRarity = 'common';
   for(let i = 0; i < n; i++){
     state.equipPullCounts[tierKey] = (state.equipPullCounts[tierKey] || 0) + 1;
@@ -164,7 +164,7 @@ function pullEquipmentMulti(tierKey, slot, n){
     if(rarityOrder.indexOf(item.rarity) > rarityOrder.indexOf(bestRarity)) bestRarity = item.rarity;
   }
   const summary = EQUIP_RARITIES.filter(r => counts[r.key] > 0).map(r => `${r.name} x${counts[r.key]}`).join(', ');
-  const cls = (bestRarity === 'epic' || bestRarity === 'legendary' || bestRarity === 'mythic') ? 'good' : undefined;
+  const cls = (bestRarity === 'epic' || bestRarity === 'legendary' || bestRarity === 'mythic' || bestRarity === 'transcendent') ? 'good' : undefined;
   log(`🎰 ${n}연 장비 뽑기 (${equipSlotName(slot)}): ${summary}`, cls);
   renderAll();
 }
@@ -203,7 +203,7 @@ function sellEquipment(id){
 
 // 미장착 장비를 등급 단위로 한 번에 정리. 전설·신화 등급은 실수로 한꺼번에 팔리지 않도록 제외(개별 판매만 가능).
 function sellEquipmentByRarity(rarityKey){
-  if(rarityKey === 'legendary' || rarityKey === 'mythic') return;
+  if(rarityKey === 'mythic' || rarityKey === 'transcendent') return;
   const items = state.equipInventory.filter(i => i.rarity === rarityKey);
   if(items.length === 0) return;
   const rarity = EQUIP_RARITIES.find(r => r.key === rarityKey);
@@ -317,9 +317,9 @@ function renderEquipment(){
       invActions.style.display = 'none';
       invActions.innerHTML = '';
     } else {
-      const counts = {common:0, rare:0, epic:0, legendary:0, mythic:0};
+      const counts = {common:0, rare:0, epic:0, legendary:0, mythic:0, transcendent:0};
       state.equipInventory.forEach(i => counts[i.rarity]++);
-      const sellable = EQUIP_RARITIES.filter(r => r.key !== 'legendary' && r.key !== 'mythic' && counts[r.key] > 0);
+      const sellable = EQUIP_RARITIES.filter(r => r.key !== 'mythic' && r.key !== 'transcendent' && counts[r.key] > 0);
       if(sellable.length === 0){
         invActions.style.display = 'none';
         invActions.innerHTML = '';
@@ -340,7 +340,7 @@ function renderEquipment(){
       if(state.equipInventory.length === 0){
         grid.innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:6px 2px;">보유한 미장착 장비가 없습니다.</div>';
       } else {
-        const rarityRank = {mythic:4, legendary:3, epic:2, rare:1, common:0};
+        const rarityRank = {transcendent:5, mythic:4, legendary:3, epic:2, rare:1, common:0};
         const sorted = [...state.equipInventory].sort((a, b) => {
           const rd = rarityRank[b.rarity] - rarityRank[a.rarity];
           if(rd !== 0) return rd;

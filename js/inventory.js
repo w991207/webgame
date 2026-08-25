@@ -28,7 +28,7 @@ document.getElementById('inventoryModal')?.addEventListener('click', (e) => {
 });
 
 document.getElementById('invSortBtn')?.addEventListener('click', () => {
-  const rarityRank = {mythic:4, legendary:3, epic:2, rare:1, common:0};
+  const rarityRank = {transcendent:5, mythic:4, legendary:3, epic:2, rare:1, common:0};
   state.equipInventory.sort((a, b) => {
     const rd = rarityRank[b.rarity] - rarityRank[a.rarity];
     if(rd !== 0) return rd;

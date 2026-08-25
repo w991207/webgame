@@ -992,6 +992,7 @@
   .rarity-epic{border-color:#b968e0;}
   .rarity-legendary{border-color:var(--gold);}
   .rarity-mythic{border-color:#ff4fd8;box-shadow:0 0 8px rgba(255,79,216,.35);}
+  .rarity-transcendent{border-color:#7affc0;box-shadow:0 0 10px rgba(122,255,192,.45);}
 
   .enhance-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
   .enhance-card{

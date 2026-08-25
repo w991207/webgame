@@ -369,7 +369,7 @@ const RAID_GEAR = [
   {key:'raidWeapon', name:'파멸의 파편검', icon:'🗡️', img:SLOT_IMG.weapon, perLevel:6, maxLevel:20, descFn:v=>`공격력 +${v}%`},
   {key:'raidArmor', name:'심연의 갑주', icon:'🛡️', img:SLOT_IMG.armor, perLevel:6, maxLevel:20, descFn:v=>`방어력 +${v}%`},
   {key:'raidCrown', name:'파멸의 왕관', icon:'👑', img:SLOT_IMG.crown, perLevel:5, maxLevel:20, descFn:v=>`최대 체력 +${v}%`},
-  {key:'raidRing', name:'천공의 인장', icon:'💍', img:SLOT_IMG.ring, perLevel:4, maxLevel:20, descFn:v=>`물자/경험치 획득 +${v}%`},
+  {key:'raidRing', name:'천공의 인장', icon:'💍', img:SLOT_IMG.ring, perLevel:2, maxLevel:20, descFn:v=>`명중 +${v}`},
 ];
 
 // 레이드 장비 제작 성공 확률표 (강화석 강화와 달리 실패해도 장비가 파괴/하락하지 않고 재료만 소모됨 —
@@ -399,6 +399,7 @@ const EQUIP_RARITIES = [
   {key:'epic',      name:'영웅', color:'#b968e0', mainMin:26, mainMax:40,  accMainMin:9,  accMainMax:14, subMin:7,  subMax:12, sellBase:35000},
   {key:'legendary', name:'전설', color:'#e8a33d', mainMin:42, mainMax:65,  accMainMin:15, accMainMax:23, subMin:13, subMax:20, sellBase:250000},
   {key:'mythic',    name:'신화', color:'#ff4fd8', mainMin:68, mainMax:100, accMainMin:24, accMainMax:35, subMin:22, subMax:32, sellBase:1800000},
+  {key:'transcendent', name:'초월', color:'#7affc0', mainMin:105, mainMax:150, accMainMin:38, accMainMax:54, subMin:35, subMax:50, sellBase:12000000},
 ];
 
 const WEAPON_SUBSTATS = [
@@ -425,7 +426,8 @@ const GACHA_TIERS = [
   {key:'t2', name:'중급 뽑기', baseCost:80000,    costMult:1.03,  weights:{common:35, rare:45, epic:19, legendary:1,  mythic:0}, unlockReq:{tier:'t1', count:30}},
   {key:'t3', name:'고급 뽑기', baseCost:600000,   costMult:1.035, weights:{common:10, rare:39, epic:47, legendary:4,  mythic:0}, unlockReq:{tier:'t2', count:30}},
   {key:'t4', name:'전설 뽑기', baseCost:4000000,  costMult:1.04,  weights:{common:0,  rare:20, epic:72, legendary:8,  mythic:0}, unlockReq:{tier:'t3', count:20}},
-  {key:'t5', name:'신화 뽑기', baseCost:30000000, costMult:1.045, weights:{common:0,  rare:0,  epic:25, legendary:65, mythic:10}, unlockReq:{tier:'t4', count:25}},
+  {key:'t5', name:'신화 뽑기', baseCost:30000000, costMult:1.045, weights:{common:0,  rare:0,  epic:25, legendary:65, mythic:10, transcendent:0}, unlockReq:{tier:'t4', count:25}},
+  {key:'t6', name:'초월 뽑기', baseCost:250000000, costMult:1.05,  weights:{common:0,  rare:0,  epic:0,  legendary:20, mythic:70, transcendent:10}, unlockReq:{tier:'t5', count:25}},
 ];
 
 // ---------- ⚔️ 몬스터 처치 패스 ----------
