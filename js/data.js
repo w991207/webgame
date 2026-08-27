@@ -340,6 +340,16 @@ const COSTUMES = [
     cost: 100000000000, desc:'전신이 순금으로 화한 신화 속 존재의 갑주. 존재 자체가 압도적인 부와 힘의 상징.',
     stats:{atkPct:12, defPct:12, hpPct:12},
   },
+  {
+    key:'jungleBrawler', name:'정글 몽둥이 삼촌', icon:'🌴', img:'image/costumes/jungleBrawler.png',
+    cost: 2000000000, desc:'선글라스와 몽둥이만 있으면 어디든 정글이 되는 야생의 사나이.',
+    stats:{atkPct:4, hpPct:4},
+  },
+  {
+    key:'chickenWarrior', name:'치킨 용사', icon:'🍗', img:'image/costumes/chickenWarrior.png',
+    cost: 50000000000, desc:'한 손엔 검, 한 손엔 통닭. 배고픔과 적을 동시에 처치하는 용사.',
+    stats:{atkPct:8, critAdd:3, goldPct:5},
+  },
 ];
 
 const SOUL_UPGRADES = [

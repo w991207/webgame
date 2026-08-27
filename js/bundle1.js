@@ -94,7 +94,6 @@
   else document.addEventListener('DOMContentLoaded', init);
 })();
 
-
 // ===== js/patch.js =====
 let latestPatch = null;
 
@@ -181,7 +180,6 @@ checkPatch();
 //  유저가 많아서 Vercel 엣지 요청량을 순식간에 잡아먹는 원인이 됐음. 패치 알림은
 //  몇 분 늦게 떠도 큰 문제가 없으니 주기를 크게 늘려서 요청 횟수를 18배 줄인다.)
 setInterval(checkPatch, 180000);
-
 // ===== js/storage.js =====
 const STORAGE_KEY = 'twilight-corridor-save-v2';
 const LOCAL_PREFIX = 'twilight-corridor-';
@@ -220,7 +218,6 @@ async function storageSet(key, value, force){
 
   return localSuccess ? {key, value, shared:false} : null;
 }
-
 
 // ===== js/data.js =====
 const MONSTERS = [
@@ -565,6 +562,16 @@ const COSTUMES = [
     cost: 100000000000, desc:'전신이 순금으로 화한 신화 속 존재의 갑주. 존재 자체가 압도적인 부와 힘의 상징.',
     stats:{atkPct:12, defPct:12, hpPct:12},
   },
+  {
+    key:'jungleBrawler', name:'정글 몽둥이 삼촌', icon:'🌴', img:'image/costumes/jungleBrawler.png',
+    cost: 2000000000, desc:'선글라스와 몽둥이만 있으면 어디든 정글이 되는 야생의 사나이.',
+    stats:{atkPct:4, hpPct:4},
+  },
+  {
+    key:'chickenWarrior', name:'치킨 용사', icon:'🍗', img:'image/costumes/chickenWarrior.png',
+    cost: 50000000000, desc:'한 손엔 검, 한 손엔 통닭. 배고픔과 적을 동시에 처치하는 용사.',
+    stats:{atkPct:8, critAdd:3, goldPct:5},
+  },
 ];
 
 const SOUL_UPGRADES = [
@@ -690,7 +697,6 @@ const ATTENDANCE_REWARDS = [
     { type:"pet", amount:1,    text:"🐾 펫 소환 1회" },
     { type:"both", amount:100, mut:240, text:"🧪 혈청 100 + 🧬 적응 포인트 240" }
 ];
-
 // ===== js/bestiary.js =====
 // ---------- 몬스터 도감 (Bestiary) ----------
 // MONSTERS/BOSSES/TOWER_MONSTERS(js/data.js)를 그룹별로 묶어서 도감 UI에 쓴다.
@@ -760,7 +766,6 @@ function renderBestiary(){
   });
   el.innerHTML = html;
 }
-
 
 // ===== js/mutation.js =====
 // ---------- 돌연변이 각성 (Mutation Awakening) ----------
@@ -976,7 +981,6 @@ function renderMutationTree(){
     btn.addEventListener('click', ()=>buyMutationNode(btn.dataset.key));
   });
 }
-
 
 // ===== js/job.js =====
 // ---------- 전직 (Job Class) ----------
@@ -1261,7 +1265,6 @@ function renderJobMasteryPanel(){
   });
 }
 
-
 // ===== js/titles.js =====
 // ---------- Titles (칭호) ----------
 // 조건을 달성하면 영구 해금되며, 해금한 칭호는 전부 동시에 효과가 적용됨(보유효과).
@@ -1350,7 +1353,6 @@ function renderTitles(){
     btn.addEventListener('click', ()=>equipTitle(btn.dataset.key));
   });
 }
-
 
 // ===== js/costumes.js =====
 // ---------- Costumes (코스튬) ----------
@@ -1466,7 +1468,6 @@ function renderCostumeGrid(){
     btn.addEventListener('click', () => equipCostume(btn.dataset.key));
   });
 }
-
 
 // ===== js/state.js =====
 // 세이브 데이터 버전. 이 값을 올리면 그보다 낮은 버전의 세이브(자동 로드 + 가져오기 모두)가
@@ -1874,7 +1875,6 @@ function tryLevelUp(){
     needed = expNeeded(state.level);
   }
 }
-
 // ===== js/combat.js =====
 // 일반모드(폐허) 전용 고층 난이도 보정.
 // 1~999층은 기존과 동일(배율 1배), 1000층마다 한 단계씩 아래 배율만큼 몬스터 전체 스탯이
@@ -2588,7 +2588,6 @@ const modeTowerHardBtnEl = document.getElementById('modeTowerHardBtn');
 if(modeTowerHardBtnEl) modeTowerHardBtnEl.addEventListener('click', ()=>setMode('towerHard'));
 const modeTowerVeryHardBtnEl = document.getElementById('modeTowerVeryHardBtn');
 if(modeTowerVeryHardBtnEl) modeTowerVeryHardBtnEl.addEventListener('click', ()=>setMode('towerVeryHard'));
-
 // ===== js/skills.js =====
 // ---------- 액티브 스킬 (자동 발동) ----------
 // 🧪 혈청으로 습득/강화하는 액티브 스킬. 각 스킬은 배우는 즉시 자신만의 쿨타임마다
@@ -2902,7 +2901,6 @@ function renderSkillsPanel(){
     btn.addEventListener('click', ()=>buySkill(btn.dataset.key));
   });
 }
-
 
 // ===== js/equipment.js =====
 // ---------- Equipment (장비 뽑기 시스템) ----------
@@ -3276,7 +3274,6 @@ function renderEquipment(){
   }
 }
 
-
 // ===== js/inventory.js =====
 // ---------- 인벤토리(상태창) 모달 ----------
 // 모험가 패널의 "🎒 인벤토리" 버튼으로 열리는 상태창. 기본 장비(무기/방어구/장신구) 3부위는
@@ -3420,7 +3417,6 @@ function renderInventoryModal(){
   }
 }
 
-
 // ===== js/potions.js =====
 // ---------- 물약 상점 (일시적 버프) ----------
 // 물자획득/경험치획득처럼 전역 상한(GOLD_MULT_CAP 등)이 걸린 스탯은 강화를 다 채운 유저에겐
@@ -3551,7 +3547,6 @@ function renderPotionShop(){
     btn.addEventListener('click', ()=>buyPotion(btn.dataset.key));
   });
 }
-
 
 // ===== js/enhance.js =====
 // ---------- 장비 강화 (Enhance) ----------
@@ -3815,7 +3810,6 @@ function renderEnhancePanel(){
   });
 }
 
-
 // ===== js/goods-shop.js =====
 // ---------- 잡화 상점 (레이드 입장권 + 강화 주문서) ----------
 // 물자(gold)로 구매하는 소모품 상점. 레이드 입장권은 자연 충전(1시간당 1개, 최대 3개)과 별개로
@@ -3909,7 +3903,6 @@ function renderEnhanceScrollShop(){
     btn.addEventListener('click', () => buyEnhanceScroll(btn.dataset.key));
   });
 }
-
 
 // ===== js/raid.js =====
 // ---------- Raid (1인 레이드) ----------
@@ -4186,7 +4179,6 @@ setInterval(()=>{
   renderRaidPanel();
 }, 1000);
 
-
 // ===== js/golden.js =====
 // ---------- 황금 몬스터 (레어 강화 조우) ----------
 // 아주 낮은 확률로 화면 위에 반짝이는 황금 몬스터 표식이 잠깐 나타난다.
@@ -4313,7 +4305,6 @@ function awardGoldenKillBonus(currentFloor, s){
 }
 
 document.getElementById('goldenMonster')?.addEventListener('click', clickGoldenMonster);
-
 
 // ===== js/golddungeon.js =====
 // ---------- Gold Dungeon (물자 구역) ----------
@@ -4514,7 +4505,6 @@ setInterval(()=>{
   renderGoldDungeonPanel();
 }, 1000);
 
-
 // ===== js/relicdungeon.js =====
 // ---------- Relic Dungeon (유산 구역) ----------
 // 물자 구역과 동일한 구조(티켓제, 10층, 고정 스탯 전투)지만 보상이 물자 대신 유산 파편입니다.
@@ -4709,7 +4699,6 @@ setInterval(()=>{
   refreshRelicDungeonTickets();
   renderRelicDungeonPanel();
 }, 1000);
-
 
 // ===== js/forgedungeon.js =====
 // ---------- Forge Dungeon (단조 구역) ----------
@@ -4907,7 +4896,6 @@ setInterval(()=>{
   renderForgeDungeonPanel();
 }, 1000);
 
-
 // ===== js/trainingdungeon.js =====
 // ---------- Training Dungeon (수련 구역) ----------
 // 물자/유산 구역과 동일한 구조(티켓제, 10층, 고정 스탯 전투)지만 보상이 확정 경험치입니다.
@@ -5102,7 +5090,6 @@ setInterval(()=>{
   refreshTrainingDungeonTickets();
   renderTrainingDungeonPanel();
 }, 1000);
-
 
 // ===== js/territory.js =====
 // ---------- 영지 (Territory) ----------
@@ -5339,7 +5326,6 @@ function renderTerritoryPanel(){
 document.getElementById('territoryBuildGoldBtn')?.addEventListener('click', ()=>expandTerritorySlot('gold'));
 document.getElementById('territoryBuildFragBtn')?.addEventListener('click', ()=>expandTerritorySlot('fragment'));
 document.getElementById('territoryBuildSoulBtn')?.addEventListener('click', ()=>expandTerritorySlot('soul'));
-
 
 // ===== js/ui-render.js =====
 // ---------- Rendering ----------
@@ -5581,7 +5567,6 @@ function setTabBadge(id, count){
 
 
 
-
 // ===== js/shop.js =====
 let shopBuyMultiplier = 1;
 document.querySelectorAll('.buy-mult-btn').forEach(btn=>{
@@ -5726,7 +5711,6 @@ function renderSoulShop(){
     if(btn.textContent !== label) btn.textContent = label;
   });
 }
-
 // ===== js/relics-pets.js =====
 // ---------- Relics ----------
 function relicPullCost(){
@@ -5912,7 +5896,6 @@ function petTick(){
 }
 
 
-
 // ===== js/killpass.js =====
 // ---------- ⚔️ 몬스터 처치 패스 ----------
 // 누적 처치(state.totalKills) 기준으로 KILL_PASS_TIERS를 순서대로 하나씩만 수령할 수 있는
@@ -6064,7 +6047,6 @@ document.getElementById('killPassTrack')?.addEventListener('click', (e)=>{
   const claimed = state.killPassClaimed || 0;
   if(tier === claimed + 1) claimKillPassTier();
 });
-
 
 // ===== js/pet-shelter.js =====
 // ---------- 동료 쉼터 (Pet Shelter) ----------
@@ -6227,7 +6209,6 @@ function wanderPetShelter(){
     el.style.top = nextTop + '%';
   });
 }
-
 
 // ===== js/expedition.js =====
 // ---------- 원정대 (Expedition) ----------
@@ -6490,7 +6471,6 @@ function renderExpeditionPanel(){
     btn.addEventListener('click', () => dispatchExpedition(btn.dataset.mission, btn.dataset.pet));
   });
 }
-
 
 // ===== js/quests.js =====
 // ---------- Quests & Achievements ----------
@@ -6854,7 +6834,6 @@ function openRebirthHistory(){
 document.getElementById('rebirthHistoryBtn')?.addEventListener('click', openRebirthHistory);
 
 
-
 // ===== js/attendance.js =====
 function isSameDay(a,b){
 
@@ -6975,7 +6954,6 @@ saveState(true);
 document
 .getElementById("attendanceBtn")
 .onclick=claimAttendance;
-
 // ===== js/persistence.js =====
 document.getElementById('saveBtn').addEventListener('click', ()=>{ saveState(true); });
 document.getElementById('resetBtn').addEventListener('click', async ()=>{
@@ -7226,4 +7204,3 @@ document.getElementById('offlineCloseBtn').addEventListener('click', ()=>{
   document.getElementById('offlineModal').style.display = 'none';
   renderAll();
 });
-

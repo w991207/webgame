@@ -25,7 +25,6 @@ firebase.initializeApp(firebaseConfig);
 const fbAuth = firebase.auth();
 const fbDb = firebase.firestore();
 
-
 // ===== js/auth.js =====
 // ---------- Auth (Firebase 로그인 시스템) ----------
 // 전략: 모든 방문자를 즉시 '익명(Anonymous) 로그인' 시켜 Firebase uid를 부여한다.
@@ -449,7 +448,6 @@ async function handleReauthAndRetryDelete(user){
   }
 }
 
-
 // ===== js/ranking.js =====
 // ---------- Ranking (랭킹 시스템) ----------
 // rankings/{uid} 문서에 닉네임/전투력/최고층을 올리고, 전투력 내림차순 상위 50명을 보여준다.
@@ -544,7 +542,6 @@ async function fetchRanking(){
 }
 
 document.getElementById('rankingRefreshBtn')?.addEventListener('click', fetchRanking);
-
 
 // ===== js/plaza.js =====
 // ---------- Plaza (광장: 실시간 접속자 목록 + 채팅) ----------
@@ -743,7 +740,6 @@ document.getElementById('plazaChatInput')?.addEventListener('keydown', (e) => {
 // 페이지를 완전히 벗어날 때 리스너 정리(안 해도 브라우저가 정리하지만 명시적으로 닫아준다)
 window.addEventListener('beforeunload', plazaLeave);
 
-
 // ===== js/pvp.js =====
 // ---------- PvP (랭킹 상대와 1대1 모의전투) ----------
 // 실시간 대전이 아니라, 상대의 최근 랭킹 스탯 스냅샷(rankings/{uid})을 가져와
@@ -878,7 +874,6 @@ function renderPvpRecord(){
   if(!el) return;
   el.textContent = `⚔️ 내 PvP 전적 ${state.pvpWins||0}승 ${state.pvpLosses||0}패 · 🎖️ 명예 ${(state.pvpHonor||0).toLocaleString()}`;
 }
-
 
 // ===== js/worldboss.js =====
 // ---------- 월드보스 ----------
@@ -1380,7 +1375,6 @@ setInterval(()=>{
   if(!worldBossUnlocked()) return;
   renderWorldBossPanel();
 }, 1000);
-
 // ===== js/tabs.js =====
 // ---------- 탭 네비게이션 ----------
 // 기능이 계속 추가되면서 한 페이지에 패널이 너무 많이 쌓여 스크롤이 길어지는 문제를 해결하기 위해
@@ -1421,7 +1415,6 @@ document.querySelectorAll('.local-subtab-btn').forEach(btn=>{
     });
   });
 });
-
 
 // ===== js/gifts.js =====
 // ---------- 선물함 (관리자 지급 보상) ----------
@@ -1598,7 +1591,6 @@ setInterval(()=>{
   }
 }, 60000);
 
-
 // ===== js/main.js =====
 // ---------- Init ----------
 async function init(){
@@ -1678,5 +1670,4 @@ async function init(){
 function startGame(){
   init();
 }
-
 
