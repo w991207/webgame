@@ -87,8 +87,12 @@ function buyPotion(key){
 
   state.gold -= POTION_COST;
   if(!state.activeBuffs) state.activeBuffs = {};
-  // 다시 사면 값이 중첩되는 게 아니라 지속시간만 갱신(리필)된다 — 중첩 구매로 무한정 강해지는 것 방지.
-  state.activeBuffs[p.key] = {stat: p.stat, value: p.value, expiresAt: Date.now() + POTION_DURATION_MS};
+  // 같은 물약을 여러 번 사면 값(스탯)은 중첩되지 않고 지속시간만 누적 연장된다.
+  // 활성 중인 버프가 있으면 남은 시간 위에 15분을 더해 연장하고, 없으면 새로 시작.
+  // (값만 중첩되면 무한대로 강해지니 방지, 시간만 누적되어도 안전.)
+  const existing = state.activeBuffs[p.key];
+  const baseTime = (existing && existing.expiresAt > Date.now()) ? existing.expiresAt : Date.now();
+  state.activeBuffs[p.key] = {stat: p.stat, value: p.value, expiresAt: baseTime + POTION_DURATION_MS};
 
   log(`🧪 ${p.name}을(를) 마셨습니다! ${p.desc}`, 'good');
   renderAll();
