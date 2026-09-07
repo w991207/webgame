@@ -4,6 +4,7 @@ document.querySelectorAll('.buy-mult-btn').forEach(btn=>{
     shopBuyMultiplier = parseInt(btn.dataset.mult, 10);
     document.querySelectorAll('.buy-mult-btn').forEach(b=>b.classList.toggle('active', b===btn));
     renderShop();
+    renderSoulShop();
   });
 });
 
@@ -90,6 +91,13 @@ function soulUpgradeCost(u, lvl){
   return lvl+2;
 }
 
+// 혈청 강화 다중 구매 총 비용 (레벨이 오를수록 +1씩 증가하는 선형 비용 기준).
+// 등차수열 합: 각 레벨 비용 = lvl+2, startLvl~startLvl+n-1 레벨을 한 번에 구매.
+function bulkSoulCost(startLvl, n){
+  if(n <= 0) return 0;
+  return Math.round(n * (2 * startLvl + n + 3) / 2);
+}
+
 function renderSoulShop(){
   const container = document.getElementById('soulShopList');
 
@@ -113,11 +121,13 @@ function renderSoulShop(){
       const btn = row.querySelector('button');
       btn.addEventListener('click', ()=>{
         if(u.capStat && isUpgradeStatMaxed(u.capStat)) return; // 이미 캡 도달 — 구매 차단
-        const cost = soulUpgradeCost(u, state.soulUpgrades[u.key]);
-        if(state.soul >= cost){
-          state.soul -= cost;
-          state.soulUpgrades[u.key]++;
-          log(`${u.name} 영구 강화! (Lv.${state.soulUpgrades[u.key]})`, 'good');
+        const startLvl = state.soulUpgrades[u.key];
+        const n = shopBuyMultiplier;
+        const totalCost = bulkSoulCost(startLvl, n);
+        if(state.soul >= totalCost){
+          state.soul -= totalCost;
+          state.soulUpgrades[u.key] = startLvl + n;
+          log(`${u.name} 영구 강화! +${n} (Lv.${state.soulUpgrades[u.key]})`, 'good');
           renderAll();
         }
       });
@@ -128,15 +138,16 @@ function renderSoulShop(){
     const row = container.querySelector(`.shop-item[data-key="${u.key}"]`);
     if(!row) return;
     const lvl = state.soulUpgrades[u.key];
-    const cost = soulUpgradeCost(u, lvl);
+    const n = shopBuyMultiplier;
+    const totalCost = bulkSoulCost(lvl, n);
     const statMaxed = !!(u.capStat && isUpgradeStatMaxed(u.capStat));
 
     row.querySelector('.uname').textContent = u.name;
     row.querySelector('.lvl-tag').textContent = `Lv.${lvl}`;
 
     const btn = row.querySelector('button');
-    const label = statMaxed ? '상한 도달 (효과없음)' : `${cost.toLocaleString()} 🧪`;
-    const disabled = statMaxed || state.soul < cost;
+    const label = statMaxed ? '상한 도달 (효과없음)' : `${totalCost.toLocaleString()} 🧪 (x${n})`;
+    const disabled = statMaxed || state.soul < totalCost;
     if(btn.disabled !== disabled) btn.disabled = disabled;
     if(btn.textContent !== label) btn.textContent = label;
   });
