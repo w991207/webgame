@@ -17,6 +17,7 @@ BUNDLE1_FILES=(
   js/storage.js
   js/data.js
   js/bestiary.js
+  js/cards.js
   js/mutation.js
   js/job.js
   js/titles.js

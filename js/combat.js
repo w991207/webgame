@@ -412,6 +412,11 @@ function dealDamageToMonster(dmgToMonster, isCrit, opts){
       recordBestiaryKill(currentMonsterMeta(), goldGain);
     }
 
+    // 몬스터 카드 드랍 판정 (cards.js — 처치한 몬스터에 대응하는 카드가 확률적으로 드랍됨)
+    if(typeof recordCardDrop === 'function'){
+      recordCardDrop(currentMonsterMeta());
+    }
+
     if(golden && typeof awardGoldenKillBonus === 'function'){
       awardGoldenKillBonus(currentFloor, s);
     }

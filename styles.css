@@ -529,6 +529,54 @@
     color:var(--text-dim);
   }
 
+  /* ---------- 몬스터 카드 (cards.js) ---------- */
+  .cards-intro{ font-size:11px; color:var(--text-dim); line-height:1.5; margin:4px 0 10px; }
+  .card-deck-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:8px; }
+  .card-slot{
+    background:rgba(0,0,0,.25);
+    border:1px dashed rgba(224,129,47,.3);
+    border-radius:8px;
+    padding:8px 4px;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    min-height:84px; justify-content:center;
+  }
+  .card-slot.filled{ border-style:solid; }
+  .card-slot-emoji{ font-size:22px; line-height:1; }
+  .card-slot-name{
+    font-size:10px; color:#f5e8c8;
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .card-slot-lvl{ font-family:'JetBrains Mono',monospace; font-size:9px; }
+  .card-deck-btn{
+    margin-top:3px; font-size:10px; padding:2px 10px;
+    background:rgba(224,129,47,.15); color:var(--gold);
+    border:1px solid rgba(224,129,47,.4); border-radius:6px; cursor:pointer;
+  }
+  .card-deck-btn:hover{ background:rgba(224,129,47,.3); }
+  .card-deck-bonus{ font-size:11px; color:var(--gold); margin-bottom:10px; min-height:14px; line-height:1.5; }
+  .cards-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(96px, 1fr)); gap:8px; }
+  .monster-card{
+    background:rgba(0,0,0,.25);
+    border:1px solid rgba(224,129,47,.18);
+    border-radius:8px;
+    padding:8px 6px;
+    text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+  }
+  .monster-card.owned{ border-color:rgba(224,129,47,.4); }
+  .monster-card.in-deck{ box-shadow:0 0 0 1px rgba(255,200,60,.55), 0 0 10px rgba(255,200,60,.22); }
+  .monster-card.unknown{ opacity:.55; }
+  .monster-card-emoji{ font-size:26px; line-height:1; }
+  .monster-card-img{ width:32px; height:32px; object-fit:contain; }
+  .monster-card-rarity{ font-size:9px; font-weight:700; letter-spacing:.5px; }
+  .monster-card-name{
+    font-size:10px; color:#f5e8c8;
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .monster-card-count{ font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--text-dim); }
+  .monster-card-bonus{ font-size:9px; color:var(--gold); }
+  .monster-card .card-deck-btn{ margin-top:2px; }
+
   .golden-monster{
     position:absolute;
     z-index:25;
