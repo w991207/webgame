@@ -5809,6 +5809,20 @@ function updateTabBadges(){
     (state.tdTicket||0) >= (typeof TRAINING_DUNGEON_TICKET_MAX !== 'undefined' ? TRAINING_DUNGEON_TICKET_MAX : 3),
   ].filter(Boolean).length;
   setTabBadge('tabNotifyDungeon', fullTickets);
+
+  // 카드: 덱에 빈 슬롯이 있는데 아직 장착하지 않은 보유 카드가 있으면 알려준다.
+  //   (빈 슬롯 수와 "덱에 없는 보유 카드 종류 수" 중 작은 값 — 카드를 다 채우면 배지가 사라진다)
+  let cardNotify = 0;
+  if(typeof cardCollectionCounts === 'function'){
+    const counts = cardCollectionCounts();
+    const deck = Array.isArray(state.cardDeck) ? state.cardDeck.filter(k => (counts[k]||0) > 0) : [];
+    const emptySlots = Math.max(0, 3 - deck.length);
+    if(emptySlots > 0){
+      const available = Object.keys(counts).filter(k => (counts[k]||0) > 0 && !deck.includes(k)).length;
+      cardNotify = Math.min(emptySlots, available);
+    }
+  }
+  setTabBadge('tabNotifyCards', cardNotify);
 }
 
 function setTabBadge(id, count){

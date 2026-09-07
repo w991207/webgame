@@ -213,6 +213,7 @@
     <button class="tab-nav-btn" data-tab="tab-territory">🏰 영지<span class="tab-badge" id="tabNotifyTerritory" style="display:none;"></span></button>
     <button class="tab-nav-btn" data-tab="tab-dungeon">🏚️ 구역<span class="tab-badge" id="tabNotifyDungeon" style="display:none;"></span></button>
     <button class="tab-nav-btn" data-tab="tab-event">🎁 이벤트</button>
+    <button class="tab-nav-btn" data-tab="tab-cards">🃏 카드<span class="tab-badge" id="tabNotifyCards" style="display:none;"></span></button>
     <button class="tab-nav-btn" data-tab="tab-plaza" id="plazaTabBtn">🌐 광장</button>
     <button class="tab-nav-btn" data-tab="tab-account">👤 계정</button>
   </div>
@@ -611,7 +612,9 @@
     <h2>📖 몬스터 도감 <span id="bestiaryCountText" style="font-size:12px;color:var(--text-dim);font-weight:400;"></span></h2>
     <div id="bestiaryGrid"></div>
   </div>
+  </div><!-- /tab-event -->
 
+  <div class="tab-content" id="tab-cards" style="display:none;">
   <div class="panel bestiary-panel">
     <h2>🃏 몬스터 카드 <span id="cardsCountText" style="font-size:12px;color:var(--text-dim);font-weight:400;"></span></h2>
     <p class="cards-intro">몬스터를 처치하면 일정 확률로 카드가 드랍됩니다. 중복 카드로 카드가 성장하고, 덱(3슬롯)에 장착하면 영구 스탯 보너스를 얻습니다. 같은 등급 3장을 장착하면 세트 보너스 효과 ×1.25!</p>
@@ -619,7 +622,7 @@
     <div class="card-deck-bonus" id="cardDeckBonusText"></div>
     <div id="cardsGrid" class="cards-grid"></div>
   </div>
-  </div><!-- /tab-event -->
+  </div><!-- /tab-cards -->
 
   <div class="tab-content" id="tab-plaza" style="display:none;">
   <div class="panel plaza-panel">
