@@ -3,7 +3,7 @@
 // 정적 리소스는 방문 시점에 캐시해두고, 다음 요청부터는 네트워크 우선 + 실패 시 캐시로 대체한다.
 // (patch.json 등 실시간으로 바뀌어야 하는 파일은 네트워크가 살아있으면 항상 최신을 받는다)
 
-const CACHE_NAME = 'lastzone-cache-v1';
+const CACHE_NAME = 'lastzone-cache-v2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

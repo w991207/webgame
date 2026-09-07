@@ -48,11 +48,11 @@ function renderSoulPackShop(){
 }
 
 const POTIONS = [
-  {key:'atk', name:'맹공의 물약', icon:'⚔️', stat:'atkPct', value:50, unit:'%', desc:`${POTION_DURATION_MIN}분간 공격력 +50%`},
-  {key:'def', name:'철벽의 물약', icon:'🛡️', stat:'defPct', value:50, unit:'%', desc:`${POTION_DURATION_MIN}분간 방어력 +50%`},
-  {key:'hp', name:'활력의 물약', icon:'❤️', stat:'hpPct', value:50, unit:'%', desc:`${POTION_DURATION_MIN}분간 최대 체력 +50%`},
-  {key:'critDmg', name:'파괴의 물약', icon:'💥', stat:'critDmgAdd', value:40, unit:'%p', desc:`${POTION_DURATION_MIN}분간 치명타 피해 +40%p`},
-  {key:'accuracy', name:'집중의 물약', icon:'🎯', stat:'accuracyAdd', value:30, unit:'', desc:`${POTION_DURATION_MIN}분간 명중 +30`},
+  {key:'atk', name:'맹공의 물약', icon:'⚔️', stat:'atkPct', value:50, unit:'%', desc:`${POTION_DURATION_MIN}분간 공격력 +50% (중복 구매 시 지속시간 누적)`},
+  {key:'def', name:'철벽의 물약', icon:'🛡️', stat:'defPct', value:50, unit:'%', desc:`${POTION_DURATION_MIN}분간 방어력 +50% (중복 구매 시 지속시간 누적)`},
+  {key:'hp', name:'활력의 물약', icon:'❤️', stat:'hpPct', value:50, unit:'%', desc:`${POTION_DURATION_MIN}분간 최대 체력 +50% (중복 구매 시 지속시간 누적)`},
+  {key:'critDmg', name:'파괴의 물약', icon:'💥', stat:'critDmgAdd', value:40, unit:'%p', desc:`${POTION_DURATION_MIN}분간 치명타 피해 +40%p (중복 구매 시 지속시간 누적)`},
+  {key:'accuracy', name:'집중의 물약', icon:'🎯', stat:'accuracyAdd', value:30, unit:'', desc:`${POTION_DURATION_MIN}분간 명중 +30 (중복 구매 시 지속시간 누적)`},
 ];
 
 // stats()에서 호출 — 만료 안 된 버프만 합산해서 돌려준다.
