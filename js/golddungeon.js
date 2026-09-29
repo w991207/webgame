@@ -38,7 +38,7 @@ function refreshGoldDungeonTickets(){
 let gdPlayerTickHandle = null;
 let gdMonsterTickHandle = null;
 
-function enterGoldDungeon(){
+async function enterGoldDungeon(){
   if(state.gdActive) return;
   if(anySubActivityActive('gdActive')){
     alert('다른 전투 콘텐츠가 진행 중에는 물자 구역에 입장할 수 없습니다.');
@@ -50,7 +50,11 @@ function enterGoldDungeon(){
     renderGoldDungeonPanel();
     return;
   }
-  if(!confirm(`물자 구역 ${state.gdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
+  if(!await showGameConfirm(
+    `물자 구역 ${state.gdFloor}층에 도전하시겠습니까?`,
+    '티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)'
+  )) return;
+  if(state.gdActive) return; // 확인 모달을 기다리는 동안 다른 진입이 완료됐다면 취소
 
   state.gdTicket--;
   state.gdActive = true;
@@ -190,8 +194,8 @@ function renderGoldDungeonPanel(){
   }
 }
 
-// 티켓 충전 카운트다운 표시를 위해 1초마다 갱신
-setInterval(()=>{
+// 티켓 충전 카운트다운 표시를 위해 1초마다 갱신 (통합 티커가 백그라운드에서는 자동으로 건너뜀)
+registerGameTickTask(()=>{
   refreshGoldDungeonTickets();
   renderGoldDungeonPanel();
-}, 1000);
+}, 1000, 'gd-panel');

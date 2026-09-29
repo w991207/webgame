@@ -1,4 +1,6 @@
 // ---------- Init ----------
+let __mainTickHandle = null;
+let __lastTickAt = Date.now();
 async function init(){
   const loaded = await loadState();
   if(wasVersionReset){
@@ -53,20 +55,32 @@ async function init(){
   }
   log('폐허에 들어섰습니다. 행운을 빕니다.', 'new');
   
-  // 독립된 두 타이머 시작
+  // 독립된 두 타이머 시작 (전투 진행은 게임의 핵심이라 백그라운드에서도 계속 돈다)
   schedulePlayerTick();
   scheduleMonsterTick();
-  
-  setInterval(petTick, 1000);
-  if(typeof checkActiveSkills === 'function') setInterval(checkActiveSkills, 500);
-  if(typeof updateSkillTrayCooldowns === 'function') setInterval(updateSkillTrayCooldowns, 100);
-  if(typeof goldenMonsterTick === 'function') setInterval(goldenMonsterTick, GOLDEN_CHECK_INTERVAL_MS);
-  // 공격속도(전투 틱)와 분리해서, 뽑기/상점/각성 등 패널의 구매 가능 여부(gold/soul 반영)를
-  // 1초마다만 새로고침한다. 전투 틱마다 부르면 버튼이 초당 여러 번 재생성돼 클릭이 씹힌다.
-  setInterval(renderAll, 1000);
 
-  setInterval(()=>saveState(false), 5000);
+  // 통합 티커(1초): 반복 작업을 한 곳으로 모으고 탭이 백그라운드면 전부 건너뛴다.
+  if(typeof registerGameTickTask === 'function'){
+    registerGameTickTask(petTick, 1000, 'pet');
+    registerGameTickTask(()=>{
+      if(typeof goldenMonsterTick === 'function') goldenMonsterTick();
+    }, typeof GOLDEN_CHECK_INTERVAL_MS === 'number' ? GOLDEN_CHECK_INTERVAL_MS : 30000, 'golden');
+    // 공격속도(전투 틱)와 분리해서, 뽑기/상점/각성 등 패널의 구매 가능 여부(gold/soul 반영)를
+    // 1초마다만 새로고침한다. 전투 틱마다 부르면 버튼이 초당 여러 번 재생성돼 클릭이 씹힌다.
+    registerGameTickTask(renderAll, 1000, 'renderAll');
+    registerGameTickTask(()=>saveState(false), 5000, 'autosave');
+    startGameTicker();
+  } else { // 통합 티커가 없는 환경(개별 파일 로드 등) 폴백
+    setInterval(petTick, 1000);
+    if(typeof goldenMonsterTick === 'function') setInterval(goldenMonsterTick, GOLDEN_CHECK_INTERVAL_MS);
+    setInterval(renderAll, 1000);
+    setInterval(()=>saveState(false), 5000);
+  }
+  if(typeof checkActiveSkills === 'function') setInterval(()=>{ if(document.hidden) return; checkActiveSkills(); }, 500);
+  if(typeof updateSkillTrayCooldowns === 'function') setInterval(()=>{ if(document.hidden) return; updateSkillTrayCooldowns(); }, 100);
+
   window.addEventListener('beforeunload', ()=>{ saveState(true); });
+
 
   renderAttendance();
 }

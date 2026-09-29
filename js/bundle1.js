@@ -1,3 +1,48 @@
+// ===== js/game-ticker.js =====
+// ---------- 통합 게임 티커 ----------
+// 흩어져 있던 setInterval들(티켓 충전/패널 갱신/랭킹 푸시 등)을 하나의 1초 드라이버로 모은다.
+//  ① 타이머 개수를 줄여 모바일에서 배터리/발열 부담을 낮추고
+//  ② 탭이 백그라운드(document.hidden)면 아무 것도 하지 않는다(어차피 화면에 안 보이는 연산).
+// 전투 틱(schedulePlayerTick/MonsterTick)은 게임 진행 자체라 여기에 넣지 않는다.
+const GAME_TICK_TASKS = [];
+function registerGameTickTask(fn, everyMs, label){
+  if(typeof fn !== 'function') return null;
+  const task = {fn, everyMs: Math.max(250, everyMs || 1000), last: 0, label: label || ''};
+  GAME_TICK_TASKS.push(task);
+  return task;
+}
+function runGameTickTasks(force){
+  if(!force && document.hidden) return;
+  const now = Date.now();
+  for(const t of GAME_TICK_TASKS){
+    if(!force && now - t.last < t.everyMs) continue;
+    t.last = now;
+    try{ t.fn(); }catch(e){ console.warn('[tick]', t.label, e); }
+  }
+}
+// 백그라운드에서 돌아왔을 때: 밀린 티켓 충전/영지 수확을 즉시 반영하고 화면을 다시 그린다.
+function catchUpAfterResume(){
+  [
+    'refreshRaidTickets',
+    'refreshGoldDungeonTickets', 'refreshRelicDungeonTickets',
+    'refreshForgeDungeonTickets', 'refreshTrainingDungeonTickets',
+  ].forEach(name=>{
+    const fn = window[name];
+    if(typeof fn === 'function'){ try{ fn(); }catch(e){} }
+  });
+  if(typeof renderAll === 'function') renderAll();
+}
+let __gameTickHandle = null;
+function startGameTicker(){
+  if(__gameTickHandle) return;
+  __gameTickHandle = setInterval(()=>runGameTickTasks(false), 1000);
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden) return;
+    runGameTickTasks(true);
+    catchUpAfterResume();
+  });
+}
+
 // ===== js/electron-bridge.js =====
 // ---------- Electron 데스크탑 위젯 전용 브릿지 ----------
 // 일반 브라우저(웹 배포판)에서는 window.electronAPI가 없으므로 이 스크립트는 아무 것도 하지
@@ -3856,7 +3901,7 @@ const ENHANCE_SLOT_LABEL = {weapon:'⚔️ 무기', armor:'🛡️ 방어구', a
 // 부위별로 "다음 강화 시도에 어떤 주문서를 쓸지" 선택 상태 (소모되기 전까지 화면에만 남는 임시 상태).
 let enhanceScrollSelection = {weapon:{rateUp:false, protect:false}, armor:{rateUp:false, protect:false}, accessory:{rateUp:false, protect:false}};
 
-function attemptEnhance(slot){
+async function attemptEnhance(slot){
   const item = state.equipment && state.equipment[slot];
   if(!item){
     flashMessageSafe('먼저 해당 부위에 장비를 장착하세요.');
@@ -3884,7 +3929,8 @@ function attemptEnhance(slot){
 
   if(info.risk === 'destroy' && !useProtect){
     const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
-    const ok = confirm(
+    const ok = await showGameConfirm(
+      `${ENHANCE_SLOT_LABEL[slot]} +${current} → +${target} 강화 시도`,
       `${ENHANCE_SLOT_LABEL[slot]} [${rarity.name}] +${current} → +${target} 강화를 시도합니다.\n` +
       `성공 확률: ${effectiveRate}%\n` +
       `⚠️ 실패 시 ${info.destroyChance}% 확률로 장비가 완전히 파괴됩니다 (파괴되지 않으면 +${Math.max(0, current-1)}로 하락).\n\n` +
@@ -4204,7 +4250,7 @@ function refreshRaidTickets(){
 let raidPlayerTickHandle = null;
 let raidMonsterTickHandle = null;
 
-function enterRaid(){
+async function enterRaid(){
   if(!raidUnlocked()){
     alert('무한의 탑 100층을 클리어해야 레이드에 입장할 수 있습니다.');
     return;
@@ -4220,7 +4266,11 @@ function enterRaid(){
     renderRaidPanel();
     return;
   }
-  if(!confirm('레이드에 입장하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 다음 티켓으로 재도전해야 합니다)')) return;
+  if(!await showGameConfirm(
+    '레이드에 입장하시겠습니까?',
+    '티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 다음 티켓으로 재도전해야 합니다)'
+  )) return;
+  if(state.raidActive) return; // 확인 모달을 기다리는 동안 다른 진입이 완료됐다면 취소
 
   state.raidTicket--;
   state.raidActive = true;
@@ -4429,12 +4479,12 @@ function renderRaidPanel(){
   });
 }
 
-// 티켓 충전 카운트다운 표시를 위해 1초마다 갱신 (해금 전에는 스킵)
-setInterval(()=>{
+// 티켓 충전 카운트다운 표시를 위해 1초마다 갱신 (해금 전에는 스킵, 통합 티커가 백그라운드에서는 건너뜀)
+registerGameTickTask(()=>{
   if(!raidUnlocked()) return;
   refreshRaidTickets();
   renderRaidPanel();
-}, 1000);
+}, 1000, 'raid-panel');
 
 // ===== js/golden.js =====
 // ---------- 황금 몬스터 (레어 강화 조우) ----------
@@ -4604,7 +4654,7 @@ function refreshGoldDungeonTickets(){
 let gdPlayerTickHandle = null;
 let gdMonsterTickHandle = null;
 
-function enterGoldDungeon(){
+async function enterGoldDungeon(){
   if(state.gdActive) return;
   if(anySubActivityActive('gdActive')){
     alert('다른 전투 콘텐츠가 진행 중에는 물자 구역에 입장할 수 없습니다.');
@@ -4616,7 +4666,11 @@ function enterGoldDungeon(){
     renderGoldDungeonPanel();
     return;
   }
-  if(!confirm(`물자 구역 ${state.gdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
+  if(!await showGameConfirm(
+    `물자 구역 ${state.gdFloor}층에 도전하시겠습니까?`,
+    '티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)'
+  )) return;
+  if(state.gdActive) return; // 확인 모달을 기다리는 동안 다른 진입이 완료됐다면 취소
 
   state.gdTicket--;
   state.gdActive = true;
@@ -4756,11 +4810,11 @@ function renderGoldDungeonPanel(){
   }
 }
 
-// 티켓 충전 카운트다운 표시를 위해 1초마다 갱신
-setInterval(()=>{
+// 티켓 충전 카운트다운 표시를 위해 1초마다 갱신 (통합 티커가 백그라운드에서는 자동으로 건너뜀)
+registerGameTickTask(()=>{
   refreshGoldDungeonTickets();
   renderGoldDungeonPanel();
-}, 1000);
+}, 1000, 'gd-panel');
 
 // ===== js/relicdungeon.js =====
 // ---------- Relic Dungeon (유산 구역) ----------
@@ -4803,7 +4857,7 @@ function refreshRelicDungeonTickets(){
 let rdPlayerTickHandle = null;
 let rdMonsterTickHandle = null;
 
-function enterRelicDungeon(){
+async function enterRelicDungeon(){
   if(state.rdActive) return;
   if(anySubActivityActive('rdActive')){
     alert('다른 전투 콘텐츠가 진행 중에는 유산 구역에 입장할 수 없습니다.');
@@ -4815,7 +4869,11 @@ function enterRelicDungeon(){
     renderRelicDungeonPanel();
     return;
   }
-  if(!confirm(`유산 구역 ${state.rdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
+  if(!await showGameConfirm(
+    `유산 구역 ${state.rdFloor}층에 도전하시겠습니까?`,
+    '티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)'
+  )) return;
+  if(state.rdActive) return; // 확인 모달을 기다리는 동안 다른 진입이 완료됐다면 취소
 
   state.rdTicket--;
   state.rdActive = true;
@@ -4952,10 +5010,10 @@ function renderRelicDungeonPanel(){
   }
 }
 
-setInterval(()=>{
+registerGameTickTask(()=>{
   refreshRelicDungeonTickets();
   renderRelicDungeonPanel();
-}, 1000);
+}, 1000, 'rd-panel');
 
 // ===== js/forgedungeon.js =====
 // ---------- Forge Dungeon (단조 구역) ----------
@@ -4997,7 +5055,7 @@ function refreshForgeDungeonTickets(){
 let fdPlayerTickHandle = null;
 let fdMonsterTickHandle = null;
 
-function enterForgeDungeon(){
+async function enterForgeDungeon(){
   if(state.fdActive) return;
   if(anySubActivityActive('fdActive')){
     alert('다른 전투 콘텐츠가 진행 중에는 단조 구역에 입장할 수 없습니다.');
@@ -5009,7 +5067,11 @@ function enterForgeDungeon(){
     renderForgeDungeonPanel();
     return;
   }
-  if(!confirm(`단조 구역 ${state.fdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
+  if(!await showGameConfirm(
+    `단조 구역 ${state.fdFloor}층에 도전하시겠습니까?`,
+    '티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)'
+  )) return;
+  if(state.fdActive) return; // 확인 모달을 기다리는 동안 다른 진입이 완료됐다면 취소
 
   state.fdTicket--;
   state.fdActive = true;
@@ -5148,10 +5210,10 @@ function renderForgeDungeonPanel(){
   }
 }
 
-setInterval(()=>{
+registerGameTickTask(()=>{
   refreshForgeDungeonTickets();
   renderForgeDungeonPanel();
-}, 1000);
+}, 1000, 'fd-panel');
 
 // ===== js/trainingdungeon.js =====
 // ---------- Training Dungeon (수련 구역) ----------
@@ -5192,7 +5254,7 @@ function refreshTrainingDungeonTickets(){
 let tdPlayerTickHandle = null;
 let tdMonsterTickHandle = null;
 
-function enterTrainingDungeon(){
+async function enterTrainingDungeon(){
   if(state.tdActive) return;
   if(anySubActivityActive('tdActive')){
     alert('다른 전투 콘텐츠가 진행 중에는 수련 구역에 입장할 수 없습니다.');
@@ -5204,7 +5266,11 @@ function enterTrainingDungeon(){
     renderTrainingDungeonPanel();
     return;
   }
-  if(!confirm(`수련 구역 ${state.tdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
+  if(!await showGameConfirm(
+    `수련 구역 ${state.tdFloor}층에 도전하시겠습니까?`,
+    '티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)'
+  )) return;
+  if(state.tdActive) return; // 확인 모달을 기다리는 동안 다른 진입이 완료됐다면 취소
 
   state.tdTicket--;
   state.tdActive = true;
@@ -5343,10 +5409,10 @@ function renderTrainingDungeonPanel(){
   }
 }
 
-setInterval(()=>{
+registerGameTickTask(()=>{
   refreshTrainingDungeonTickets();
   renderTrainingDungeonPanel();
-}, 1000);
+}, 1000, 'td-panel');
 
 // ===== js/territory.js =====
 // ---------- 영지 (Territory) ----------
@@ -5841,9 +5907,16 @@ function setTabBadge(id, count){
 
 // ===== js/shop.js =====
 let shopBuyMultiplier = 1;
+let shopBuyMaxMode = false;
 document.querySelectorAll('.buy-mult-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    shopBuyMultiplier = parseInt(btn.dataset.mult, 10);
+    if(btn.dataset.mult === 'max'){
+      shopBuyMaxMode = true;
+      shopBuyMultiplier = 1;
+    } else {
+      shopBuyMaxMode = false;
+      shopBuyMultiplier = parseInt(btn.dataset.mult, 10);
+    }
     document.querySelectorAll('.buy-mult-btn').forEach(b=>b.classList.toggle('active', b===btn));
     renderShop();
     renderSoulShop();
@@ -5884,6 +5957,7 @@ function renderShop(){
       const btn = row.querySelector('button');
       btn.addEventListener('click', ()=>{
         if(u.capStat && isUpgradeStatMaxed(u.capStat)) return; // 이미 캡 도달 — 구매 차단
+        if(typeof shopBuyMaxMode !== 'undefined' && shopBuyMaxMode && typeof buyShopMax === 'function'){ buyShopMax(u, false); return; }
         const remain = u.maxLevel ? Math.max(0, u.maxLevel - (state.goldUpgrades[u.key]||0)) : Infinity;
         const n = Math.min(shopBuyMultiplier, remain);
         const totalCost = bulkCost(u.baseCost, u.mult, state.goldUpgrades[u.key]||0, n);
@@ -5911,11 +5985,13 @@ function renderShop(){
     const maxed = u.maxLevel && lvl >= u.maxLevel;
     const statMaxed = !!(u.capStat && isUpgradeStatMaxed(u.capStat)); // 실제 스탯이 이미 캡에 도달
     const remainToMax = u.maxLevel ? Math.max(0, u.maxLevel - lvl) : Infinity;
-    const buyN = Math.min(shopBuyMultiplier, remainToMax);
-    const cost = bulkCost(u.baseCost, u.mult, lvl, buyN);
+    // MAX 모드에서는 "지금 재화로 살 수 있는 최대치"를 라벨에 그대로 보여준다(클릭 결과와 표시가 어긋나지 않게).
+    const maxInfo = (shopBuyMaxMode && typeof shopMaxBuyable === 'function') ? shopMaxBuyable(u, false) : null;
+    const buyN = maxInfo ? maxInfo.n : Math.min(shopBuyMultiplier, remainToMax);
+    const cost = maxInfo ? maxInfo.cost : bulkCost(u.baseCost, u.mult, lvl, buyN);
     const label = maxed ? '최대'
       : statMaxed ? '상한 도달 (효과없음)'
-      : (buyN <= 0 ? '최대' : `${cost.toLocaleString()} 📦 (x${buyN})`);
+      : (buyN <= 0 ? (maxInfo ? 'MAX 구매 불가' : '최대') : `${cost.toLocaleString()} 📦 (${maxInfo ? `MAX x${buyN}` : `x${buyN}`})`);
 
     row.querySelector('.uname').textContent = u.name;
     row.querySelector('.lvl-tag').textContent = `Lv.${lvl}`;
@@ -5963,6 +6039,7 @@ function renderSoulShop(){
       const btn = row.querySelector('button');
       btn.addEventListener('click', ()=>{
         if(u.capStat && isUpgradeStatMaxed(u.capStat)) return; // 이미 캡 도달 — 구매 차단
+        if(typeof shopBuyMaxMode !== 'undefined' && shopBuyMaxMode && typeof buyShopMax === 'function'){ buyShopMax(u, true); return; }
         const startLvl = state.soulUpgrades[u.key];
         const n = shopBuyMultiplier;
         const totalCost = bulkSoulCost(startLvl, n);
@@ -5980,16 +6057,19 @@ function renderSoulShop(){
     const row = container.querySelector(`.shop-item[data-key="${u.key}"]`);
     if(!row) return;
     const lvl = state.soulUpgrades[u.key];
-    const n = shopBuyMultiplier;
-    const totalCost = bulkSoulCost(lvl, n);
+    // MAX 모드에서는 지금 혈청으로 살 수 있는 최대치를 라벨에 표시한다(클릭 결과와 표시 일치).
+    const maxInfo = (shopBuyMaxMode && typeof shopMaxBuyable === 'function') ? shopMaxBuyable(u, true) : null;
+    const n = maxInfo ? maxInfo.n : shopBuyMultiplier;
+    const totalCost = maxInfo ? maxInfo.cost : bulkSoulCost(lvl, n);
     const statMaxed = !!(u.capStat && isUpgradeStatMaxed(u.capStat));
 
     row.querySelector('.uname').textContent = u.name;
     row.querySelector('.lvl-tag').textContent = `Lv.${lvl}`;
 
     const btn = row.querySelector('button');
-    const label = statMaxed ? '상한 도달 (효과없음)' : `${totalCost.toLocaleString()} 🧪 (x${n})`;
-    const disabled = statMaxed || state.soul < totalCost;
+    const label = statMaxed ? '상한 도달 (효과없음)'
+      : (maxInfo && n <= 0 ? 'MAX 구매 불가' : `${totalCost.toLocaleString()} 🧪 (${maxInfo ? `MAX x${n}` : `x${n}`})`);
+    const disabled = statMaxed || n <= 0 || state.soul < totalCost;
     if(btn.disabled !== disabled) btn.disabled = disabled;
     if(btn.textContent !== label) btn.textContent = label;
   });
@@ -7027,12 +7107,15 @@ function updateRebirthAvailability(){
   }
 }
 
-document.getElementById('rebirthBtn').addEventListener('click', ()=>{
+document.getElementById('rebirthBtn').addEventListener('click', async ()=>{
   if(state.highestFloor < 15) return;
   const soulMult = (typeof rebirthSoulMultiplier === 'function') ? rebirthSoulMultiplier() : 1;
   const gainSoul = Math.floor(state.highestFloor / 2.5 * soulMult);
   const gainFrag = Math.floor(state.highestFloor / 3);
-  if(!confirm(`환생하시겠습니까?\n🧪 ${gainSoul}개의 혈청과 ◈ ${gainFrag}개의 유산 파편을 얻고 층수/레벨/물자가 초기화됩니다.`)) return;
+  if(!await showGameConfirm(
+    '환생하시겠습니까?',
+    `🧪 ${gainSoul}개의 혈청과 ◈ ${gainFrag}개의 유산 파편을 얻고 층수/레벨/물자가 초기화됩니다.`
+  )) return;
   state.soul += gainSoul;
   state.fragments += gainFrag;
   state.rebirthCount++;
@@ -7240,7 +7323,7 @@ document
 // ===== js/persistence.js =====
 document.getElementById('saveBtn').addEventListener('click', ()=>{ saveState(true); });
 document.getElementById('resetBtn').addEventListener('click', async ()=>{
-  if(!confirm('정말 모든 진행 상황을 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+  if(!await showGameConfirm('정말 모든 진행 상황을 초기화하시겠습니까?', '이 작업은 되돌릴 수 없습니다.')) return;
   state = defaultState();
   document.getElementById('modeNormalBtn').classList.toggle('active', true);
   document.getElementById('modeTowerBtn').classList.toggle('active', false);
@@ -7358,12 +7441,15 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   }
 });
 
-document.getElementById('importBtn').addEventListener('click', ()=>{
-  const choice = confirm('세이브 파일(.json)을 업로드하여 불러오시겠습니까?\n[확인]: 파일 선택 / [취소]: 텍스트 코드 직접 입력');
+document.getElementById('importBtn').addEventListener('click', async ()=>{
+  const choice = await showGameConfirm(
+    '세이브 파일(.json)을 업로드하여 불러오시겠습니까?',
+    '[확인]: 파일 선택 / [취소]: 텍스트 코드 직접 입력'
+  );
   if(choice){
     document.getElementById('importFileInput').click();
   } else {
-    const code = prompt('내보내기했던 세이브 코드(JSON 텍스트)를 붙여넣으세요:');
+    const code = await showGamePrompt('세이브 코드 직접 입력', '내보내기했던 세이브 코드(JSON 텍스트)를 붙여넣으세요:');
     if(code && code.trim()){
       processImportedData(code.trim());
     }
@@ -7455,6 +7541,8 @@ function computeOfflineProgress(){
 
   state.gold += goldGained;
   state.exp += expGained;
+  // 오프라인 동안의 처치도 누적 처치(처치 패스/업적/주간 미션)에 반영한다.
+  state.totalKills = (state.totalKills || 0) + totalKills;
   let levelsGained = 0;
   let needed = expNeeded(state.level);
   while(state.exp >= needed){
@@ -7464,7 +7552,10 @@ function computeOfflineProgress(){
     needed = expNeeded(state.level);
   }
 
-  return {elapsedSec, goldGained, expGained, levelsGained, totalKills};
+  // v2.23: 자리를 비운 동안 던전/레이드 티켓 충전 + 가득 찬 영지 수확물 자동 수령 (upgrades-v23.js)
+  const extended = (typeof applyExtendedOffline === 'function') ? applyExtendedOffline(elapsedSec) : null;
+
+  return {elapsedSec, goldGained, expGained, levelsGained, totalKills, extended};
 }
 
 function formatDuration(sec){
@@ -7477,10 +7568,20 @@ function formatDuration(sec){
 function showOfflineModal(result){
   const modal = document.getElementById('offlineModal');
   const text = document.getElementById('offlineText');
+  // v2.23: 오프라인 추가 보상(티켓 충전/영지 자동 수령) 줄을 덧붙인다.
+  let extraHtml = '';
+  if(result.extended){
+    if(result.extended.tickets > 0){
+      extraHtml += `<br>티켓 재충전 <span class="num">+${result.extended.tickets}</span>장`;
+    }
+    result.extended.territory.forEach(t=>{
+      extraHtml += `<br>${t.label} 자동 수령 <span class="num">+${t.amount.toLocaleString()}</span>`;
+    });
+  }
   text.innerHTML = `자리를 비운 <b>${formatDuration(result.elapsedSec)}</b> 동안<br>
     변이체 <span class="num">${result.totalKills}</span>마리를 처치했습니다.<br><br>
     획득: <span class="num">+${result.goldGained.toLocaleString()}📦</span> · <span class="num">+${result.expGained} EXP</span>
-    ${result.levelsGained>0? `<br>레벨 업 <span class="num">x${result.levelsGained}</span>!` : ''}`;
+    ${result.levelsGained>0? `<br>레벨 업 <span class="num">x${result.levelsGained}</span>!` : ''}${extraHtml}`;
   modal.style.display = 'flex';
 }
 document.getElementById('offlineCloseBtn').addEventListener('click', ()=>{

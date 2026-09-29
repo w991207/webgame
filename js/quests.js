@@ -269,12 +269,15 @@ function updateRebirthAvailability(){
   }
 }
 
-document.getElementById('rebirthBtn').addEventListener('click', ()=>{
+document.getElementById('rebirthBtn').addEventListener('click', async ()=>{
   if(state.highestFloor < 15) return;
   const soulMult = (typeof rebirthSoulMultiplier === 'function') ? rebirthSoulMultiplier() : 1;
   const gainSoul = Math.floor(state.highestFloor / 2.5 * soulMult);
   const gainFrag = Math.floor(state.highestFloor / 3);
-  if(!confirm(`환생하시겠습니까?\n🧪 ${gainSoul}개의 혈청과 ◈ ${gainFrag}개의 유산 파편을 얻고 층수/레벨/물자가 초기화됩니다.`)) return;
+  if(!await showGameConfirm(
+    '환생하시겠습니까?',
+    `🧪 ${gainSoul}개의 혈청과 ◈ ${gainFrag}개의 유산 파편을 얻고 층수/레벨/물자가 초기화됩니다.`
+  )) return;
   state.soul += gainSoul;
   state.fragments += gainFrag;
   state.rebirthCount++;

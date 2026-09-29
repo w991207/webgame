@@ -40,7 +40,7 @@ function refreshRaidTickets(){
 let raidPlayerTickHandle = null;
 let raidMonsterTickHandle = null;
 
-function enterRaid(){
+async function enterRaid(){
   if(!raidUnlocked()){
     alert('무한의 탑 100층을 클리어해야 레이드에 입장할 수 있습니다.');
     return;
@@ -56,7 +56,11 @@ function enterRaid(){
     renderRaidPanel();
     return;
   }
-  if(!confirm('레이드에 입장하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 다음 티켓으로 재도전해야 합니다)')) return;
+  if(!await showGameConfirm(
+    '레이드에 입장하시겠습니까?',
+    '티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 다음 티켓으로 재도전해야 합니다)'
+  )) return;
+  if(state.raidActive) return; // 확인 모달을 기다리는 동안 다른 진입이 완료됐다면 취소
 
   state.raidTicket--;
   state.raidActive = true;
@@ -265,9 +269,9 @@ function renderRaidPanel(){
   });
 }
 
-// 티켓 충전 카운트다운 표시를 위해 1초마다 갱신 (해금 전에는 스킵)
-setInterval(()=>{
+// 티켓 충전 카운트다운 표시를 위해 1초마다 갱신 (해금 전에는 스킵, 통합 티커가 백그라운드에서는 건너뜀)
+registerGameTickTask(()=>{
   if(!raidUnlocked()) return;
   refreshRaidTickets();
   renderRaidPanel();
-}, 1000);
+}, 1000, 'raid-panel');

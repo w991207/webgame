@@ -125,6 +125,7 @@
       <div class="monster-name" id="monsterName">떠오는 망령</div>
       <div class="kill-progress" id="killProgressText">처치: 0 / 5</div>
       <div class="accuracy-line" id="accuracyLine">권장 명중 -</div>
+      <div class="dps-line" id="dpsLine">⚔️ DPS(10초): 0</div>
 
       <div class="hp-bar-outer"><div class="hp-bar-inner" id="monsterHpBar" style="width:100%"></div></div>
       <div class="hp-text" id="monsterHpText">50 / 50</div>
@@ -161,6 +162,7 @@
             <button class="buy-mult-btn active" data-mult="1">x1</button>
             <button class="buy-mult-btn" data-mult="5">x5</button>
             <button class="buy-mult-btn" data-mult="10">x10</button>
+            <button class="buy-mult-btn" data-mult="max">MAX</button>
           </span>
         </h2>
         <div id="shopList"></div>
@@ -566,6 +568,12 @@
 
   <div class="tab-content" id="tab-event" style="display:none;">
   <div class="panel quest-panel">
+    <h2>📅 주간 미션 <span id="weeklyResetText" style="font-size:12px;color:var(--text-dim);font-weight:400;"></span></h2>
+    <p class="killpass-hint">월요일마다 초기화됩니다. 이벤트 탭에서 언제든 진행도를 확인하고 보상을 받으세요.</p>
+    <div id="weeklyMissionList"></div>
+  </div>
+
+  <div class="panel quest-panel">
     <h2>퀘스트</h2>
     <div class="quest-grid">
       <div class="quest-col">
@@ -620,6 +628,17 @@
     <p class="cards-intro">몬스터를 처치하면 일정 확률로 카드가 드랍됩니다. 중복 카드로 카드가 성장하고, 덱(3슬롯)에 장착하면 영구 스탯 보너스를 얻습니다. 같은 등급 3장을 장착하면 세트 보너스 효과 ×1.25!</p>
     <div class="card-deck-row" id="cardDeckRow"></div>
     <div class="card-deck-bonus" id="cardDeckBonusText"></div>
+    <div class="card-toolbar">
+      <button type="button" class="inv-tool-btn" id="cardAutoBtn">⚡ 최적 장착</button>
+      <span class="card-filter-group" id="cardFilterGroup">
+        <button type="button" class="inv-tool-btn active" data-rarity="all">전체</button>
+        <button type="button" class="inv-tool-btn" data-rarity="common">일반</button>
+        <button type="button" class="inv-tool-btn" data-rarity="rare">고급</button>
+        <button type="button" class="inv-tool-btn" data-rarity="epic">희귀</button>
+        <button type="button" class="inv-tool-btn" data-rarity="legendary">영웅</button>
+      </span>
+    </div>
+    <div class="card-set-preview" id="cardSetPreview"></div>
     <div id="cardsGrid" class="cards-grid"></div>
   </div>
   </div><!-- /tab-cards -->
@@ -839,6 +858,28 @@
   </div>
 </div>
 
+<div id="gameToastWrap" class="game-toast-wrap"></div>
+<div class="modal-overlay" id="gameConfirmModal" style="display:none;">
+  <div class="modal">
+    <h3 id="gameConfirmTitle">확인</h3>
+    <p id="gameConfirmDesc"></p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+      <button id="gameConfirmOkBtn">확인</button>
+      <button id="gameConfirmCancelBtn" class="secondary">취소</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="gamePromptModal" style="display:none;">
+  <div class="modal">
+    <h3 id="gamePromptTitle">입력</h3>
+    <p id="gamePromptDesc"></p>
+    <input type="text" class="field-input" id="gamePromptInput" style="margin-top:8px;">
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+      <button id="gamePromptOkBtn">확인</button>
+      <button id="gamePromptCancelBtn" class="secondary">취소</button>
+    </div>
+  </div>
+</div>
 <!-- 개별 js 파일 30개를 여기서 각각 <script>로 부르면 접속 1번마다 Vercel Edge Request가
      그만큼 소모된다. build-bundle.sh로 js/bundle1.js(파이어베이스 이전) / js/bundle2.js(이후)
      2개로 미리 합쳐두고 그것만 부른다. 원본 js/*.js는 그대로 남아있고(다음 수정도 그 파일들에서
@@ -860,6 +901,7 @@
   <div id="minigameModal" class="minigame-modal">
     <div class="minigame-modal-box">
       <button type="button" class="minigame-modal-close" onclick="document.getElementById('minigameModal').style.display='none'; document.getElementById('minigameFrame').src='';">✕</button>
+      <div class="minigame-best" id="minigameBestText">아직 기록이 없습니다.</div>
       <iframe id="minigameFrame" class="minigame-modal-iframe" src=""></iframe>
     </div>
   </div>

@@ -12,6 +12,7 @@ set -e
 cd "$(dirname "$0")"
 
 BUNDLE1_FILES=(
+  js/game-ticker.js
   js/electron-bridge.js
   js/patch.js
   js/storage.js
@@ -60,6 +61,7 @@ BUNDLE2_FILES=(
   js/tabs.js
   js/gifts.js
   js/main.js
+  js/upgrades-v23.js
 )
 
 build_bundle() {
@@ -74,5 +76,15 @@ build_bundle() {
 
 build_bundle js/bundle1.js "${BUNDLE1_FILES[@]}"
 build_bundle js/bundle2.js "${BUNDLE2_FILES[@]}"
+
+# patch.json의 버전을 서비스 워커 캐시 이름에 자동으로 반영한다.
+# (버전을 올리면 옛 캐시가 자동 폐기되므로 "수정했는데 예전 파일이 보이는" 문제를 막을 수 있다)
+PATCH_VERSION=$(grep -m1 '"version"' patch.json | sed -E 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/')
+if [ -n "$PATCH_VERSION" ]; then
+  sed -i -E "s/const CACHE_NAME = 'lastzone-cache-[^']*';/const CACHE_NAME = 'lastzone-cache-v${PATCH_VERSION}';/" service-worker.js
+  echo "서비스 워커 캐시 이름 동기화: lastzone-cache-v${PATCH_VERSION}"
+else
+  echo "⚠️ patch.json 버전을 읽지 못해 서비스 워커 캐시 이름은 그대로 둡니다."
+fi
 
 echo "빌드 완료: js/bundle1.js ($(wc -l < js/bundle1.js) lines), js/bundle2.js ($(wc -l < js/bundle2.js) lines)"

@@ -1380,6 +1380,22 @@ function updateRecruitButton(){
 }
 
 /* ===================== 전투 시스템 ===================== */
+/* ===================== 부모 게임(라스트 존) 연동 ===================== */
+// 도달 스테이지를 부모 창(index.html의 미니게임 모달 iframe)에 알려 기록/보상으로 이어지게 한다.
+// 부모가 없으면(단독 실행) 아무 것도 하지 않는다. 5스테이지마다 + 창을 닫거나 숨길 때 보고.
+let lastReportedStage = 0;
+function reportStageToParent(force){
+  try{
+    if(window.parent === window) return;
+    const stage = Math.max(0, Math.floor(state.stage) || 0);
+    if(!force && stage - lastReportedStage < 5) return;
+    lastReportedStage = stage;
+    window.parent.postMessage({source:'lastzone-minigame', type:'record', game:'tavern', score:stage}, '*');
+  }catch(e){}
+}
+window.addEventListener('beforeunload', ()=>reportStageToParent(true));
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) reportStageToParent(true); });
+
 function addLog(msg){
   state.log.unshift(msg);
   if(state.log.length>30) state.log.length=30;
@@ -1444,6 +1460,7 @@ function battleTick(doRender){
     state.gold += reward;
     state.stage += 1;
     state.monster = makeMonster(state.stage);
+    if(doRender) reportStageToParent(false);
     if(doRender) addLog(`${wasBoss?'👑 보스':'몬스터'} 처치! 💰${reward} 획득 ➔ Stage ${state.stage}`);
     if(doRender){
       playTone(wasBoss ? 140 : 200, wasBoss ? 0.22 : 0.1, 'square', wasBoss ? 0.18 : 0.1);

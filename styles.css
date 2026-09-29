@@ -1449,6 +1449,8 @@
   }
   .modal h3{margin:0 0 10px;color:var(--soul);font-size:18px;}
   .modal p{color:var(--text-dim);font-size:13px;line-height:1.7;margin:0 0 18px;}
+  /* 확인/입력 모달 설명: 네이티브 confirm에서 온 여러 줄 메시지의 개행을 유지 */
+  #gameConfirmDesc, #gamePromptDesc{white-space:pre-line;}
   .modal .num{color:var(--gold);font-family:'JetBrains Mono',monospace;font-weight:700;}
   .modal button{
     background:var(--soul-dim);color:#fff;border:none;padding:10px 22px;border-radius:8px;
@@ -1770,4 +1772,66 @@ margin-top:4px;
   width:32px; height:32px; border-radius:50%; border:none;
   background:rgba(0,0,0,.6); color:#fff; font-size:16px; cursor:pointer;
   display:flex; align-items:center; justify-content:center;
+}
+.minigame-best{
+  position:absolute; top:10px; left:10px; z-index:1;
+  font-size:11px; color:var(--gold); background:rgba(0,0,0,.55);
+  padding:4px 8px; border-radius:6px; pointer-events:none;
+}
+
+/* ---------- v2.23: 게임 내 토스트 ---------- */
+.game-toast-wrap{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%);
+  display:flex; flex-direction:column; gap:6px; align-items:center;
+  z-index:9998; pointer-events:none; width:min(92vw, 420px);
+}
+.game-toast{
+  background:rgba(12,10,20,.94); border:1px solid rgba(224,129,47,.55);
+  color:#f3e9d6; font-size:12.5px; line-height:1.5; text-align:center;
+  padding:9px 14px; border-radius:10px; width:100%;
+  box-shadow:0 6px 22px rgba(0,0,0,.45);
+  animation:gameToastIn .22s ease-out;
+}
+.game-toast.good{ border-color:rgba(120,220,140,.6); color:#dcffe4; }
+.game-toast.warn{ border-color:rgba(255,170,80,.65); color:#ffe9c9; }
+.game-toast.out{ opacity:0; transform:translateY(6px); transition:opacity .3s, transform .3s; }
+@keyframes gameToastIn{
+  from{ opacity:0; transform:translateY(8px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@media (max-width:700px){
+  .game-toast-wrap{ bottom:14px; }
+  .game-toast{ font-size:12px; }
+}
+
+/* ---------- v2.23: 모달 보조 버튼 / 소탕 버튼 / 카드 툴바 / DPS ---------- */
+.modal button.secondary{
+  background:transparent; border:1px solid var(--soul-dim);
+  color:var(--text-dim);
+}
+.modal button.secondary:hover{ color:var(--text); }
+button.sweep-btn{
+  background:linear-gradient(180deg,#2a2438,#171320);
+  border:1px solid rgba(224,129,47,.45);
+  color:var(--gold);
+  font-size:12px; font-weight:700; letter-spacing:.5px;
+  padding:8px 10px; border-radius:8px; cursor:pointer;
+}
+button.sweep-btn:hover{ filter:brightness(1.2); }
+button.sweep-btn:disabled{ opacity:.4; cursor:not-allowed; }
+.card-toolbar{
+  display:flex; flex-wrap:wrap; gap:6px; align-items:center;
+  margin:4px 0 6px;
+}
+.card-filter-group{ display:flex; gap:4px; flex-wrap:wrap; }
+.card-toolbar .inv-tool-btn.active{
+  border-color:var(--gold); color:var(--gold);
+}
+.card-set-preview{
+  font-size:11px; line-height:1.6; color:var(--text-dim);
+  min-height:14px; margin-bottom:10px;
+}
+.dps-line{
+  font-size:11.5px; color:#9fd0ff; font-family:'JetBrains Mono',monospace;
+  letter-spacing:.5px; margin-top:2px;
 }

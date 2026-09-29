@@ -244,8 +244,8 @@ fbAuth.onAuthStateChanged(async (user) => {
           }catch(e){ cloudSummary = '(정보 확인 불가)'; }
           const localSummary = `Lv.${localData.level||1}, 최고 ${localData.highestFloor||1}층`;
 
-          const useCloud = confirm(
-            '이 계정에 더 최신 진행 상황이 있습니다.\n\n' +
+          const useCloud = await showGameConfirm(
+            '이 계정에 더 최신 진행 상황이 있습니다',
             `[이 기기]  ${localSummary}\n` +
             `[클라우드] ${cloudSummary}\n\n` +
             '[확인] = 클라우드 데이터를 불러옵니다 (이 기기의 진행 상황은 대체됩니다)\n' +
@@ -309,7 +309,10 @@ document.getElementById('linkGoogleBtn')?.addEventListener('click', async () => 
     renderAccountPanel(fbAuth.currentUser);
   }catch(e){
     if(e.code === 'auth/credential-already-in-use' && e.credential){
-      const ok = confirm('이미 가입된 Google 계정입니다. 그 계정으로 로그인할까요?\n(현재 기기의 진행 상황은 그 계정 데이터로 대체될 수 있습니다)');
+      const ok = await showGameConfirm(
+        '이미 가입된 Google 계정입니다',
+        '그 계정으로 로그인할까요?\n(현재 기기의 진행 상황은 그 계정 데이터로 대체될 수 있습니다)'
+      );
       if(ok){
         try{ await fbAuth.signInWithCredential(e.credential); }
         catch(e2){ alert(authErrorMessage(e2)); }
@@ -341,7 +344,10 @@ document.getElementById('loginGoogleBtn')?.addEventListener('click', async () =>
 });
 
 document.getElementById('logoutBtn')?.addEventListener('click', async () => {
-  if(!confirm('로그아웃하시겠습니까? (다음 접속 시 새 게스트로 시작하며, 다시 로그인하면 이 계정 데이터로 이어할 수 있습니다)')) return;
+  if(!await showGameConfirm(
+    '로그아웃하시겠습니까?',
+    '다음 접속 시 새 게스트로 시작하며, 다시 로그인하면 이 계정 데이터로 이어할 수 있습니다'
+  )) return;
   await fbAuth.signOut();
   location.reload();
 });
@@ -362,11 +368,11 @@ document.getElementById('deleteAccountBtn')?.addEventListener('click', async () 
   if(!user) return;
 
   const warn = user.isAnonymous
-    ? '정말 탈퇴하시겠습니까?\n\n지금까지의 진행 상황(캐릭터, 재화, 랭킹)이 이 기기에서 영구적으로 삭제되며 되돌릴 수 없습니다.'
-    : '정말 탈퇴하시겠습니까?\n\n계정에 저장된 모든 진행 상황(캐릭터, 재화, 랭킹)이 영구적으로 삭제되며 되돌릴 수 없습니다.';
-  if(!confirm(warn)) return;
+    ? '지금까지의 진행 상황(캐릭터, 재화, 랭킹)이 이 기기에서 영구적으로 삭제되며 되돌릴 수 없습니다.'
+    : '계정에 저장된 모든 진행 상황(캐릭터, 재화, 랭킹)이 영구적으로 삭제되며 되돌릴 수 없습니다.';
+  if(!await showGameConfirm('정말 탈퇴하시겠습니까?', warn)) return;
 
-  const typed = prompt('되돌릴 수 없습니다. 계속하려면 아래 칸에 "탈퇴"를 입력해주세요.');
+  const typed = await showGamePrompt('탈퇴 확인', '되돌릴 수 없습니다. 계속하려면 아래 칸에 "탈퇴"를 입력해주세요.');
   if(typed !== '탈퇴'){ alert('입력이 일치하지 않아 탈퇴가 취소되었습니다.'); return; }
 
   await performAccountDeletion(user);
@@ -406,7 +412,7 @@ async function handleReauthAndRetryDelete(user){
       const provider = new firebase.auth.GoogleAuthProvider();
       await user.reauthenticateWithPopup(provider);
     } else if(providerId === 'password'){
-      const pw = prompt('보안을 위해 비밀번호를 다시 입력해주세요.');
+      const pw = await showGamePrompt('재인증 필요', '보안을 위해 비밀번호를 다시 입력해주세요.');
       if(!pw) return;
       const cred = firebase.auth.EmailAuthProvider.credential(user.email, pw);
       await user.reauthenticateWithCredential(cred);

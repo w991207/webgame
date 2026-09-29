@@ -48,7 +48,7 @@ const ENHANCE_SLOT_LABEL = {weapon:'⚔️ 무기', armor:'🛡️ 방어구', a
 // 부위별로 "다음 강화 시도에 어떤 주문서를 쓸지" 선택 상태 (소모되기 전까지 화면에만 남는 임시 상태).
 let enhanceScrollSelection = {weapon:{rateUp:false, protect:false}, armor:{rateUp:false, protect:false}, accessory:{rateUp:false, protect:false}};
 
-function attemptEnhance(slot){
+async function attemptEnhance(slot){
   const item = state.equipment && state.equipment[slot];
   if(!item){
     flashMessageSafe('먼저 해당 부위에 장비를 장착하세요.');
@@ -76,7 +76,8 @@ function attemptEnhance(slot){
 
   if(info.risk === 'destroy' && !useProtect){
     const rarity = EQUIP_RARITIES.find(r => r.key === item.rarity);
-    const ok = confirm(
+    const ok = await showGameConfirm(
+      `${ENHANCE_SLOT_LABEL[slot]} +${current} → +${target} 강화 시도`,
       `${ENHANCE_SLOT_LABEL[slot]} [${rarity.name}] +${current} → +${target} 강화를 시도합니다.\n` +
       `성공 확률: ${effectiveRate}%\n` +
       `⚠️ 실패 시 ${info.destroyChance}% 확률로 장비가 완전히 파괴됩니다 (파괴되지 않으면 +${Math.max(0, current-1)}로 하락).\n\n` +

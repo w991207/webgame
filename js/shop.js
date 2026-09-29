@@ -1,7 +1,14 @@
 let shopBuyMultiplier = 1;
+let shopBuyMaxMode = false;
 document.querySelectorAll('.buy-mult-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    shopBuyMultiplier = parseInt(btn.dataset.mult, 10);
+    if(btn.dataset.mult === 'max'){
+      shopBuyMaxMode = true;
+      shopBuyMultiplier = 1;
+    } else {
+      shopBuyMaxMode = false;
+      shopBuyMultiplier = parseInt(btn.dataset.mult, 10);
+    }
     document.querySelectorAll('.buy-mult-btn').forEach(b=>b.classList.toggle('active', b===btn));
     renderShop();
     renderSoulShop();
@@ -42,6 +49,7 @@ function renderShop(){
       const btn = row.querySelector('button');
       btn.addEventListener('click', ()=>{
         if(u.capStat && isUpgradeStatMaxed(u.capStat)) return; // 이미 캡 도달 — 구매 차단
+        if(typeof shopBuyMaxMode !== 'undefined' && shopBuyMaxMode && typeof buyShopMax === 'function'){ buyShopMax(u, false); return; }
         const remain = u.maxLevel ? Math.max(0, u.maxLevel - (state.goldUpgrades[u.key]||0)) : Infinity;
         const n = Math.min(shopBuyMultiplier, remain);
         const totalCost = bulkCost(u.baseCost, u.mult, state.goldUpgrades[u.key]||0, n);
@@ -69,11 +77,13 @@ function renderShop(){
     const maxed = u.maxLevel && lvl >= u.maxLevel;
     const statMaxed = !!(u.capStat && isUpgradeStatMaxed(u.capStat)); // 실제 스탯이 이미 캡에 도달
     const remainToMax = u.maxLevel ? Math.max(0, u.maxLevel - lvl) : Infinity;
-    const buyN = Math.min(shopBuyMultiplier, remainToMax);
-    const cost = bulkCost(u.baseCost, u.mult, lvl, buyN);
+    // MAX 모드에서는 "지금 재화로 살 수 있는 최대치"를 라벨에 그대로 보여준다(클릭 결과와 표시가 어긋나지 않게).
+    const maxInfo = (shopBuyMaxMode && typeof shopMaxBuyable === 'function') ? shopMaxBuyable(u, false) : null;
+    const buyN = maxInfo ? maxInfo.n : Math.min(shopBuyMultiplier, remainToMax);
+    const cost = maxInfo ? maxInfo.cost : bulkCost(u.baseCost, u.mult, lvl, buyN);
     const label = maxed ? '최대'
       : statMaxed ? '상한 도달 (효과없음)'
-      : (buyN <= 0 ? '최대' : `${cost.toLocaleString()} 📦 (x${buyN})`);
+      : (buyN <= 0 ? (maxInfo ? 'MAX 구매 불가' : '최대') : `${cost.toLocaleString()} 📦 (${maxInfo ? `MAX x${buyN}` : `x${buyN}`})`);
 
     row.querySelector('.uname').textContent = u.name;
     row.querySelector('.lvl-tag').textContent = `Lv.${lvl}`;
@@ -121,6 +131,7 @@ function renderSoulShop(){
       const btn = row.querySelector('button');
       btn.addEventListener('click', ()=>{
         if(u.capStat && isUpgradeStatMaxed(u.capStat)) return; // 이미 캡 도달 — 구매 차단
+        if(typeof shopBuyMaxMode !== 'undefined' && shopBuyMaxMode && typeof buyShopMax === 'function'){ buyShopMax(u, true); return; }
         const startLvl = state.soulUpgrades[u.key];
         const n = shopBuyMultiplier;
         const totalCost = bulkSoulCost(startLvl, n);
@@ -138,16 +149,19 @@ function renderSoulShop(){
     const row = container.querySelector(`.shop-item[data-key="${u.key}"]`);
     if(!row) return;
     const lvl = state.soulUpgrades[u.key];
-    const n = shopBuyMultiplier;
-    const totalCost = bulkSoulCost(lvl, n);
+    // MAX 모드에서는 지금 혈청으로 살 수 있는 최대치를 라벨에 표시한다(클릭 결과와 표시 일치).
+    const maxInfo = (shopBuyMaxMode && typeof shopMaxBuyable === 'function') ? shopMaxBuyable(u, true) : null;
+    const n = maxInfo ? maxInfo.n : shopBuyMultiplier;
+    const totalCost = maxInfo ? maxInfo.cost : bulkSoulCost(lvl, n);
     const statMaxed = !!(u.capStat && isUpgradeStatMaxed(u.capStat));
 
     row.querySelector('.uname').textContent = u.name;
     row.querySelector('.lvl-tag').textContent = `Lv.${lvl}`;
 
     const btn = row.querySelector('button');
-    const label = statMaxed ? '상한 도달 (효과없음)' : `${totalCost.toLocaleString()} 🧪 (x${n})`;
-    const disabled = statMaxed || state.soul < totalCost;
+    const label = statMaxed ? '상한 도달 (효과없음)'
+      : (maxInfo && n <= 0 ? 'MAX 구매 불가' : `${totalCost.toLocaleString()} 🧪 (${maxInfo ? `MAX x${n}` : `x${n}`})`);
+    const disabled = statMaxed || n <= 0 || state.soul < totalCost;
     if(btn.disabled !== disabled) btn.disabled = disabled;
     if(btn.textContent !== label) btn.textContent = label;
   });

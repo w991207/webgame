@@ -36,7 +36,7 @@ function refreshTrainingDungeonTickets(){
 let tdPlayerTickHandle = null;
 let tdMonsterTickHandle = null;
 
-function enterTrainingDungeon(){
+async function enterTrainingDungeon(){
   if(state.tdActive) return;
   if(anySubActivityActive('tdActive')){
     alert('다른 전투 콘텐츠가 진행 중에는 수련 구역에 입장할 수 없습니다.');
@@ -48,7 +48,11 @@ function enterTrainingDungeon(){
     renderTrainingDungeonPanel();
     return;
   }
-  if(!confirm(`수련 구역 ${state.tdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
+  if(!await showGameConfirm(
+    `수련 구역 ${state.tdFloor}층에 도전하시겠습니까?`,
+    '티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)'
+  )) return;
+  if(state.tdActive) return; // 확인 모달을 기다리는 동안 다른 진입이 완료됐다면 취소
 
   state.tdTicket--;
   state.tdActive = true;
@@ -187,7 +191,7 @@ function renderTrainingDungeonPanel(){
   }
 }
 
-setInterval(()=>{
+registerGameTickTask(()=>{
   refreshTrainingDungeonTickets();
   renderTrainingDungeonPanel();
-}, 1000);
+}, 1000, 'td-panel');

@@ -37,7 +37,7 @@ function refreshForgeDungeonTickets(){
 let fdPlayerTickHandle = null;
 let fdMonsterTickHandle = null;
 
-function enterForgeDungeon(){
+async function enterForgeDungeon(){
   if(state.fdActive) return;
   if(anySubActivityActive('fdActive')){
     alert('다른 전투 콘텐츠가 진행 중에는 단조 구역에 입장할 수 없습니다.');
@@ -49,7 +49,11 @@ function enterForgeDungeon(){
     renderForgeDungeonPanel();
     return;
   }
-  if(!confirm(`단조 구역 ${state.fdFloor}층에 도전하시겠습니까? 티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)`)) return;
+  if(!await showGameConfirm(
+    `단조 구역 ${state.fdFloor}층에 도전하시겠습니까?`,
+    '티켓 1개를 소모합니다.\n(패배해도 티켓은 소모되며 같은 층부터 다시 도전합니다)'
+  )) return;
+  if(state.fdActive) return; // 확인 모달을 기다리는 동안 다른 진입이 완료됐다면 취소
 
   state.fdTicket--;
   state.fdActive = true;
@@ -188,7 +192,7 @@ function renderForgeDungeonPanel(){
   }
 }
 
-setInterval(()=>{
+registerGameTickTask(()=>{
   refreshForgeDungeonTickets();
   renderForgeDungeonPanel();
-}, 1000);
+}, 1000, 'fd-panel');

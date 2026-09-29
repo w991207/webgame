@@ -165,9 +165,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
 });
 
 // 로그인 상태에서 1분마다 자동으로 확인 (관리자가 접속 중에 선물을 넣어줘도 바로 받게)
-setInterval(()=>{
+registerGameTickTask(()=>{
   if(fbAuth.currentUser){
     checkGifts();
     checkGlobalGifts();
   }
-}, 60000);
+}, 60000, 'gifts');

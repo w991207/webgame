@@ -1,6 +1,6 @@
 document.getElementById('saveBtn').addEventListener('click', ()=>{ saveState(true); });
 document.getElementById('resetBtn').addEventListener('click', async ()=>{
-  if(!confirm('정말 모든 진행 상황을 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+  if(!await showGameConfirm('정말 모든 진행 상황을 초기화하시겠습니까?', '이 작업은 되돌릴 수 없습니다.')) return;
   state = defaultState();
   document.getElementById('modeNormalBtn').classList.toggle('active', true);
   document.getElementById('modeTowerBtn').classList.toggle('active', false);
@@ -118,12 +118,15 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   }
 });
 
-document.getElementById('importBtn').addEventListener('click', ()=>{
-  const choice = confirm('세이브 파일(.json)을 업로드하여 불러오시겠습니까?\n[확인]: 파일 선택 / [취소]: 텍스트 코드 직접 입력');
+document.getElementById('importBtn').addEventListener('click', async ()=>{
+  const choice = await showGameConfirm(
+    '세이브 파일(.json)을 업로드하여 불러오시겠습니까?',
+    '[확인]: 파일 선택 / [취소]: 텍스트 코드 직접 입력'
+  );
   if(choice){
     document.getElementById('importFileInput').click();
   } else {
-    const code = prompt('내보내기했던 세이브 코드(JSON 텍스트)를 붙여넣으세요:');
+    const code = await showGamePrompt('세이브 코드 직접 입력', '내보내기했던 세이브 코드(JSON 텍스트)를 붙여넣으세요:');
     if(code && code.trim()){
       processImportedData(code.trim());
     }
@@ -215,6 +218,8 @@ function computeOfflineProgress(){
 
   state.gold += goldGained;
   state.exp += expGained;
+  // 오프라인 동안의 처치도 누적 처치(처치 패스/업적/주간 미션)에 반영한다.
+  state.totalKills = (state.totalKills || 0) + totalKills;
   let levelsGained = 0;
   let needed = expNeeded(state.level);
   while(state.exp >= needed){
@@ -224,7 +229,10 @@ function computeOfflineProgress(){
     needed = expNeeded(state.level);
   }
 
-  return {elapsedSec, goldGained, expGained, levelsGained, totalKills};
+  // v2.23: 자리를 비운 동안 던전/레이드 티켓 충전 + 가득 찬 영지 수확물 자동 수령 (upgrades-v23.js)
+  const extended = (typeof applyExtendedOffline === 'function') ? applyExtendedOffline(elapsedSec) : null;
+
+  return {elapsedSec, goldGained, expGained, levelsGained, totalKills, extended};
 }
 
 function formatDuration(sec){
@@ -237,10 +245,20 @@ function formatDuration(sec){
 function showOfflineModal(result){
   const modal = document.getElementById('offlineModal');
   const text = document.getElementById('offlineText');
+  // v2.23: 오프라인 추가 보상(티켓 충전/영지 자동 수령) 줄을 덧붙인다.
+  let extraHtml = '';
+  if(result.extended){
+    if(result.extended.tickets > 0){
+      extraHtml += `<br>티켓 재충전 <span class="num">+${result.extended.tickets}</span>장`;
+    }
+    result.extended.territory.forEach(t=>{
+      extraHtml += `<br>${t.label} 자동 수령 <span class="num">+${t.amount.toLocaleString()}</span>`;
+    });
+  }
   text.innerHTML = `자리를 비운 <b>${formatDuration(result.elapsedSec)}</b> 동안<br>
     변이체 <span class="num">${result.totalKills}</span>마리를 처치했습니다.<br><br>
     획득: <span class="num">+${result.goldGained.toLocaleString()}📦</span> · <span class="num">+${result.expGained} EXP</span>
-    ${result.levelsGained>0? `<br>레벨 업 <span class="num">x${result.levelsGained}</span>!` : ''}`;
+    ${result.levelsGained>0? `<br>레벨 업 <span class="num">x${result.levelsGained}</span>!` : ''}${extraHtml}`;
   modal.style.display = 'flex';
 }
 document.getElementById('offlineCloseBtn').addEventListener('click', ()=>{

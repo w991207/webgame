@@ -1,0 +1,18 @@
+#!/bin/sh
+# 커밋 전에 js/bundle*.js(배포본)와 서비스 워커 캐시 이름을 자동으로 재생성해 함께 스테이징한다.
+# -> "js/*.js는 고쳤는데 build-bundle.sh를 잊어서 배포본에는 반영되지 않는" 사고를 막는다.
+# 설치: ./scripts/install-git-hooks.sh
+
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+# 번들에 영향을 주는 파일이 하나도 안 바뀌었으면 그냥 통과한다.
+if ! git diff --cached --name-only | grep -qE '^(js/[^/]+\.js|build-bundle\.sh|patch\.json|service-worker\.js)$'; then
+  exit 0
+fi
+
+if [ ! -x ./build-bundle.sh ]; then
+  chmod +x ./build-bundle.sh 2>/dev/null || true
+fi
+
+sh ./build-bundle.sh >/dev/null && git add js/bundle1.js js/bundle2.js service-worker.js

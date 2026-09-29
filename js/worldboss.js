@@ -144,7 +144,11 @@ async function enterWorldBoss(){
     renderWorldBossPanel();
     return;
   }
-  if(!confirm(`${WORLD_BOSS_META.name}에게 도전하시겠습니까?\n제한시간 1분 동안(또는 쓰러질 때까지) 자동으로 전투가 진행됩니다.\n입힌 데미지량에 비례해 보상을 받으며, 재도전은 ${WB_COOLDOWN_MS/3600000}시간 후 가능합니다.`)) return;
+  if(!await showGameConfirm(
+    `${WORLD_BOSS_META.name}에게 도전하시겠습니까?`,
+    `제한시간 1분 동안(또는 쓰러질 때까지) 자동으로 전투가 진행됩니다.\n입힌 데미지량에 비례해 보상을 받으며, 재도전은 ${WB_COOLDOWN_MS/3600000}시간 후 가능합니다.`
+  )) return;
+  if(state.wbActive) return; // 확인 모달을 기다리는 동안 다른 진입이 완료됐다면 취소
 
   state.wbLastEnterAt = Date.now();
   state.wbActive = true;
@@ -387,8 +391,9 @@ function startWorldBossSync(){
   fetchWorldBossStatus();
   fetchWorldBossLeaderboard();
   checkWorldBossDailyRewards(); // 접속 시점에 정산 안 된 지난 날짜 순위 보상이 있으면 확정 지급
-  setInterval(fetchWorldBossStatus, 15000);
-  setInterval(fetchWorldBossLeaderboard, 30000);
+  // 서버 폴링도 통합 티커에 맡긴다(백그라운드 탭에서는 요청 자체를 보내지 않아 데이터/배터리를 아낀다).
+  registerGameTickTask(fetchWorldBossStatus, 15000, 'wb-status');
+  registerGameTickTask(fetchWorldBossLeaderboard, 30000, 'wb-leaderboard');
 }
 
 function renderWorldBossPanel(){
@@ -493,7 +498,7 @@ function renderWorldBossPanel(){
 document.getElementById('wbEnterBtn')?.addEventListener('click', enterWorldBoss);
 
 // 카운트다운/상태 표시 갱신용 (해금 전에는 스킵)
-setInterval(()=>{
-  if(!worldBossUnlocked()) return;
+registerGameTickTask(() => {
+  if (!worldBossUnlocked()) return;
   renderWorldBossPanel();
-}, 1000);
+}, 1000, 'wb-panel');

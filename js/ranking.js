@@ -7,7 +7,7 @@ function startRankingSync(){
   if(rankingSyncStarted) return;
   rankingSyncStarted = true;
   pushRanking();
-  setInterval(pushRanking, 60000);
+  registerGameTickTask(pushRanking, 60000, 'ranking-push'); // 통합 티커(백그라운드 탭에서는 생략)
   fetchRanking();
 }
 
